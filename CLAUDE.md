@@ -23,7 +23,8 @@ Nếu code và tài liệu mâu thuẫn, hỏi lại thay vì tự chọn.
 ## Cấu trúc
 
 ```text
-apps/web            Nuxt 4 SSR (web khách + /admin ở lát 1), tổ chức theo FSD trong app/
+apps/web            Nuxt 4 SSR, chỉ web khách, tổ chức theo FSD trong app/
+apps/admin          Vue 3 + Vite SPA quản trị, FSD trong src/, deploy Cloudflare Pages (admin.ranhduong.vn)
 apps/api            NestJS 12, prefix /v1, Mongoose
 packages/contracts  Zod: enum, schema, parser giờ mở cửa (dùng chung web, API, script)
 packages/geo        Chuẩn hoá tên, slug, khoảng cách, Jaro-Winkler
@@ -37,7 +38,7 @@ docs/               Nhật ký quyết định
 ```bash
 pnpm install
 pnpm infra:up                         # MongoDB, Redis, MinIO (docker compose)
-pnpm dev                              # chạy web + API
+pnpm dev                              # chạy web (:3000), admin (:5174), API (:3001)
 pnpm turbo run typecheck test build   # phải xanh trước khi commit
 pnpm --filter @ranhduong/geo test        # test một package
 ```
@@ -58,12 +59,19 @@ pnpm --filter @ranhduong/geo test        # test một package
 - Không hard-code màu, font, bo góc: dùng biến trong `packages/ui/src/tokens.css`. Component Vue đặt tên `Rd…` và dùng đúng class `rd-…` của design system. Màu nhấn `--accent` luôn đi với chữ `--ink`, không dùng chữ trắng trên nền nhấn.
 - Vùng bấm tối thiểu 44×44px; dùng đúng thẻ `<button>`, `<a href>`, `<label>`; nút chỉ có biểu tượng phải có `aria-label`.
 - Thiết kế cho màn 390px trước. Tôn trọng `prefers-reduced-motion`.
-- Trang công khai render SSR; `/admin/**` và `/l/**` không index.
+- Trang công khai render SSR; `/l/**` không index.
+
+## Admin (Vue 3 + Vite)
+
+- App riêng ở `apps/admin`, build tĩnh lên Cloudflare Pages tại `admin.ranhduong.vn`, có Cloudflare Access chặn trước; không có code admin trong `apps/web`.
+- Cùng quy ước FSD và token với web; gọi API qua `src/shared/api/client.ts` (ofetch, `credentials: 'include'`).
+- Thiết kế theo Spec UI mục 12 và các màn hình quản trị trong bản mẫu UI.
 
 ## API (NestJS)
 
 - Mỗi nghiệp vụ một module (`places`, `submissions`, `itineraries`…), theo danh sách ở thiết kế kỹ thuật mục 2.
 - Biến môi trường đọc qua `loadEnv()` (Zod), không đọc `process.env` rải rác.
+- CORS có `credentials` chỉ cho các nguồn trong `WEB_ORIGINS` (production: `https://ranhduong.vn`, `https://admin.ranhduong.vn`); kiểm `Origin` theo cùng danh sách cho request ghi dữ liệu.
 - Lỗi trả về `{ code, message, details? }` với mã lỗi ở thiết kế kỹ thuật mục 6.
 
 ## Quy tắc dữ liệu (bắt buộc)
@@ -82,5 +90,5 @@ pnpm --filter @ranhduong/geo test        # test một package
 
 ## Trạng thái
 
-- Xong: S01 (khung monorepo, CI, health check, trang `/da-lat` tạm).
+- Xong: S01 (khung monorepo, CI, health check, trang `/da-lat` tạm), khung `apps/admin` cho S26.
 - Tiếp theo: S02 hạ tầng (`ranhduong.vn`, `api.ranhduong.vn`, `media.ranhduong.vn`), S03 schema City/Zone/Place, S04 đăng nhập admin.

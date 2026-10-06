@@ -1,4 +1,4 @@
-// Cấu hình Nuxt cho web khách (Spec UI, tài liệu thiết kế kỹ thuật mục 11).
+// Cấu hình Nuxt cho web khách (Spec UI, tài liệu thiết kế kỹ thuật mục 11). Admin là app riêng ở apps/admin.
 export default defineNuxtConfig({
   compatibilityDate: '2026-10-01',
   css: ['@ranhduong/ui/tokens.css', '~/assets/base.css'],
@@ -26,7 +26,6 @@ export default defineNuxtConfig({
     '/:city/dia-diem/**': { swr: 3600 },
     '/:city/lich-trinh/**': { swr: 86400 },
     '/l/**': { headers: { 'x-robots-tag': 'noindex' } },
-    '/admin/**': { ssr: false, headers: { 'x-robots-tag': 'noindex' } },
   },
   typescript: { strict: true },
 });

@@ -10,7 +10,7 @@ corepack enable         # dùng pnpm theo packageManager
 pnpm install
 cp .env.example apps/api/.env   # sửa giá trị nếu cần
 pnpm infra:up           # MongoDB, Redis, MinIO
-pnpm dev                # web: http://localhost:3000, API: http://localhost:3001/v1/health
+pnpm dev                # web: http://localhost:3000, admin: http://localhost:5174, API: http://localhost:3001/v1/health
 ```
 
 Kiểm tra trước khi đẩy code: `pnpm turbo run typecheck test build`.

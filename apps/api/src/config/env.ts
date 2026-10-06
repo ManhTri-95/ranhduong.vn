@@ -3,7 +3,11 @@ import { z } from 'zod';
 const EnvSchema = z.object({
   API_PORT: z.coerce.number().int().default(3001),
   MONGODB_URI: z.string().min(1),
-  WEB_ORIGIN: z.string().url().default('http://localhost:3000'),
+  /** Các nguồn được gọi API kèm cookie: web khách và admin, cách nhau bằng dấu phẩy. */
+  WEB_ORIGINS: z
+    .string()
+    .default('http://localhost:3000,http://localhost:5174')
+    .transform((s) => s.split(',').map((o) => o.trim()).filter(Boolean)),
   ADMIN_EMAILS: z
     .string()
     .default('')
