@@ -20,3 +20,5 @@ Mỗi quyết định một dòng: chọn gì, vì sao. Đổi quyết định t
 | 2026-10-06 | Web `ranhduong.vn`, API `api.ranhduong.vn`, ảnh `media.ranhduong.vn`, cookie phiên ở `.ranhduong.vn` | Theo tài liệu Kiến trúc hệ thống, mục 3 |
 | 2026-10-06 | Admin là app riêng ngay từ đầu: Vue 3 + Vite SPA trên Cloudflare Pages (`admin.ranhduong.vn`), có Cloudflare Access | Ranh giới rõ, deploy độc lập, không phải tách về sau; đổi lấy khoảng 5 giờ dựng ban đầu (S26) |
 | 2026-10-06 | API nhận cookie từ nhiều nguồn qua `WEB_ORIGINS` | Web khách và admin khác subdomain, cùng site `.ranhduong.vn` |
+| 2026-10-07 | Test API bằng Vitest; thêm `@oxc-project/runtime` (devDependency của `apps/api`) | Vite 8 biên dịch decorator NestJS bằng Oxc, mã sinh ra import helper `decorate`/`decorateMetadata` từ gói này |
+| 2026-10-07 | Test tích hợp API chạy với MongoDB thật: local qua `pnpm infra:up`, CI qua service container `mongo:8`; mỗi kết nối test một database tên ngẫu nhiên | Kiểm được unique index, 2dsphere và upsert thật; không thêm mongodb-memory-server |
