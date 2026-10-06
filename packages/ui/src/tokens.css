@@ -1,0 +1,35 @@
+/* Design tokens theo Spec UI mục 2. --accent đổi theo thành phố và mùa. */
+:root {
+  --paper: #F7F2E8;
+  --paper-raised: #FFFDF8;
+  --ink: #1E3A2F;
+  --ink-soft: #46564E;
+  --mist: #DDE5E2;
+  --line: #C9D3CF;
+  --note: #FCEFB4;
+  --note-edge: #E2D38E;
+  --map-land: #F3EAD6;
+  --map-forest: #CBD9C5;
+  --map-water: #BFD4DC;
+  --map-road-casing: #B8A98A;
+  --accent: #E9B824;
+
+  --font-display: 'Lora', Georgia, serif;
+  --font-body: 'Be Vietnam Pro', system-ui, sans-serif;
+  --font-hand: 'Patrick Hand', 'Be Vietnam Pro', cursive;
+
+  --radius-chip: 12px;
+  --radius-card: 16px;
+  --radius-pill: 999px;
+  --radius-note: 4px;
+  --border: 1.5px solid var(--line);
+  --border-ink: 1.5px solid var(--ink);
+  --page-gutter: 20px;
+}
+
+[data-season='maianhdao'] { --accent: #E58FA8; }
+[data-season='mua'] { --accent: #8DB3CF; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}

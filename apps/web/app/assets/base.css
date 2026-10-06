@@ -1,0 +1,4 @@
+html { background: var(--paper); color: var(--ink); font-family: var(--font-body); }
+body { margin: 0; }
+a { color: var(--ink); }
+:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
