@@ -2,23 +2,11 @@
 
 Hướng dẫn cho người và AI làm việc trong repo này. Đọc hết trước khi sửa code.
 
-## Dự án
+## Tổng quan
 
-**Rành Đường** (`ranhduong.vn`): cẩm nang số Đà Lạt trên web. Bản đồ địa điểm được curate và xác minh với chủ quán, lịch trình mẫu theo cụm khu vực, sau này có đóng góp cộng đồng, tích điểm, voucher và gói cho chủ quán. Một người làm part-time, mục tiêu ra mắt lát 1 trước 15/11/2026.
-
-## Tài liệu (nguồn sự thật, đọc trước khi làm một story)
-
-- Spec sản phẩm: https://claude.ai/code/artifact/b5687d63-6a70-42d9-aec3-9b2ec024424c
-- Thiết kế kỹ thuật (data model, API, thuật toán, SEO, vận hành): https://claude.ai/code/artifact/a7c1ac68-212f-46dd-ac13-98c125730021
-- Backlog lát 1 (story S01–S25, tiêu chí nghiệm thu): https://claude.ai/code/artifact/96adba21-d45c-44a3-a6ab-0312e907d5a6
-- Kiến trúc hệ thống (triển khai, phân lớp NestJS, luồng chính, cache, mở rộng): https://claude.ai/code/artifact/d5c5198d-94ce-4f1d-977b-7995cc3a7058
-- Spec UI (token, component, màn hình, bản đồ, giọng văn): https://claude.ai/code/artifact/2db077a1-70d1-4827-a1bf-f1de9f0e77ba
-- Design system (token, class `rd-…`, component có xem trước, brand book): https://claude.ai/artifact/TZnHy2ugtDautrGXuGhjLT
-- Bản mẫu UI: https://claude.ai/artifact/M81fn6X8fzBBqpnNYviz3v
-- Quy trình thu thập dữ liệu (cột Google Sheet, định dạng giờ mở cửa): https://claude.ai/code/artifact/59b55066-ec2b-4cc7-8c3c-1c303fd92f83
-- Quyết định kỹ thuật: `docs/decisions.md`
-
-Nếu code và tài liệu mâu thuẫn, hỏi lại thay vì tự chọn.
+**Rành Đường** (`ranhduong.vn`) là cẩm nang số Đà Lạt trên web: bản đồ địa điểm được curate và xác minh với chủ quán, lịch trình theo cụm khu vực, sau này thêm đóng góp cộng đồng, tích điểm, voucher và gói cho chủ quán.
+Một người làm part-time. Lát 1 (bản đồ, trang địa điểm, danh sách curate, 5 lịch trình mẫu, SEO, công cụ nhập liệu) phải ra mắt trước 15/11/2026.
+Kiến trúc: monorepo pnpm + Turborepo; web Nuxt 4 SSR, admin Vue 3 SPA, API NestJS + MongoDB; mọi dữ liệu có `cityId` để mở thành phố mới chỉ bằng dữ liệu.
 
 ## Cấu trúc
 
@@ -29,17 +17,27 @@ apps/api            NestJS 12, prefix /v1, Mongoose
 packages/contracts  Zod: enum, schema, parser giờ mở cửa (dùng chung web, API, script)
 packages/geo        Chuẩn hoá tên, slug, khoảng cách, Jaro-Winkler
 packages/ui         Design token CSS (tokens.css)
-packages/config     tsconfig dùng chung
+packages/config     tsconfig và cấu hình ESLint (eslint.mjs) dùng chung
 docs/               Nhật ký quyết định
 ```
 
 ## Lệnh
 
+Cài đặt lần đầu (Node 24 theo `.nvmrc`, tối thiểu 22.19; pnpm 12.9.1 qua corepack):
+
+```bash
+nvm use && corepack enable && pnpm install
+cp .env.example apps/api/.env      # API dev nạp file này qua --env-file; sửa giá trị nếu cần
+pnpm infra:up                      # MongoDB, Redis, MinIO (docker compose); tắt: pnpm infra:down
+```
+
+Lệnh gốc (`package.json`):
+
 ```bash
 pnpm install
 pnpm infra:up                         # MongoDB, Redis, MinIO (docker compose)
 pnpm dev                              # chạy web (:3000), admin (:5174), API (:3001)
-pnpm turbo run typecheck test build   # phải xanh trước khi commit
+pnpm turbo run lint typecheck test build   # phải xanh trước khi commit
 pnpm --filter @ranhduong/geo test        # test một package
 ```
 
@@ -61,32 +59,42 @@ pnpm --filter @ranhduong/geo test        # test một package
 - Thiết kế cho màn 390px trước. Tôn trọng `prefers-reduced-motion`.
 - Trang công khai render SSR; `/l/**` không index.
 
-## Admin (Vue 3 + Vite)
+## Quy trình với Superpowers
 
-- App riêng ở `apps/admin`, build tĩnh lên Cloudflare Pages tại `admin.ranhduong.vn`, có Cloudflare Access chặn trước; không có code admin trong `apps/web`.
-- Cùng quy ước FSD và token với web; gọi API qua `src/shared/api/client.ts` (ofetch, `credentials: 'include'`).
-- Thiết kế theo Spec UI mục 12 và các màn hình quản trị trong bản mẫu UI.
+- **Story đã có trong `docs/backlog.md`**: bỏ qua brainstorming, dùng `superpowers:writing-plans` ngay. Trước khi viết plan, đọc story, tiêu chí nghiệm thu, các mục liên quan theo bản đồ tài liệu và các ADR liên quan. Plan phải ghi rõ tiêu chí nghiệm thu nào được kiểm ở bước nào.
+- **Ý tưởng mới, thay đổi hướng, hoặc việc không có trong backlog**: bắt đầu bằng `superpowers:brainstorming`. Nếu kết quả đổi quyết định kiến trúc thì áp dụng mục "Nguồn chuẩn" ở trên trước khi viết plan.
+- Nhánh: `feat/S05-place-form`. Commit theo Conventional Commits (`feat:`, `fix:`, `chore:`…), có ID story, ví dụ `feat: S05 add place form`.
+- Story xong khi đạt definition of done ở backlog mục 6: đạt tiêu chí nghiệm thu, CI xanh, đã thử trên staging và trên điện thoại thật, logic có điều kiện có unit test.
 
-## API (NestJS)
+## Vùng TDD
 
-- Mỗi nghiệp vụ một module (`places`, `submissions`, `itineraries`…), theo danh sách ở thiết kế kỹ thuật mục 2.
-- Biến môi trường đọc qua `loadEnv()` (Zod), không đọc `process.env` rải rác.
-- CORS có `credentials` chỉ cho các nguồn trong `WEB_ORIGINS` (production: `https://ranhduong.vn`, `https://admin.ranhduong.vn`); kiểm `Origin` theo cùng danh sách cho request ghi dữ liệu.
-- Lỗi trả về `{ code, message, details? }` với mã lỗi ở thiết kế kỹ thuật mục 6.
+**Bắt buộc TDD** (viết test trước, thấy test đỏ, rồi mới viết code):
+- `apps/api`: domain logic, service, validation (schema Zod, guard, policy, chuyển trạng thái).
+- Logic lịch trình (lọc, chấm điểm, sắp tuyến, xếp giờ, kiểm tra lỗi khi soạn lịch trình mẫu).
+- Điểm thưởng, check-in, quà, voucher, kể cả trường hợp chạy đồng thời.
+- Logic có điều kiện trong `packages/contracts` và `packages/geo` (giờ mở cửa, slug, chống trùng) cũng phải có unit test theo definition of done.
+- `apps/api` hiện chưa có script `test`. Story đầu tiên viết logic API phải thêm Vitest (công cụ test đã chọn trong `docs/decisions.md`) trước.
 
-## Quy tắc dữ liệu (bắt buộc)
+**Không ép TDD**: trang hiển thị nội dung, styling, layout theo design system. Kiểm tra bằng typecheck, lint và xem trên trình duyệt ở 390px trước, rồi desktop.
 
-- Google Places: chỉ lưu `place_id`. Không lưu giờ mở cửa, rating, review, ảnh của Google.
-- Không viết code scrape Facebook, Google Maps hay trang khác.
-- Ảnh phải có nguồn (`source`, `credit`, `license`); không dùng ảnh khi chưa có quyền.
-- `verifySource`: `owner` khi quán đã xác nhận, `admin` khi chỉ dựa trên Facebook hoặc là điểm công cộng.
+## Nguyên tắc cứng
 
-## Làm một story
+- **TypeScript strict** ở mọi package. Không tắt `strict`, `noUncheckedIndexedAccess`, và không dùng `any` hay `@ts-ignore` để lách lỗi kiểu.
+- **Không bao giờ tự bịa dữ liệu thực tế về địa điểm**: giờ mở cửa, giá, địa chỉ, số điện thoại, toạ độ, ảnh. Dữ liệu thật chỉ đến từ quy trình trong `docs/data-collection.md`. Seed và test chỉ dùng dữ liệu giả có tên rõ là giả. Thiếu dữ liệu thì để trống và hỏi.
+- **Tuân thủ điều khoản Google Places** ([ADR 0001](docs/decisions/0001-google-places-place-id-only.md)): chỉ lưu `place_id`, chỉ đường bằng URL Google Maps; không lưu hay cache giờ mở cửa, rating, review, ảnh, toạ độ của Google; không dùng Google Maps JS.
+- Không viết code scrape Facebook, Google Maps hay trang khác. Ảnh phải có `source`, `credit`, `license`. `verifySource` là `owner` khi quán đã xác nhận, `admin` khi chỉ dựa trên Facebook hoặc là điểm công cộng.
+- **SEO là ưu tiên** ([ADR 0010](docs/decisions/0010-stable-public-urls-and-slugs.md)): URL slug ổn định, sinh bằng `slugify`; **không đổi hay xoá route công khai khi chưa hỏi**; đổi slug thì lưu `slugHistory` và trả 301. Trang công khai render SSR; `/l/**` không index.
 
-1. Đọc story và tiêu chí nghiệm thu trong backlog, cùng phần liên quan trong thiết kế kỹ thuật và Spec UI.
-2. Nhánh `feat/S05-place-form`; commit theo Conventional Commits (`feat:`, `fix:`, `chore:`…), ghi ID story trong commit.
-3. Logic có điều kiện (giờ mở cửa, slug, chống trùng, điểm) phải có unit test.
-4. Xong khi đạt definition of done ở backlog mục 6: đạt tiêu chí, CI xanh, đã thử trên staging và điện thoại thật.
+## Quy ước
+
+- Code, tên biến, tên file bằng tiếng Anh. Chữ hiển thị cho người dùng bằng tiếng Việt, theo giọng văn ở Spec UI mục 3. Comment tiếng Việt được.
+- Mọi kiểu dữ liệu đi qua API, form, import hoặc sự kiện đặt trong `packages/contracts` bằng Zod; API validate input bằng đúng schema đó, không định nghĩa lại ở nơi khác ([ADR 0011](docs/decisions/0011-shared-zod-contracts.md)).
+- Toạ độ lưu GeoJSON `[lng, lat]`. Thời gian lưu UTC, hiển thị theo `Asia/Ho_Chi_Minh`. Giờ mở cửa dạng `HH:mm`, ngày 0 = Chủ nhật; đọc chuỗi giờ bằng `parseOpeningHours`.
+- Mọi document nghiệp vụ có `cityId`. Thao tác có giới hạn số lượng (voucher, suất quà, điểm) dùng `findOneAndUpdate` có điều kiện hoặc transaction, không đọc rồi ghi ([ADR 0006](docs/decisions/0006-point-ledger-and-atomic-limits.md)).
+- API: biến môi trường đọc qua `loadEnv()` (Zod), không đọc `process.env` rải rác. Lỗi trả `{ code, message, details? }` với mã lỗi ở technical-design mục 6. CORS có `credentials` chỉ cho các nguồn trong `WEB_ORIGINS`; request ghi dữ liệu kiểm `Origin` theo cùng danh sách.
+- Web và admin: không hard-code màu, font, bo góc, chỉ dùng biến trong `packages/ui/src/tokens.css`. Component Vue đặt tên `Rd…` và dùng đúng class `rd-…` của design system. `--accent` luôn đi với chữ `--ink`, không dùng chữ trắng trên nền nhấn.
+- Vùng bấm tối thiểu 44×44px; dùng đúng thẻ `<button>`, `<a href>`, `<label>`; nút chỉ có biểu tượng phải có `aria-label`. Thiết kế cho 390px trước. Tôn trọng `prefers-reduced-motion`.
+- Admin gọi API qua `src/shared/api/client.ts` (ofetch, `credentials: 'include'`); không có code admin trong `apps/web`.
 
 ## Trạng thái
 
