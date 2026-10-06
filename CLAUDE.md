@@ -29,7 +29,7 @@ apps/api            NestJS 12, prefix /v1, Mongoose
 packages/contracts  Zod: enum, schema, parser giờ mở cửa (dùng chung web, API, script)
 packages/geo        Chuẩn hoá tên, slug, khoảng cách, Jaro-Winkler
 packages/ui         Design token CSS (tokens.css)
-packages/config     tsconfig dùng chung
+packages/config     tsconfig và cấu hình ESLint (eslint.mjs) dùng chung
 docs/               Nhật ký quyết định
 ```
 
@@ -39,7 +39,7 @@ docs/               Nhật ký quyết định
 pnpm install
 pnpm infra:up                         # MongoDB, Redis, MinIO (docker compose)
 pnpm dev                              # chạy web (:3000), admin (:5174), API (:3001)
-pnpm turbo run typecheck test build   # phải xanh trước khi commit
+pnpm turbo run lint typecheck test build   # phải xanh trước khi commit
 pnpm --filter @ranhduong/geo test        # test một package
 ```
 

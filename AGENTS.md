@@ -8,7 +8,7 @@ Ranh Duong is a Da Lat travel guide built as a pnpm/Turborepo monorepo. Read `CL
 - `apps/api/src/`: NestJS API with `/v1` routes; group business functionality into modules.
 - `packages/contracts/src/`: shared Zod schemas and opening-hours utilities.
 - `packages/geo/src/`: normalization, slugs, distance, and similarity utilities.
-- `packages/ui/src/tokens.css`: design tokens; `packages/config/`: shared TypeScript configuration.
+- `packages/ui/src/tokens.css`: design tokens; `packages/config/`: shared TypeScript and ESLint configuration.
 - Tests sit alongside source as `*.test.ts`; `.github/workflows/ci.yml` defines CI.
 
 ## Build, Test, and Development Commands
