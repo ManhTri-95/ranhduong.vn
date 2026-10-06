@@ -23,12 +23,12 @@ export const vue = defineConfig([
       parserOptions: { parser: tseslint.parser },
       globals: { ...globals.browser },
     },
-    // TypeScript và auto-import của Nuxt lo tên chưa khai báo, như typescript-eslint khuyên cho file .ts.
-    rules: { 'no-undef': 'off' },
+    // Tắt các rule lõi mà TypeScript đã kiểm (như typescript-eslint làm cho file .ts), kể cả `no-undef` cho auto-import của Nuxt.
+    rules: { ...tseslint.configs.eslintRecommended.rules },
   },
   {
-    // Tên file trang và component gốc theo quy ước Nuxt/Vue Router (index.vue, app.vue, App.vue).
-    files: ['**/pages/**/*.vue', '**/app.vue', '**/App.vue'],
+    // Tên file trang, layout, error.vue và component gốc theo quy ước Nuxt/Vue Router (index.vue, default.vue, error.vue, app.vue, App.vue).
+    files: ['**/pages/**/*.vue', '**/layouts/**/*.vue', '**/error.vue', '**/app.vue', '**/App.vue'],
     rules: { 'vue/multi-word-component-names': 'off' },
   },
 ]);
