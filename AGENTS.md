@@ -18,6 +18,7 @@ Use Node 24 (`.nvmrc`; minimum 22.19) and pnpm 12.9.1.
 - `corepack enable` and `pnpm install`: enable pnpm and install dependencies.
 - `pnpm infra:up` / `pnpm infra:down`: start/stop Docker MongoDB, Redis, and MinIO.
 - `pnpm dev`: start web on port 3000 and API on port 3001; health endpoint is `/v1/health`.
+- `pnpm seed`: build the API and upsert the Đà Lạt city and its 4 zones (safe to re-run).
 - `pnpm build`, `pnpm typecheck`, `pnpm test`: run workspace tasks.
 - `pnpm turbo run typecheck test build`: required pre-commit checks; also run in CI.
 - `pnpm --filter @ranhduong/geo test`: test one package.
@@ -30,7 +31,7 @@ Use English identifiers, kebab-case filenames, and Vietnamese user-facing text. 
 
 ## Testing Guidelines
 
-Use Vitest with descriptive `describe`/`it` cases in colocated `*.test.ts` files. Test conditional business logic, including opening hours, slugs, and duplicate detection. No numeric coverage threshold is configured; API and web currently have no test scripts.
+Use Vitest with descriptive `describe`/`it` cases in colocated `*.test.ts` files. Test conditional business logic, including opening hours, slugs, and duplicate detection. No numeric coverage threshold is configured. API tests use Vitest; integration tests need MongoDB (`pnpm infra:up`) and get a throwaway database from `apps/api/src/testing/mongo.ts`. Web has no test script yet.
 
 ## Commit & Pull Request Guidelines
 
