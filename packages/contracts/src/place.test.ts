@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_CHECKIN_RADIUS_M, Place } from './place.js';
+import {
+  DEFAULT_CHECKIN_RADIUS_M,
+  needsOwnerConfirmation,
+  PHOTO_WIDTHS,
+  photoVariantKey,
+  Place,
+  PlaceListQuery,
+} from './place.js';
 
 // Dữ liệu giả, tên rõ là giả; toạ độ quanh [0, 0].
 const DRAFT = {
@@ -74,5 +81,54 @@ describe('Place', () => {
   it('giờ mở cửa dùng OpeningSlot (ngày 0 = Chủ nhật, tối đa 6)', () => {
     expect(Place.safeParse({ ...DRAFT, openingHours: [{ day: 0, open: '07:00', close: '22:00' }] }).success).toBe(true);
     expect(Place.safeParse({ ...DRAFT, openingHours: [{ day: 7, open: '07:00', close: '22:00' }] }).success).toBe(false);
+  });
+});
+
+describe('photoVariantKey', () => {
+  it('ghép khoá bản WebP theo chiều rộng (S06 sinh đúng các khoá này)', () => {
+    expect(PHOTO_WIDTHS).toEqual([400, 800, 1200]);
+    expect(photoVariantKey('places/gia-lap/1', 800)).toBe('places/gia-lap/1/800.webp');
+  });
+});
+
+describe('needsOwnerConfirmation', () => {
+  it('quán chưa được chủ xác nhận thì hiện nhãn', () => {
+    expect(needsOwnerConfirmation({ category: 'cafe', verifySource: 'admin' })).toBe(true);
+    expect(needsOwnerConfirmation({ category: 'food', verifySource: 'ctv' })).toBe(true);
+    expect(needsOwnerConfirmation({ category: 'activity' })).toBe(true);
+  });
+  it('quán đã xác nhận và điểm tham quan công cộng thì không', () => {
+    expect(needsOwnerConfirmation({ category: 'cafe', verifySource: 'owner' })).toBe(false);
+    expect(needsOwnerConfirmation({ category: 'attraction', verifySource: 'admin' })).toBe(false);
+    expect(needsOwnerConfirmation({ category: 'attraction' })).toBe(false);
+  });
+});
+
+describe('PlaceListQuery', () => {
+  it('mặc định 20 kết quả, không lọc, không từ khoá', () => {
+    const query = PlaceListQuery.parse({});
+    expect(query.limit).toBe(20);
+    expect(query.q).toBeUndefined();
+    expect(query.category).toBeUndefined();
+  });
+  it('bỏ khoảng trắng thừa ở từ khoá; chỉ có khoảng trắng thì coi như không có', () => {
+    expect(PlaceListQuery.parse({ q: '  ca phe  ' }).q).toBe('ca phe');
+    expect(PlaceListQuery.parse({ q: '   ' }).q).toBeUndefined();
+  });
+  it('từ khoá tối đa 100 ký tự', () => {
+    expect(PlaceListQuery.safeParse({ q: 'a'.repeat(100) }).success).toBe(true);
+    expect(PlaceListQuery.safeParse({ q: 'a'.repeat(101) }).success).toBe(false);
+  });
+  it('đọc nhiều danh mục cách nhau bằng dấu phẩy', () => {
+    expect(PlaceListQuery.parse({ category: 'cafe,food' }).category).toEqual(['cafe', 'food']);
+    expect(PlaceListQuery.parse({ category: ' cafe , ' }).category).toEqual(['cafe']);
+    expect(PlaceListQuery.parse({ category: '' }).category).toBeUndefined();
+    expect(PlaceListQuery.safeParse({ category: 'cafe,bar' }).success).toBe(false);
+  });
+  it('limit đọc từ chuỗi query, số nguyên trong khoảng 1–50', () => {
+    expect(PlaceListQuery.parse({ limit: '6' }).limit).toBe(6);
+    for (const limit of ['0', '51', 'abc', '2.5']) {
+      expect(PlaceListQuery.safeParse({ limit }).success, limit).toBe(false);
+    }
   });
 });

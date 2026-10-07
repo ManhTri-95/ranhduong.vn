@@ -74,3 +74,64 @@ export const Place = z.object({
   ratingCount: z.number().int().min(0).default(0),
 });
 export type Place = z.infer<typeof Place>;
+
+/** Chiều rộng các bản WebP sinh khi upload (S06, ui-spec mục 11). */
+export const PHOTO_WIDTHS = [400, 800, 1200] as const;
+export type PhotoWidth = (typeof PHOTO_WIDTHS)[number];
+
+/** Khoá object của một bản WebP; S06 phải sinh đúng các khoá này cạnh ảnh gốc. */
+export function photoVariantKey(key: string, width: PhotoWidth): string {
+  return `${key}/${width}.webp`;
+}
+
+/**
+ * Hiện nhãn "Thông tin chưa được quán xác nhận" khi quán chưa được chủ xác nhận.
+ * Không áp cho điểm tham quan công cộng (category attraction): với loại này, verifySource admin là bình thường
+ * (ui-spec mục 4).
+ */
+export function needsOwnerConfirmation(place: { category: PlaceCategory; verifySource?: VerifySource }): boolean {
+  return place.category !== 'attraction' && place.verifySource !== 'owner';
+}
+
+/** Thẻ địa điểm ngang trên trang chủ, trang danh mục, trang tìm kiếm (ui-spec mục 4). */
+export const PlaceCard = z.object({
+  slug: Slug,
+  name: z.string(),
+  category: PlaceCategory,
+  zoneName: z.string().optional(),
+  /** Câu đầu của practicalNotes, hiện bằng chữ viết tay. */
+  note: z.string().optional(),
+  /** Trình duyệt tự tính trạng thái mở cửa theo giờ Việt Nam, vì trang được cache SWR. */
+  openingHours: z.array(OpeningSlot),
+  /** true: dòng trạng thái thay bằng "Thông tin chưa được quán xác nhận". */
+  unconfirmed: z.boolean(),
+  coverKey: z.string().optional(),
+});
+export type PlaceCard = z.infer<typeof PlaceCard>;
+
+const MAX_QUERY_LENGTH = 100;
+
+/** Query của GET /v1/cities/:city/places. */
+export const PlaceListQuery = z.object({
+  /** Từ khoá tìm không dấu; rỗng hoặc chỉ có khoảng trắng thì coi như không có. */
+  q: z
+    .string()
+    .trim()
+    .max(MAX_QUERY_LENGTH, `Từ khoá tối đa ${MAX_QUERY_LENGTH} ký tự`)
+    .optional()
+    .transform((s) => s || undefined),
+  /** Một hoặc nhiều danh mục, cách nhau bằng dấu phẩy: `category=cafe,food`. */
+  category: z
+    .string()
+    .optional()
+    .transform((s) => {
+      const parts = s?.split(',').map((part) => part.trim()).filter(Boolean) ?? [];
+      return parts.length > 0 ? parts : undefined;
+    })
+    .pipe(z.array(PlaceCategory).optional()),
+  limit: z.coerce.number().int().min(1).max(50).default(20),
+});
+export type PlaceListQuery = z.infer<typeof PlaceListQuery>;
+
+export const PlaceListResponse = z.object({ items: z.array(PlaceCard) });
+export type PlaceListResponse = z.infer<typeof PlaceListResponse>;

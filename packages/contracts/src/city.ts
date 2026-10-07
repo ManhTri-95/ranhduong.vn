@@ -66,3 +66,18 @@ export const CitySeedResult = z.object({
   staleZoneSlugs: z.array(Slug),
 });
 export type CitySeedResult = z.infer<typeof CitySeedResult>;
+
+/** Thành phố đã xác định, truyền giữa các module của API (id là ObjectId dạng chuỗi). */
+export const CityRef = z.object({ id: ObjectIdString, slug: Slug, name: z.string().min(1) });
+export type CityRef = z.infer<typeof CityRef>;
+
+/** GET /v1/cities/:city: thông tin công khai và danh sách cụm (technical-design mục 6). */
+export const CityPublic = z.object({
+  slug: Slug,
+  name: z.string().min(1),
+  accent: HexColor,
+  center: GeoPoint,
+  mapBounds: BBox,
+  zones: z.array(z.object({ slug: Slug, name: z.string().min(1) })),
+});
+export type CityPublic = z.infer<typeof CityPublic>;
