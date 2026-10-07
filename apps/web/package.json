@@ -8,7 +8,9 @@
     "build": "nuxt build",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
-    "lint": "eslint . --max-warnings 0"
+    "lint": "eslint . --max-warnings 0",
+    "test": "vitest run",
+    "typecheck": "nuxt typecheck"
   },
   "dependencies": {
     "@ranhduong/contracts": "workspace:*",
@@ -19,6 +21,9 @@
   },
   "devDependencies": {
     "@ranhduong/config": "workspace:*",
-    "eslint": "^10.12.0"
+    "eslint": "^10.12.0",
+    "typescript": "~6.0.3",
+    "vitest": "^5.0.3",
+    "vue-tsc": "^3.3.12"
   }
 }

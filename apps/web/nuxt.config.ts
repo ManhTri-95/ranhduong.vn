@@ -17,8 +17,12 @@ export default defineNuxtConfig({
     },
   },
   runtimeConfig: {
+    /** SSR gọi API qua mạng nội bộ Docker (http://api:3001/v1, ADR 0003); để trống thì dùng public.apiBase. */
+    apiInternalBase: '',
     public: {
       apiBase: 'http://localhost:3001/v1',
+      /** Ảnh trên R2 (media.ranhduong.vn); local là bucket MinIO. */
+      mediaBase: 'http://localhost:9000/ranhduong-media',
       mapStyleUrl: 'https://tiles.openfreemap.org/styles/positron',
     },
   },
