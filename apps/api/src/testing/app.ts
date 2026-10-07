@@ -26,7 +26,8 @@ export async function createTestApp(imports: NonNullable<ModuleMetadata['imports
   })
   class TestAppModule {}
 
-  const app = await NestFactory.create(TestAppModule, { logger: false });
+  // abortOnError false: lỗi khi dựng app thành exception trong test, không gọi process.exit.
+  const app = await NestFactory.create(TestAppModule, { logger: false, abortOnError: false });
   configureApp(app, webOrigins);
   await app.listen(0, '127.0.0.1');
   const conn = app.get<Connection>(getConnectionToken());
