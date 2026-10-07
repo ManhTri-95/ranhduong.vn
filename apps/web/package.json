@@ -7,7 +7,8 @@
     "dev": "nuxt dev",
     "build": "nuxt build",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "lint": "eslint . --max-warnings 0"
   },
   "dependencies": {
     "@ranhduong/contracts": "workspace:*",
@@ -15,5 +16,9 @@
     "@ranhduong/ui": "workspace:*",
     "nuxt": "^4.5.2",
     "vue": "^3.5.43"
+  },
+  "devDependencies": {
+    "@ranhduong/config": "workspace:*",
+    "eslint": "^10.12.0"
   }
 }

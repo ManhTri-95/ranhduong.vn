@@ -20,3 +20,4 @@ Mỗi quyết định một dòng: chọn gì, vì sao. Đổi quyết định t
 | 2026-10-06 | Web `ranhduong.vn`, API `api.ranhduong.vn`, ảnh `media.ranhduong.vn`, cookie phiên ở `.ranhduong.vn` | Theo tài liệu Kiến trúc hệ thống, mục 3 |
 | 2026-10-06 | Admin là app riêng ngay từ đầu: Vue 3 + Vite SPA trên Cloudflare Pages (`admin.ranhduong.vn`), có Cloudflare Access | Ranh giới rõ, deploy độc lập, không phải tách về sau; đổi lấy khoảng 5 giờ dựng ban đầu (S26) |
 | 2026-10-06 | API nhận cookie từ nhiều nguồn qua `WEB_ORIGINS` | Web khách và admin khác subdomain, cùng site `.ranhduong.vn` |
+| 2026-10-06 | ESLint 10 (flat config) + typescript-eslint 8 + eslint-plugin-vue 10, cấu hình chung ở `packages/config/eslint.mjs`; CI chạy `lint` cùng typecheck, test, build | Tiêu chí nghiệm thu S01; thay cho dòng "Chưa cấu hình ESLint". Chỉ bật rule bắt lỗi (chặn `any`, `@ts-ignore`), không bật rule định dạng, chưa dùng Prettier |

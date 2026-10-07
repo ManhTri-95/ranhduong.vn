@@ -13,6 +13,6 @@ pnpm infra:up           # MongoDB, Redis, MinIO
 pnpm dev                # web: http://localhost:3000, admin: http://localhost:5174, API: http://localhost:3001/v1/health
 ```
 
-Kiểm tra trước khi đẩy code: `pnpm turbo run typecheck test build`.
+Kiểm tra trước khi đẩy code: `pnpm turbo run lint typecheck test build`.
 
 Quy ước và tài liệu: xem [CLAUDE.md](./CLAUDE.md) và [docs/decisions.md](./docs/decisions.md).
