@@ -73,3 +73,68 @@ export function isOpenAt(slots: OpeningSlot[], day: number, minutesOfDay: number
     return (s.day === day && minutesOfDay >= open) || ((s.day + 1) % 7 === day && minutesOfDay < close);
   });
 }
+
+const DAY_MIN = 1440;
+const WEEK_MIN = 7 * DAY_MIN;
+const WEEKDAY_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+export type OpenStatus =
+  | { kind: 'unknown' }
+  /** closesAt null: mở 24/7. */
+  | { kind: 'open'; closesAt: string | null }
+  /** day: thứ của lần mở tới (0 = Chủ nhật); inDays: sau mấy ngày tính từ hôm nay. */
+  | { kind: 'closed'; opensAt: string; day: number; inDays: number };
+
+/** Thứ (0 = Chủ nhật) và phút trong ngày của `now` theo múi giờ `timeZone`. */
+function localTime(now: Date, timeZone: string): { day: number; minutes: number } {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    weekday: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(now);
+  const part = (type: string) => parts.find((p) => p.type === type)?.value ?? '';
+  return { day: WEEKDAY_EN.indexOf(part('weekday')), minutes: (Number(part('hour')) % 24) * 60 + Number(part('minute')) };
+}
+
+const toMinutes = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
+const toHHmm = (minutes: number) => {
+  const m = ((minutes % DAY_MIN) + DAY_MIN) % DAY_MIN;
+  return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+};
+
+/**
+ * Trạng thái mở cửa lúc `now` theo giờ địa phương: đang mở (đóng lúc nào), đang đóng (mở lại lúc nào, sau mấy ngày)
+ * hoặc chưa có giờ. Các ca nối tiếp hoặc chồng nhau được gộp lại, kể cả ca qua nửa đêm và ca qua cuối tuần.
+ * Ca có giờ đóng bằng giờ mở (ví dụ 00:00-00:00) coi như mở 24 giờ kể từ giờ mở.
+ */
+export function openStatus(slots: OpeningSlot[], now: Date, timeZone = 'Asia/Ho_Chi_Minh'): OpenStatus {
+  if (slots.length === 0) return { kind: 'unknown' };
+  // Mỗi ca thành khoảng [đầu, cuối) tính bằng phút trong tuần. Nhân bản sang tuần trước và tuần sau để xử lý quay vòng.
+  const week = slots.map((s): [number, number] => {
+    const open = toMinutes(s.open);
+    const close = toMinutes(s.close);
+    const start = s.day * DAY_MIN + open;
+    return [start, start + (close > open ? close - open : close - open + DAY_MIN)];
+  });
+  const all = [-1, 0, 1]
+    .flatMap((w) => week.map(([a, b]): [number, number] => [a + w * WEEK_MIN, b + w * WEEK_MIN]))
+    .sort((x, y) => x[0] - y[0]);
+  const merged: [number, number][] = [];
+  for (const [a, b] of all) {
+    const last = merged.at(-1);
+    if (last && a <= last[1]) last[1] = Math.max(last[1], b);
+    else merged.push([a, b]);
+  }
+
+  const { day, minutes } = localTime(now, timeZone);
+  const t = day * DAY_MIN + minutes;
+  const current = merged.find(([a, b]) => a <= t && t < b);
+  if (current) return { kind: 'open', closesAt: current[1] - current[0] >= WEEK_MIN ? null : toHHmm(current[1]) };
+  const next = merged.find(([a]) => a > t);
+  // Có ít nhất một ca và đã nhân bản sang tuần sau, nên luôn có lần mở tiếp theo.
+  if (!next) return { kind: 'unknown' };
+  const nextDayIndex = Math.floor(next[0] / DAY_MIN);
+  return { kind: 'closed', opensAt: toHHmm(next[0]), day: ((nextDayIndex % 7) + 7) % 7, inDays: nextDayIndex - day };
+}
