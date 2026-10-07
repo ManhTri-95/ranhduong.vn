@@ -18,11 +18,17 @@ describe('tagChips', () => {
       { slug: 'view-doi', label: 'View đồi', pressed: false, value: 'chill,view-doi' },
     ]);
   });
-  it('thẻ đang chọn mà không còn chỗ nào có vẫn hiện ở cuối để bỏ chọn được', () => {
-    expect(tagChips(available, ['khong-con'])).toEqual([
-      { slug: 'chill', label: 'Chill', pressed: false, value: 'chill,khong-con' },
-      { slug: 'view-doi', label: 'View đồi', pressed: false, value: 'khong-con,view-doi' },
-      { slug: 'khong-con', label: 'Khong con', pressed: true, value: '' },
+  it('thẻ đang chọn có tên trong TAG_LABEL mà không còn chỗ nào có vẫn hiện ở cuối để bỏ chọn được', () => {
+    expect(tagChips(available, ['an-sang'])).toEqual([
+      { slug: 'chill', label: 'Chill', pressed: false, value: 'an-sang,chill' },
+      { slug: 'view-doi', label: 'View đồi', pressed: false, value: 'an-sang,view-doi' },
+      { slug: 'an-sang', label: 'Ăn sáng', pressed: true, value: '' },
+    ]);
+  });
+  it('chữ tuỳ ý trên URL (không có trong dữ liệu, không có tên) không thành chip và bị bỏ khi bấm chip khác', () => {
+    expect(tagChips(available, ['chill', 'lua-dao-chuyen-khoan-0123456789'])).toEqual([
+      { slug: 'chill', label: 'Chill', pressed: true, value: '' },
+      { slug: 'view-doi', label: 'View đồi', pressed: false, value: 'chill,view-doi' },
     ]);
   });
   it('không có thẻ nào thì không có chip', () => {

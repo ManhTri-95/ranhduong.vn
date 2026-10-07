@@ -1,4 +1,4 @@
-import { tagLabel, type TagCount } from '@ranhduong/contracts';
+import { TAG_LABEL, tagLabel, type TagCount } from '@ranhduong/contracts';
 import { toggleTag } from '~/entities/place/lib/listing-query';
 
 export interface TagChip {
@@ -10,16 +10,19 @@ export interface TagChip {
 }
 
 /**
- * Chip lọc thẻ: các thẻ có trong danh mục hoặc cụm (nhiều chỗ trước), rồi các thẻ đang chọn mà không còn chỗ nào có,
- * để luôn bỏ chọn được. Bấm chip không làm chip đổi chỗ.
+ * Chip lọc thẻ: các thẻ có trong danh mục hoặc cụm (nhiều chỗ trước), rồi các thẻ đang chọn có tên trong TAG_LABEL mà
+ * không còn chỗ nào có, để luôn bỏ chọn được. Bấm chip không làm chip đổi chỗ.
+ * Chữ tuỳ ý trên URL (không có trong dữ liệu, không có tên) không thành chip, để không ai mượn trang hiện chữ của họ;
+ * bấm chip bất kỳ thì nó bị bỏ khỏi URL.
  */
 export function tagChips(available: readonly TagCount[], selected: readonly string[]): TagChip[] {
   const known = new Set(available.map((tag) => tag.slug));
-  const slugs = [...available.map((tag) => tag.slug), ...selected.filter((slug) => !known.has(slug))];
+  const shown = selected.filter((slug) => known.has(slug) || Object.hasOwn(TAG_LABEL, slug));
+  const slugs = [...available.map((tag) => tag.slug), ...shown.filter((slug) => !known.has(slug))];
   return slugs.map((slug) => ({
     slug,
     label: tagLabel(slug),
-    pressed: selected.includes(slug),
-    value: toggleTag(selected, slug).join(','),
+    pressed: shown.includes(slug),
+    value: toggleTag(shown, slug).join(','),
   }));
 }

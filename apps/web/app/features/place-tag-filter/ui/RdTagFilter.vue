@@ -1,10 +1,22 @@
 <script setup lang="ts">
 import type { TagCount } from '@ranhduong/contracts';
-import { computed } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { tagChips } from '../lib/tag-chips';
 
 const props = defineProps<{ action: string; tags: TagCount[]; selected: string[] }>();
 const chips = computed(() => tagChips(props.tags, props.selected));
+const form = ref<HTMLFormElement | null>(null);
+
+// Đổi thẻ thì trang được dựng lại (key theo fullPath), nút vừa bấm bị thay bằng nút mới và focus rơi về <body>.
+// Nhớ thẻ vừa bấm qua lần dựng lại, rồi trả focus về chip của thẻ đó (WCAG 2.4.3).
+const focusSlug = useState<string | null>('tag-filter-focus', () => null);
+onMounted(() => {
+  const slug = focusSlug.value;
+  if (!slug) return;
+  focusSlug.value = null;
+  const buttons = [...(form.value?.querySelectorAll<HTMLButtonElement>('button[name="tags"]') ?? [])];
+  (buttons.find((button) => button.dataset.slug === slug) ?? buttons[0])?.focus();
+});
 
 /**
  * Form GET thường: chưa có JS thì trình duyệt tự gửi `?tags=…` (mỗi nút mang sẵn giá trị sau khi bật/tắt thẻ).
@@ -15,16 +27,17 @@ async function onSubmit(event: SubmitEvent): Promise<void> {
   const button = event.submitter;
   if (!(button instanceof HTMLButtonElement)) return;
   event.preventDefault();
+  focusSlug.value = button.dataset.slug ?? null;
   await navigateTo(button.value ? { path: props.action, query: { tags: button.value } } : props.action);
 }
 </script>
 
 <template>
-  <form v-if="chips.length" method="get" :action="action" aria-label="Lọc theo thẻ" @submit="onSubmit">
+  <form v-if="chips.length" ref="form" method="get" :action="action" aria-label="Lọc theo thẻ" @submit="onSubmit">
     <ul class="chips">
       <li v-for="chip in chips" :key="chip.slug">
         <!-- Nhãn để cùng dòng với thẻ: xuống dòng thì HTML có khoảng trắng thừa quanh chữ. -->
-        <button class="rd-chip rd-chip--filter" type="submit" name="tags" :value="chip.value" :aria-pressed="chip.pressed">{{ chip.label }}</button>
+        <button class="rd-chip rd-chip--filter" type="submit" name="tags" :value="chip.value" :data-slug="chip.slug" :aria-pressed="chip.pressed">{{ chip.label }}</button>
       </li>
     </ul>
   </form>

@@ -96,7 +96,8 @@ async function loadMore(event: MouseEvent): Promise<void> {
         {{ loading ? 'Đang tải…' : 'Xem thêm' }}
       </a>
       <p v-if="loadFailed" class="empty-note" role="alert">Chưa tải thêm được, có thể mạng đang chập chờn. Bấm Xem thêm lần nữa nhé.</p>
-      <NuxtLink v-if="paged" class="listing__first" :to="firstHref">Về đầu danh sách</NuxtLink>
+      <!-- <a> thường, không dùng NuxtLink: cùng đường dẫn chỉ khác query thì router giữ vị trí cuộn, khách vẫn ở cuối trang. -->
+      <a v-if="paged" class="listing__first" :href="firstHref">Về đầu danh sách</a>
     </div>
   </section>
 </template>
