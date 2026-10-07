@@ -23,6 +23,33 @@ export const CATEGORY_URL_SLUG: Record<PublicCategory, string> = {
   activity: 'hoat-dong',
 };
 
+/** Danh mục của trang `/{city}/{slug}`; slug không phải danh mục công khai thì undefined. */
+export function categoryFromUrlSlug(urlSlug: string): PublicCategory | undefined {
+  return PUBLIC_CATEGORIES.find((category) => CATEGORY_URL_SLUG[category] === urlSlug);
+}
+
+/**
+ * Tên hiển thị của thẻ. Thẻ được phép dùng nằm ở tab "Tags" của Google Sheet nhập liệu (docs/data-collection.md);
+ * thêm thẻ vào tab đó thì thêm tên ở đây.
+ */
+export const TAG_LABEL: Readonly<Record<string, string>> = {
+  chill: 'Chill',
+  'view-doi': 'View đồi',
+  'song-ao': 'Sống ảo',
+  'gia-dinh': 'Gia đình',
+  'mao-hiem': 'Mạo hiểm',
+  'an-sang': 'Ăn sáng',
+  'dac-san': 'Đặc sản',
+};
+
+/** Tên của thẻ; thẻ chưa có trong TAG_LABEL thì hiện slug, gạch nối thành khoảng trắng, viết hoa chữ đầu. */
+export function tagLabel(slug: string): string {
+  // Object.hasOwn: slug "constructor" không được lấy nhầm hàm của Object.prototype.
+  if (Object.hasOwn(TAG_LABEL, slug)) return TAG_LABEL[slug] ?? slug;
+  const words = slug.replaceAll('-', ' ');
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
 /** Phương tiện, viết thường vì đứng giữa dòng meta. */
 export const TRANSPORT_LABEL: Record<ItineraryTransport, string> = { motorbike: 'xe máy', car: 'ô tô', taxi: 'taxi' };
 
