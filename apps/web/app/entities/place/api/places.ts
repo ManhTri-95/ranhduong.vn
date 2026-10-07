@@ -21,3 +21,8 @@ export function usePlaceList(citySlug: string, params: PlaceListParams, key: str
     timeout: API_TIMEOUT_MS,
   });
 }
+
+/** Tải một trang trên trình duyệt (nút "Xem thêm"); apiBase lấy bằng useApiBase() lúc setup của component. */
+export function fetchPlacePage(apiBase: string, citySlug: string, params: PlaceListParams): Promise<PlaceListResponse> {
+  return $fetch<PlaceListResponse>(`/cities/${citySlug}/places`, { baseURL: apiBase, query: params, timeout: API_TIMEOUT_MS });
+}

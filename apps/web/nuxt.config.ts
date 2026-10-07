@@ -31,6 +31,12 @@ export default defineNuxtConfig({
   routeRules: {
     // Trang chủ thành phố: SWR 1 giờ (technical-design mục 11). Trang lỗi (từ 400) Nitro không cache.
     '/:city': { swr: 3600 },
+    // Trang danh mục: SWR 1 giờ, kể cả bản có ?tags= hay ?cursor= (Nitro cache theo cả query).
+    // Giữ khớp CATEGORY_URL_SLUG trong contracts: nuxt.config không import được contracts vì lúc postinstall chưa build.
+    '/:city/ca-phe': { swr: 3600 },
+    '/:city/an-uong': { swr: 3600 },
+    '/:city/tham-quan': { swr: 3600 },
+    '/:city/hoat-dong': { swr: 3600 },
     '/:city/tim-kiem': { headers: { 'x-robots-tag': 'noindex' } },
     '/:city/dia-diem/**': { swr: 3600 },
     '/:city/lich-trinh/**': { swr: 86400 },
