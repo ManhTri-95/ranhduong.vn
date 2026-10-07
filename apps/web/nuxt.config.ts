@@ -1,7 +1,7 @@
 // Cấu hình Nuxt cho web khách (Spec UI, tài liệu thiết kế kỹ thuật mục 11). Admin là app riêng ở apps/admin.
 export default defineNuxtConfig({
   compatibilityDate: '2026-10-01',
-  css: ['@ranhduong/ui/tokens.css', '~/assets/base.css'],
+  css: ['@ranhduong/ui/tokens.css', '@ranhduong/ui/components.css', '~/assets/base.css'],
   app: {
     head: {
       htmlAttrs: { lang: 'vi' },
@@ -27,6 +27,9 @@ export default defineNuxtConfig({
     },
   },
   routeRules: {
+    // Trang chủ thành phố: SWR 1 giờ (technical-design mục 11). Trang lỗi (từ 400) Nitro không cache.
+    '/:city': { swr: 3600 },
+    '/:city/tim-kiem': { headers: { 'x-robots-tag': 'noindex' } },
     '/:city/dia-diem/**': { swr: 3600 },
     '/:city/lich-trinh/**': { swr: 86400 },
     '/l/**': { headers: { 'x-robots-tag': 'noindex' } },

@@ -12,5 +12,3 @@ export function useApiBase(): string {
   if (import.meta.server && config.apiInternalBase) return config.apiInternalBase;
   return config.public.apiBase;
 }
-
-export interface HealthResponse { status: 'ok'; db: 'up' | 'down'; time: string }
