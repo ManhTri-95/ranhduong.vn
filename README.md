@@ -14,6 +14,8 @@ pnpm seed               # thành phố Đà Lạt và 4 cụm khu vực (chạy 
 pnpm dev                # web: http://localhost:3100, admin: http://localhost:5174, API: http://localhost:3101/v1/health
 ```
 
+API cần GOOGLE_CLIENT_ID và GOOGLE_CLIENT_SECRET để khởi động; cách tạo xem docs/runbooks/admin-login.md.
+
 Kiểm tra trước khi đẩy code: `pnpm turbo run lint typecheck test build`.
 
 Quy ước và tài liệu: xem [CLAUDE.md](./CLAUDE.md) và [docs/decisions.md](./docs/decisions.md).

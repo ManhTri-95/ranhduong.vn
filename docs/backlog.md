@@ -66,7 +66,7 @@ Story P1 (S13 tìm kiếm không dấu) chèn vào tuần nào còn dư giờ. S
 | S01 | Nền tảng | Khởi tạo monorepo (Nuxt web, NestJS API, packages contracts, geo, config) | Lint, typecheck, test chạy trên GitHub Actions; một lệnh chạy cả web và API ở local | 5 | P0 | Chưa làm |
 | S02 | Nền tảng | Hạ tầng production và staging | VPS + Docker Compose, Cloudflare DNS/CDN, Atlas M0 cho prod và staging, bucket R2, HTTPS; merge vào main tự deploy staging | 6 | P0 | Chưa làm |
 | S03 | Nền tảng | Schema City, Zone, Place và seed Đà Lạt | 4 zone có polygon; index 2dsphere và {cityId, slug} unique; chạy seed lại không tạo trùng | 4 | P0 | Chưa làm |
-| S04 | Nhập liệu | Đăng nhập admin bằng Google | Chỉ email trong danh sách được dùng admin.ranhduong.vn; email khác bị từ chối ở cả Cloudflare Access và API | 4 | P0 | Chưa làm |
+| S04 | Nhập liệu | Đăng nhập admin bằng Google | Chỉ email trong danh sách được dùng admin.ranhduong.vn; email khác bị từ chối ở cả Cloudflare Access và API | 4 | P0 | Code xong (nhánh `feat/S04-admin-google-login`, chưa mở PR); chờ S02, S26 để cấu hình Cloudflare Access và thử staging |
 | S05 | Nhập liệu | Form tạo và sửa địa điểm trên điện thoại | Ghim vị trí trên bản đồ; giờ mở cửa theo từng ngày; zone, tags, mức giá, trong nhà/ngoài trời, ghi chú thực tế; lưu nháp; dùng tốt ở màn hình 375px; ô dán giờ theo mẫu Google Sheet; cảnh báo nghi trùng dưới ô tên; chọn nguồn xác nhận; chỉ kích hoạt khi đủ toạ độ, giờ hợp lệ, nguồn xác nhận và mọi ảnh có nguồn (Spec UI mục 12) | 12 | P0 | Chưa làm |
 | S06 | Nhập liệu | Upload ảnh | Presigned URL R2; chỉ JPEG, PNG, WebP dưới 8MB; sinh WebP 400/800/1200; xoá EXIF vị trí; bắt buộc chọn nguồn ảnh | 6 | P0 | Chưa làm |
 | S07 | Nhập liệu | Danh sách và xác minh trong admin | Lọc theo trạng thái, zone, danh mục; nút "Đã xác minh" cập nhật lastVerifiedAt và verifySource; chuyển draft sang active; chọn quán đã xác nhận (owner) hay chỉ dựa trên Facebook (admin); tab trạng thái có số đếm; hành động theo trạng thái (Hoàn thiện, Xác minh, Xem báo cáo) | 4 | P0 | Chưa làm |
@@ -155,3 +155,4 @@ Một story chỉ chuyển sang "Xong" khi đạt đủ các điều kiện dư�
 - [x] Nhà cung cấp tile bản đồ: đã chốt MapLibre + OpenFreeMap
 - [ ] Umami hay PostHog
 - [ ] Tài khoản dùng để nhắn quán: Facebook cá nhân hay fanpage của web
+- [ ] Rate limit /auth/* 20/giờ mỗi IP (technical-design mục 13): làm sau S02, khi đọc được IP thật qua CF-Connecting-IP
