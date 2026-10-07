@@ -99,6 +99,72 @@ describe('GET /v1/cities/:city/places', () => {
     expect(await search('khong co gi')).toEqual([]);
   });
 
+  it('lọc theo cụm, kết hợp được với danh mục; cụm không có hoặc của thành phố khác thì 404 NOT_FOUND', async () => {
+    const zoneB = await t.conn.collection('zones').findOne({ cityId: new Types.ObjectId(cityId), slug: 'cum-gia-lap-b' });
+    if (!zoneB) throw new Error('Thiếu cụm giả lập B');
+    await t.conn.collection('zones').insertOne({
+      cityId: new Types.ObjectId(),
+      slug: 'cum-cua-thanh-pho-khac',
+      name: 'Cụm Giả Lập Khác',
+      area: { type: 'Polygon', coordinates: [[[0, 0], [0.1, 0], [0.1, 0.1], [0, 0.1], [0, 0]]] },
+    });
+    await places().insertMany([
+      fakePlaceDoc(cityId, { slug: 'o-cum-a', zoneId: zoneAId }),
+      fakePlaceDoc(cityId, { slug: 'o-cum-a-an', zoneId: zoneAId, category: 'food' }),
+      fakePlaceDoc(cityId, { slug: 'o-cum-b', zoneId: zoneB._id }),
+      fakePlaceDoc(cityId, { slug: 'chua-co-cum' }),
+    ]);
+    expect(slugs((await get(`/cities/${CITY}/places?zone=cum-gia-lap-a`)).body)).toEqual(['o-cum-a', 'o-cum-a-an']);
+    expect(slugs((await get(`/cities/${CITY}/places?zone=cum-gia-lap-a&category=food`)).body)).toEqual(['o-cum-a-an']);
+    for (const zone of ['khong-co', 'cum-cua-thanh-pho-khac']) {
+      const { status, body } = await get(`/cities/${CITY}/places?zone=${zone}`);
+      expect(status, zone).toBe(404);
+      expect(body, zone).toMatchObject({ code: 'NOT_FOUND' });
+    }
+  });
+
+  it('lọc nhiều thẻ (phải có đủ mọi thẻ); kèm số chỗ theo thẻ của cả danh mục, trước khi lọc thẻ', async () => {
+    await places().insertMany([
+      fakePlaceDoc(cityId, { slug: 'co-ca-hai', tags: ['view-doi', 'chill'] }),
+      fakePlaceDoc(cityId, { slug: 'chi-chill', tags: ['chill', 'chill'] }),
+      fakePlaceDoc(cityId, { slug: 'khong-the' }),
+      fakePlaceDoc(cityId, { slug: 'quan-an', category: 'food', tags: ['dac-san'] }),
+      fakePlaceDoc(cityId, { slug: 'nhap', status: 'draft', tags: ['chill'] }),
+    ]);
+    const { body } = await get(`/cities/${CITY}/places?category=cafe&tags=chill,view-doi`);
+    expect(slugs(body)).toEqual(['co-ca-hai']);
+    expect((body as PlaceListResponse).tags).toEqual([
+      { slug: 'chill', count: 2 },
+      { slug: 'view-doi', count: 1 },
+    ]);
+    expect(slugs((await get(`/cities/${CITY}/places?category=cafe&tags=chill`)).body)).toEqual(['chi-chill', 'co-ca-hai']);
+    expect(slugs((await get(`/cities/${CITY}/places?tags=khong-ai-co`)).body)).toEqual([]);
+  });
+
+  it('phân trang cursor: đi hết trang không trùng, không sót; chỗ mới chen vào và chỗ ở cursor bị ẩn giữa hai lần gọi', async () => {
+    // Thứ tự nổi bật: trang-a (xác minh 10/10) … trang-e (6/10).
+    await places().insertMany(
+      ['a', 'b', 'c', 'd', 'e'].map((s, i) =>
+        fakePlaceDoc(cityId, { slug: `trang-${s}`, verifySource: 'admin', lastVerifiedAt: new Date(Date.UTC(2026, 9, 10 - i)) }),
+      ),
+    );
+    const first = (await get(`/cities/${CITY}/places?limit=2`)).body as PlaceListResponse;
+    expect(slugs(first)).toEqual(['trang-a', 'trang-b']);
+    expect(first.nextCursor).toEqual(expect.any(String));
+
+    // Giữa hai lần bấm "Xem thêm": một chỗ mới xác minh (đứng đầu danh sách), chỗ ở cursor bị ẩn.
+    await places().insertOne(
+      fakePlaceDoc(cityId, { slug: 'moi-xac-minh', verifySource: 'admin', lastVerifiedAt: new Date(Date.UTC(2026, 9, 11)) }),
+    );
+    await places().updateOne({ cityId: new Types.ObjectId(cityId), slug: 'trang-b' }, { $set: { status: 'hidden' } });
+
+    const second = (await get(`/cities/${CITY}/places?limit=2&cursor=${first.nextCursor ?? ''}`)).body as PlaceListResponse;
+    expect(slugs(second)).toEqual(['trang-c', 'trang-d']);
+    const third = (await get(`/cities/${CITY}/places?limit=2&cursor=${second.nextCursor ?? ''}`)).body as PlaceListResponse;
+    expect(slugs(third)).toEqual(['trang-e']);
+    expect(third.nextCursor).toBeUndefined();
+  });
+
   it('thành phố không có hoặc đang tắt thì 404 NOT_FOUND', async () => {
     await t.app.get(CitiesService).applySeed(fakeCitySeed({ slug: 'thanh-pho-gia-lap-tat', active: false }));
     for (const slug of ['khong-co', 'thanh-pho-gia-lap-tat']) {
@@ -109,7 +175,22 @@ describe('GET /v1/cities/:city/places', () => {
   });
 
   it('tham số sai thì 400 VALIDATION_FAILED kèm chỗ sai', async () => {
-    for (const qs of ['limit=0', 'limit=51', 'limit=abc', 'category=bar', `q=${'a'.repeat(101)}`]) {
+    const elevenTags = Array.from({ length: 11 }, (_, i) => `the-${i}`).join(',');
+    for (const qs of [
+      'limit=0',
+      'limit=51',
+      'limit=abc',
+      'category=bar',
+      `q=${'a'.repeat(101)}`,
+      'tags=View-Doi',
+      `tags=${elevenTags}`,
+      // Express gộp khoá lặp thành mảng; API chỉ nhận một chuỗi cách nhau dấu phẩy.
+      'tags=chill&tags=view-doi',
+      'zone=Trung%20Tam',
+      'cursor=abc',
+      'cursor=2.-.a',
+      'q=gia&cursor=1.-.a',
+    ]) {
       const { status, body } = await get(`/cities/${CITY}/places?${qs}`);
       expect(status, qs).toBe(400);
       expect(body, qs).toMatchObject({ code: 'VALIDATION_FAILED', details: expect.any(Array) });

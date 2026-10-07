@@ -159,5 +159,11 @@ export type PlaceListQuery = z.infer<typeof PlaceListQuery>;
 export const TagCount = z.object({ slug: Slug, count: z.number().int().positive() });
 export type TagCount = z.infer<typeof TagCount>;
 
-export const PlaceListResponse = z.object({ items: z.array(PlaceCard) });
+export const PlaceListResponse = z.object({
+  items: z.array(PlaceCard),
+  /** Có khi còn trang sau: gửi lại trong `cursor`. Không có khi tìm theo từ khoá. */
+  nextCursor: z.string().optional(),
+  /** Thẻ của các địa điểm khớp thành phố, danh mục, cụm (trước khi lọc thẻ, từ khoá, phân trang); nhiều chỗ trước. */
+  tags: z.array(TagCount),
+});
 export type PlaceListResponse = z.infer<typeof PlaceListResponse>;

@@ -65,4 +65,10 @@ export class CitiesRepository {
     const docs = await this.zones.find({ cityId: new Types.ObjectId(cityId) }, { slug: 1, name: 1 }).sort({ _id: 1 }).lean();
     return docs.map((d) => ({ id: d._id.toString(), slug: d.slug, name: d.name }));
   }
+
+  /** Cụm theo slug trong một thành phố; null nếu không có. */
+  async findZone(cityId: string, slug: string): Promise<{ id: string; slug: string; name: string } | null> {
+    const doc = await this.zones.findOne({ cityId: new Types.ObjectId(cityId), slug }, { slug: 1, name: 1 }).lean();
+    return doc ? { id: doc._id.toString(), slug: doc.slug, name: doc.name } : null;
+  }
 }

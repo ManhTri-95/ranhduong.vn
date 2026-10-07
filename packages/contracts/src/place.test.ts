@@ -6,6 +6,7 @@ import {
   photoVariantKey,
   Place,
   PlaceListQuery,
+  PlaceListResponse,
 } from './place.js';
 
 // Dữ liệu giả, tên rõ là giả; toạ độ quanh [0, 0].
@@ -156,5 +157,14 @@ describe('PlaceListQuery', () => {
     expect(withQ.error?.issues.map((issue) => issue.path)).toEqual([['cursor']]);
     // Từ khoá chỉ có khoảng trắng coi như không có, nên đi cùng cursor vẫn được.
     expect(PlaceListQuery.safeParse({ q: '   ', cursor: '1.-.quan-gia-lap' }).success).toBe(true);
+  });
+});
+
+describe('PlaceListResponse', () => {
+  it('nextCursor không bắt buộc; thẻ có số đếm dương', () => {
+    expect(PlaceListResponse.safeParse({ items: [], tags: [] }).success).toBe(true);
+    expect(PlaceListResponse.safeParse({ items: [], tags: [{ slug: 'chill', count: 2 }], nextCursor: '0.-.a' }).success).toBe(true);
+    expect(PlaceListResponse.safeParse({ items: [] }).success).toBe(false);
+    expect(PlaceListResponse.safeParse({ items: [], tags: [{ slug: 'chill', count: 0 }] }).success).toBe(false);
   });
 });

@@ -40,6 +40,12 @@ interface CoverRow {
   photos?: { key: string }[];
 }
 
+/** Lọc trong DB; thẻ, từ khoá, phân trang lọc trong bộ nhớ ở PlacesService. */
+export interface ListFilter {
+  categories?: PlaceCategory[];
+  zoneId?: string;
+}
+
 /** Lớp dữ liệu của module places: chỉ file này import model Place. */
 @Injectable()
 export class PlacesRepository {
@@ -54,9 +60,17 @@ export class PlacesRepository {
    * Địa điểm active của thành phố, chỉ đọc các trường của thẻ; ảnh đầu tiên làm ảnh bìa.
    * Đọc hết rồi xếp trong bộ nhớ: lát 1 có vài trăm điểm mỗi thành phố (đổi khi quá khoảng 1.000 điểm).
    */
-  async listActive(cityId: string, categories?: PlaceCategory[]): Promise<ListedPlace[]> {
+  async listActive(cityId: string, filter: ListFilter = {}): Promise<ListedPlace[]> {
     const docs = await this.places
-      .find({ cityId: new Types.ObjectId(cityId), status: 'active', ...(categories ? { category: { $in: categories } } : {}) }, CARD_FIELDS)
+      .find(
+        {
+          cityId: new Types.ObjectId(cityId),
+          status: 'active',
+          ...(filter.categories ? { category: { $in: filter.categories } } : {}),
+          ...(filter.zoneId ? { zoneId: new Types.ObjectId(filter.zoneId) } : {}),
+        },
+        CARD_FIELDS,
+      )
       .lean<CardRow[]>();
     return docs.map((d) => ({
       slug: d.slug,

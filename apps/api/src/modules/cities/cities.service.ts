@@ -1,5 +1,5 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
-import { CityPublic, CitySeed, type CityRef, type CitySeedResult } from '@ranhduong/contracts';
+import { CityPublic, CitySeed, type CityRef, type CitySeedResult, type ZoneRef } from '@ranhduong/contracts';
 import { ApiException } from '../../shared/http/api-exception';
 import { CitiesRepository } from './cities.repository';
 
@@ -37,6 +37,13 @@ export class CitiesService {
     const city = await this.repo.findActiveBySlug(slug);
     if (!city) throw cityNotFound();
     return { id: city.id, slug: city.slug, name: city.name };
+  }
+
+  /** Cụm theo slug trong thành phố; không có thì 404 NOT_FOUND. */
+  async resolveZone(cityId: string, slug: string): Promise<ZoneRef> {
+    const zone = await this.repo.findZone(cityId, slug);
+    if (!zone) throw new ApiException('NOT_FOUND', HttpStatus.NOT_FOUND, 'Không tìm thấy khu vực');
+    return zone;
   }
 
   /** zoneId → tên cụm, để thẻ địa điểm hiện "Cà phê · Trung tâm". */
