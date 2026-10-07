@@ -99,5 +99,5 @@ pnpm --filter @ranhduong/geo test        # test một package
 
 ## Trạng thái
 
-- Xong: S01 (khung monorepo, CI, health check, trang `/da-lat` tạm), khung `apps/admin` cho S26, S03 (schema City/Zone/Place, `pnpm seed` Đà Lạt; chờ thử trên staging sau S02, ranh giới cụm chờ chủ dự án duyệt), S10 (trang danh mục `/da-lat/{ca-phe,an-uong,tham-quan,hoat-dong}` và khu vực `/da-lat/khu-vuc/{slug}`, lọc thẻ, phân trang cursor; nhánh dựa trên S09 chưa merge; chờ thử trên staging và điện thoại thật sau S02).
+- Xong: S01 (khung monorepo, CI, health check, trang `/da-lat` tạm), khung `apps/admin` cho S26, S03 (schema City/Zone/Place, `pnpm seed` Đà Lạt; chờ thử trên staging sau S02, ranh giới cụm chờ chủ dự án duyệt), S10 (trang danh mục `/da-lat/{ca-phe,an-uong,tham-quan,hoat-dong}` và khu vực `/da-lat/khu-vuc/{slug}`, lọc thẻ, phân trang cursor; nhánh dựa trên S09 chưa merge; đã kiểm SSR bằng curl và phía client bằng Chrome headless ở 390px; chờ chủ dự án thử tay trên trình duyệt, staging và điện thoại thật).
 - Tiếp theo: S02 hạ tầng (`ranhduong.vn`, `api.ranhduong.vn`, `media.ranhduong.vn`), S04 đăng nhập admin.
