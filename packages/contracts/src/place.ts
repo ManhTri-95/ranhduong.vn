@@ -19,8 +19,9 @@ export type PlacePhoto = z.infer<typeof PlacePhoto>;
 export const PlaceContact = z.object({
   /** Dạng +84…, ví dụ +84912345678 (data-collection mục 5). */
   phone: z.string().regex(/^\+84\d{9,10}$/, 'Số điện thoại phải có dạng +84…').optional(),
-  fanpage: z.url().optional(),
-  website: z.url().optional(),
+  /** Chỉ http/https: giá trị được render thành <a href> trên trang công khai, chặn javascript:, data:. */
+  fanpage: z.httpUrl().optional(),
+  website: z.httpUrl().optional(),
 });
 export type PlaceContact = z.infer<typeof PlaceContact>;
 

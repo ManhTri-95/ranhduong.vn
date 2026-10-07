@@ -52,6 +52,14 @@ describe('Place', () => {
     expect(Place.safeParse({ ...DRAFT, contact: { phone: '0900000000' } }).success).toBe(false);
     expect(Place.safeParse({ ...DRAFT, contact: { phone: '+84 900 000 000' } }).success).toBe(false);
   });
+  it('fanpage và website chỉ nhận link http/https (không nhận javascript:, data:)', () => {
+    const ok = { fanpage: 'https://gia-lap.example/fanpage', website: 'http://gia-lap.example' };
+    expect(Place.safeParse({ ...DRAFT, contact: ok }).success).toBe(true);
+    for (const url of ['javascript:alert(1)', 'data:text/html,<script>alert(1)</script>', 'ftp://gia-lap.example']) {
+      expect(Place.safeParse({ ...DRAFT, contact: { fanpage: url } }).success, url).toBe(false);
+      expect(Place.safeParse({ ...DRAFT, contact: { website: url } }).success, url).toBe(false);
+    }
+  });
   it('mức giá chỉ từ 1 đến 4', () => {
     expect(Place.safeParse({ ...DRAFT, priceLevel: 4 }).success).toBe(true);
     expect(Place.safeParse({ ...DRAFT, priceLevel: 0 }).success).toBe(false);
