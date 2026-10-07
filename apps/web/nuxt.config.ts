@@ -37,6 +37,7 @@ export default defineNuxtConfig({
     '/:city/an-uong': { swr: 3600 },
     '/:city/tham-quan': { swr: 3600 },
     '/:city/hoat-dong': { swr: 3600 },
+    '/:city/khu-vuc/**': { swr: 3600 },
     '/:city/tim-kiem': { headers: { 'x-robots-tag': 'noindex' } },
     '/:city/dia-diem/**': { swr: 3600 },
     '/:city/lich-trinh/**': { swr: 86400 },
