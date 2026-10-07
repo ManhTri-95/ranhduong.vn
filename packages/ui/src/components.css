@@ -1,0 +1,93 @@
+/* Rành Đường: class component dùng chung. Component Vue trong packages/ui render đúng các class này. */
+.rd-root { font-family: var(--font-body); color: var(--ink); }
+
+/* Nút */
+.rd-btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); height: var(--button-height); padding: 0 var(--space-6); border-radius: var(--radius-pill); font: 700 15px/1 var(--font-body); text-decoration: none; cursor: pointer; box-sizing: border-box; border: 0; }
+.rd-btn svg { width: 20px; height: 20px; }
+.rd-btn--primary { background: var(--ink); color: var(--paper-raised); }
+.rd-btn--accent { background: var(--accent); color: var(--ink); border: var(--border-strong) solid var(--ink); }
+.rd-btn--outline { background: transparent; color: var(--ink); border: var(--border-hair) solid var(--ink); height: var(--tap-min); padding: 0 var(--space-4); font-size: 14px; }
+.rd-btn--dashed { background: transparent; color: var(--ink); border: var(--border-strong) dashed var(--ink); }
+.rd-btn--float { background: var(--ink); color: var(--paper-raised); box-shadow: var(--shadow-float); }
+.rd-icon-btn { width: var(--tap-min); height: var(--tap-min); display: inline-flex; align-items: center; justify-content: center; border-radius: var(--radius-pill); background: var(--paper-raised); border: var(--border-hair) solid var(--line); color: var(--ink); cursor: pointer; }
+.rd-btn:focus-visible, .rd-icon-btn:focus-visible, .rd-chip:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+
+/* Chip */
+.rd-chip { display: inline-flex; align-items: center; gap: var(--space-1); padding: 3px 10px; border-radius: var(--radius-thumb); font: 700 12px/16px var(--font-body); color: var(--ink); background: var(--mist); border: 0; }
+.rd-chip--accent { background: var(--accent); }
+.rd-chip--partner { background: transparent; border: var(--border-hair) solid var(--ink); }
+.rd-chip--filter { height: var(--tap-min); padding: 0 var(--space-4); border-radius: var(--radius-pill); font-size: 14px; font-weight: 600; background: var(--paper-raised); border: var(--border-hair) solid var(--line); cursor: pointer; }
+.rd-chip--filter[aria-pressed="true"] { background: var(--ink); color: var(--paper-raised); border-color: var(--ink); }
+.rd-quiet { font: 400 12px/16px var(--font-body); color: var(--ink-soft); }
+
+/* Ô tìm kiếm */
+.rd-search { display: flex; flex-direction: column; gap: 6px; }
+.rd-search__label { font: 600 13px/18px var(--font-body); }
+.rd-search__field { display: flex; align-items: center; gap: 10px; height: var(--button-height); padding: 0 var(--space-4); background: var(--paper-raised); border: var(--border-hair) solid var(--ink); border-radius: 14px; }
+.rd-search__field input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; font: 400 15px var(--font-body); color: var(--ink); }
+
+/* Thẻ địa điểm */
+.rd-place { display: flex; gap: var(--space-3); padding: 10px; background: var(--paper-raised); border: var(--border-hair) solid var(--line); border-radius: var(--radius-card); color: var(--ink); text-decoration: none; }
+.rd-place__thumb { flex: 0 0 var(--thumb); height: var(--thumb); border-radius: var(--radius-thumb); background: var(--mist); display: flex; align-items: center; justify-content: center; font: 400 11px var(--font-body); color: var(--ink-soft); text-align: center; }
+.rd-place__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.rd-place__title { font: 700 16px/22px var(--font-body); }
+.rd-place__meta { font: 400 13px/18px var(--font-body); color: var(--ink-soft); }
+.rd-place__quote { font: 400 16px/1.25 var(--font-hand); }
+.rd-place__status { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+
+/* Thẻ lịch trình */
+.rd-itin { width: 250px; display: flex; flex-direction: column; background: var(--paper-raised); border: var(--border-hair) solid var(--line); border-radius: var(--radius-card); overflow: hidden; color: var(--ink); text-decoration: none; }
+.rd-itin__img { height: 120px; background: var(--mist); display: flex; align-items: center; justify-content: center; font: 400 12px var(--font-body); color: var(--ink-soft); }
+.rd-itin__body { padding: var(--space-3) 14px 14px; display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+
+/* Banner theo mùa */
+.rd-season { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-4); background: var(--paper-raised); border: var(--border-strong) solid var(--ink); border-radius: 18px; color: var(--ink); text-decoration: none; }
+.rd-season__text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.rd-season__title { font: 700 20px/1.2 var(--font-display); }
+.rd-season__sub { font: 400 13px/1.45 var(--font-body); color: var(--ink-soft); }
+.rd-season__art { flex: 0 0 96px; height: 96px; }
+.rd-season__art .fill { fill: var(--accent); }
+
+/* Ô thời tiết */
+.rd-weather { display: flex; align-items: center; gap: 14px; padding: 14px var(--space-4); background: var(--ink); color: var(--paper-raised); border-radius: 18px; }
+.rd-weather__icon { flex: 0 0 var(--tap-min); height: var(--tap-min); border-radius: var(--radius-pill); background: rgba(255, 253, 248, 0.12); display: flex; align-items: center; justify-content: center; }
+.rd-weather__kicker { font: 600 12px/16px var(--font-body); }
+.rd-weather__title { font: 700 17px/22px var(--font-body); }
+.rd-weather__sub { font: 400 13px/1.4 var(--font-body); }
+
+/* Ghi chú viết tay */
+.rd-note { padding: 14px var(--space-4); background: var(--note); border-radius: var(--radius-note); box-shadow: var(--shadow-note); transform: rotate(-1deg); color: var(--ink); display: flex; flex-direction: column; gap: 6px; }
+.rd-note__label { font: 700 12px/16px var(--font-body); }
+.rd-note__text { font: 400 19px/1.35 var(--font-hand); }
+
+/* Lịch trình */
+.rd-stops { display: flex; flex-direction: column; }
+.rd-stop { display: flex; gap: 14px; }
+.rd-stop__rail { flex: 0 0 var(--stop-dot); display: flex; flex-direction: column; align-items: center; }
+.rd-stop__dot { width: var(--stop-dot); height: var(--stop-dot); border-radius: var(--radius-pill); background: var(--ink); color: var(--paper-raised); display: flex; align-items: center; justify-content: center; font: 700 15px var(--font-body); box-sizing: border-box; }
+.rd-stop--end .rd-stop__dot { background: var(--accent); color: var(--ink); border: var(--border-strong) solid var(--ink); }
+.rd-stop__line { flex: 1; width: 0; margin-top: 4px; border-left: var(--border-strong) dashed var(--ink); }
+.rd-stop__body { flex: 1; min-width: 0; padding-bottom: var(--space-2); }
+.rd-stop__time { font: 700 13px/18px var(--font-body); color: var(--ink-soft); }
+.rd-stop__title { font: 700 17px/1.3 var(--font-body); margin-top: 2px; }
+.rd-stop__meta { font: 400 13px/18px var(--font-body); color: var(--ink-soft); margin-top: 2px; }
+.rd-stop__travel { font: italic 400 12px/16px var(--font-body); color: var(--ink-soft); margin-top: var(--space-3); }
+
+/* Thanh hành động cố định */
+.rd-action-bar { display: flex; gap: 10px; align-items: center; padding: 14px var(--space-5) calc(var(--space-6) + env(safe-area-inset-bottom, 0px)); background: var(--paper-raised); border-top: var(--border-hair) solid var(--line); }
+.rd-action-bar .rd-btn--accent, .rd-action-bar .rd-btn--primary { flex: 1; }
+
+/* Ghim bản đồ */
+.rd-pin path.drop { fill: var(--paper-raised); stroke: var(--ink); stroke-width: 1.8; }
+.rd-pin--active path.drop { fill: var(--accent); stroke-width: 2; }
+.rd-pin .glyph { fill: none; stroke: var(--ink); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Tem */
+.rd-stamp { width: 92px; }
+.rd-stamp .frame { fill: var(--paper-raised); stroke: var(--ink); stroke-width: 1.5; stroke-dasharray: 3 4; }
+.rd-stamp .inner { fill: var(--accent); stroke: var(--ink); stroke-width: 1.5; }
+.rd-stamp .art { fill: none; stroke: var(--ink); stroke-width: 1.6; stroke-linecap: round; }
+.rd-stamp--missing { opacity: 0.55; }
+.rd-stamp--missing .inner { fill: var(--paper); }
+
+@media (prefers-reduced-motion: reduce) { .rd-note, .rd-season__art { transform: none; animation: none; } }

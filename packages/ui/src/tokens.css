@@ -24,6 +24,24 @@
   --radius-note: 4px;
   --border: 1.5px solid var(--line);
   --border-ink: 1.5px solid var(--ink);
+  /* Theo tokens.json của design system: khoảng cách, bo góc, viền, kích thước, bóng. */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 28px;
+  --radius-thumb: 12px;
+  --radius-sheet: 24px;
+  --border-hair: 1.5px;
+  --border-strong: 2px;
+  --tap-min: 44px;
+  --button-height: 52px;
+  --thumb: 96px;
+  --stop-dot: 36px;
+  --shadow-note: 0 2px 0 var(--note-edge);
+  --shadow-float: 0 6px 16px rgba(30, 58, 47, 0.25);
   --page-gutter: 20px;
 }
 
