@@ -1,6 +1,8 @@
 // Cấu hình Nuxt cho web khách (Spec UI, tài liệu thiết kế kỹ thuật mục 11). Admin là app riêng ở apps/admin.
 export default defineNuxtConfig({
   compatibilityDate: '2026-10-01',
+  // Cổng local 3100 (API 3101) để không trùng các dự án khác đang dùng 3000–3002 trên cùng máy.
+  devServer: { port: 3100 },
   css: ['@ranhduong/ui/tokens.css', '@ranhduong/ui/components.css', '~/assets/base.css'],
   app: {
     head: {
@@ -20,7 +22,7 @@ export default defineNuxtConfig({
     /** SSR gọi API qua mạng nội bộ Docker (http://api:3001/v1, ADR 0003); để trống thì dùng public.apiBase. */
     apiInternalBase: '',
     public: {
-      apiBase: 'http://localhost:3001/v1',
+      apiBase: 'http://localhost:3101/v1',
       /** Ảnh trên R2 (media.ranhduong.vn); local là bucket MinIO. */
       mediaBase: 'http://localhost:9000/ranhduong-media',
       mapStyleUrl: 'https://tiles.openfreemap.org/styles/positron',

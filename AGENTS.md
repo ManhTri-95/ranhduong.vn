@@ -17,7 +17,7 @@ Use Node 24 (`.nvmrc`; minimum 22.19) and pnpm 12.9.1.
 
 - `corepack enable` and `pnpm install`: enable pnpm and install dependencies.
 - `pnpm infra:up` / `pnpm infra:down`: start/stop Docker MongoDB, Redis, and MinIO.
-- `pnpm dev`: start web on port 3000 and API on port 3001; health endpoint is `/v1/health`; the API reads `apps/api/.env`.
+- `pnpm dev`: start web on port 3100, admin on port 5174 and API on port 3101; health endpoint is `/v1/health`; the API reads `apps/api/.env`.
 - `pnpm seed`: build the API and upsert the Đà Lạt city and its 4 zones (safe to re-run).
 - `pnpm build`, `pnpm typecheck`, `pnpm test`, `pnpm lint`: run workspace tasks.
 - `pnpm turbo run lint typecheck test build`: required pre-commit checks; also run in CI.

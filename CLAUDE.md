@@ -36,7 +36,7 @@ Lệnh gốc (`package.json`):
 ```bash
 pnpm install
 pnpm infra:up                         # MongoDB, Redis, MinIO (docker compose)
-pnpm dev                              # chạy web (:3000), admin (:5174), API (:3001)
+pnpm dev                              # chạy web (:3100), admin (:5174), API (:3101)
 pnpm seed                             # tạo/cập nhật thành phố Đà Lạt và 4 cụm (chạy lại không trùng)
 pnpm turbo run lint typecheck test build   # phải xanh trước khi commit
 pnpm --filter @ranhduong/geo test        # test một package
