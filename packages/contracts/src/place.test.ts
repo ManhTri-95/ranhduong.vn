@@ -110,6 +110,9 @@ describe('PlaceListQuery', () => {
     expect(query.limit).toBe(20);
     expect(query.q).toBeUndefined();
     expect(query.category).toBeUndefined();
+    expect(query.tags).toBeUndefined();
+    expect(query.zone).toBeUndefined();
+    expect(query.cursor).toBeUndefined();
   });
   it('bỏ khoảng trắng thừa ở từ khoá; chỉ có khoảng trắng thì coi như không có', () => {
     expect(PlaceListQuery.parse({ q: '  ca phe  ' }).q).toBe('ca phe');
@@ -130,5 +133,28 @@ describe('PlaceListQuery', () => {
     for (const limit of ['0', '51', 'abc', '2.5']) {
       expect(PlaceListQuery.safeParse({ limit }).success, limit).toBe(false);
     }
+  });
+  it('đọc nhiều thẻ cách nhau bằng dấu phẩy, tối đa 10 thẻ, mỗi thẻ là slug', () => {
+    expect(PlaceListQuery.parse({ tags: 'view-doi,chill' }).tags).toEqual(['view-doi', 'chill']);
+    expect(PlaceListQuery.parse({ tags: ' chill , ' }).tags).toEqual(['chill']);
+    expect(PlaceListQuery.parse({ tags: ',' }).tags).toBeUndefined();
+    const ten = Array.from({ length: 10 }, (_, i) => `the-${i}`).join(',');
+    expect(PlaceListQuery.safeParse({ tags: ten }).success).toBe(true);
+    for (const tags of [`${ten},the-10`, 'View-Doi', 'view doi', 'sống-ảo']) {
+      expect(PlaceListQuery.safeParse({ tags }).success, tags).toBe(false);
+    }
+  });
+  it('cụm là slug', () => {
+    expect(PlaceListQuery.parse({ zone: 'trung-tam' }).zone).toBe('trung-tam');
+    expect(PlaceListQuery.safeParse({ zone: 'Trung Tâm' }).success).toBe(false);
+  });
+  it('cursor đọc ra khoá xếp hạng; sai định dạng hoặc đi cùng từ khoá thì lỗi ở trường cursor', () => {
+    expect(PlaceListQuery.parse({ cursor: '1.-.quan-gia-lap' }).cursor).toEqual({ owner: true, verifiedAt: null, slug: 'quan-gia-lap' });
+    expect(PlaceListQuery.safeParse({ cursor: 'abc' }).success).toBe(false);
+    const withQ = PlaceListQuery.safeParse({ q: 'gia lap', cursor: '1.-.quan-gia-lap' });
+    expect(withQ.success).toBe(false);
+    expect(withQ.error?.issues.map((issue) => issue.path)).toEqual([['cursor']]);
+    // Từ khoá chỉ có khoảng trắng coi như không có, nên đi cùng cursor vẫn được.
+    expect(PlaceListQuery.safeParse({ q: '   ', cursor: '1.-.quan-gia-lap' }).success).toBe(true);
   });
 });

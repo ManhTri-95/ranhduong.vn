@@ -3,6 +3,7 @@ import { ObjectIdString, Slug } from './common.js';
 import { BestTime, PhotoSource, PlaceCategory, PlaceSource, PlaceStatus, Transport, VerifySource, VipTier } from './enums.js';
 import { GeoPoint } from './geojson.js';
 import { OpeningSlot } from './opening-hours.js';
+import { PlaceCursor } from './place-cursor.js';
 
 /** Bán kính check-in mặc định cho quán nhỏ (product-spec: khoảng 100m). */
 export const DEFAULT_CHECKIN_RADIUS_M = 100;
@@ -111,27 +112,52 @@ export type PlaceCard = z.infer<typeof PlaceCard>;
 
 const MAX_QUERY_LENGTH = 100;
 
-/** Query của GET /v1/cities/:city/places. */
-export const PlaceListQuery = z.object({
-  /** Từ khoá tìm không dấu; rỗng hoặc chỉ có khoảng trắng thì coi như không có. */
-  q: z
-    .string()
-    .trim()
-    .max(MAX_QUERY_LENGTH, `Từ khoá tối đa ${MAX_QUERY_LENGTH} ký tự`)
-    .optional()
-    .transform((s) => s || undefined),
-  /** Một hoặc nhiều danh mục, cách nhau bằng dấu phẩy: `category=cafe,food`. */
-  category: z
+/** Số thẻ lọc tối đa trong một lần gọi (`tags=a,b`). */
+export const MAX_FILTER_TAGS = 10;
+
+/** Chuỗi nhiều giá trị cách nhau bằng dấu phẩy (`a,b`); rỗng hoặc chỉ có dấu phẩy thì coi như không có. */
+function commaList<T extends z.ZodType<unknown, string>>(item: T) {
+  return z
     .string()
     .optional()
     .transform((s) => {
       const parts = s?.split(',').map((part) => part.trim()).filter(Boolean) ?? [];
       return parts.length > 0 ? parts : undefined;
     })
-    .pipe(z.array(PlaceCategory).optional()),
-  limit: z.coerce.number().int().min(1).max(50).default(20),
-});
+    .pipe(z.array(item).optional());
+}
+
+/** Query của GET /v1/cities/:city/places. */
+export const PlaceListQuery = z
+  .object({
+    /** Từ khoá tìm không dấu; rỗng hoặc chỉ có khoảng trắng thì coi như không có. */
+    q: z
+      .string()
+      .trim()
+      .max(MAX_QUERY_LENGTH, `Từ khoá tối đa ${MAX_QUERY_LENGTH} ký tự`)
+      .optional()
+      .transform((s) => s || undefined),
+    /** Một hoặc nhiều danh mục, cách nhau bằng dấu phẩy: `category=cafe,food`. */
+    category: commaList(PlaceCategory),
+    /** Một hoặc nhiều thẻ: `tags=view-doi,chill`; địa điểm phải có đủ mọi thẻ. */
+    tags: commaList(Slug).refine((tags) => (tags?.length ?? 0) <= MAX_FILTER_TAGS, `Tối đa ${MAX_FILTER_TAGS} thẻ`),
+    /** Slug cụm khu vực trong thành phố: `zone=trung-tam`. */
+    zone: Slug.optional(),
+    /** `nextCursor` của trang trước. */
+    cursor: PlaceCursor.optional(),
+    limit: z.coerce.number().int().min(1).max(50).default(20),
+  })
+  .superRefine((query, ctx) => {
+    // Kết quả tìm xếp theo độ khớp chứ không theo thứ tự nổi bật, nên chưa phân trang được (S13).
+    if (query.q && query.cursor) {
+      ctx.addIssue({ code: 'custom', path: ['cursor'], message: 'Tìm theo từ khoá chưa phân trang được' });
+    }
+  });
 export type PlaceListQuery = z.infer<typeof PlaceListQuery>;
+
+/** Một thẻ và số địa điểm có thẻ đó. */
+export const TagCount = z.object({ slug: Slug, count: z.number().int().positive() });
+export type TagCount = z.infer<typeof TagCount>;
 
 export const PlaceListResponse = z.object({ items: z.array(PlaceCard) });
 export type PlaceListResponse = z.infer<typeof PlaceListResponse>;

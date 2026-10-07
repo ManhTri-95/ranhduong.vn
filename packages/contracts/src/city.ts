@@ -71,6 +71,10 @@ export type CitySeedResult = z.infer<typeof CitySeedResult>;
 export const CityRef = z.object({ id: ObjectIdString, slug: Slug, name: z.string().min(1) });
 export type CityRef = z.infer<typeof CityRef>;
 
+/** Cụm khu vực đã xác định, truyền giữa các module của API (id là ObjectId dạng chuỗi). */
+export const ZoneRef = z.object({ id: ObjectIdString, slug: Slug, name: z.string().min(1) });
+export type ZoneRef = z.infer<typeof ZoneRef>;
+
 /** GET /v1/cities/:city: thông tin công khai và danh sách cụm (technical-design mục 6). */
 export const CityPublic = z.object({
   slug: Slug,
