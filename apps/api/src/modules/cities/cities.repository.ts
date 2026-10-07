@@ -52,4 +52,17 @@ export class CitiesRepository {
     const docs = await this.zones.find({ cityId: new Types.ObjectId(cityId) }, { slug: 1 }).lean();
     return docs.map((d) => d.slug);
   }
+
+  /** Thành phố đang hoạt động theo slug; null nếu không có hoặc đã tắt. */
+  async findActiveBySlug(slug: string) {
+    const doc = await this.cities.findOne({ slug, active: true }, { slug: 1, name: 1, accent: 1, center: 1, mapBounds: 1 }).lean();
+    if (!doc) return null;
+    return { id: doc._id.toString(), slug: doc.slug, name: doc.name, accent: doc.accent, center: doc.center, mapBounds: doc.mapBounds };
+  }
+
+  /** Các cụm của thành phố theo thứ tự tạo, tức thứ tự trong file seed. */
+  async listZones(cityId: string): Promise<{ id: string; slug: string; name: string }[]> {
+    const docs = await this.zones.find({ cityId: new Types.ObjectId(cityId) }, { slug: 1, name: 1 }).sort({ _id: 1 }).lean();
+    return docs.map((d) => ({ id: d._id.toString(), slug: d.slug, name: d.name }));
+  }
 }

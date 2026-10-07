@@ -1,6 +1,9 @@
-import { Injectable } from '@nestjs/common';
-import { CitySeed, type CitySeedResult } from '@ranhduong/contracts';
+import { HttpStatus, Injectable } from '@nestjs/common';
+import { CityPublic, CitySeed, type CityRef, type CitySeedResult } from '@ranhduong/contracts';
+import { ApiException } from '../../shared/http/api-exception';
 import { CitiesRepository } from './cities.repository';
+
+const cityNotFound = () => new ApiException('NOT_FOUND', HttpStatus.NOT_FOUND, 'Không tìm thấy thành phố');
 
 @Injectable()
 export class CitiesService {
@@ -27,5 +30,26 @@ export class CitiesService {
     const seedSlugs = new Set(seed.zones.map((z) => z.slug));
     const staleZoneSlugs = (await this.repo.listZoneSlugs(city.id)).filter((slug) => !seedSlugs.has(slug)).sort();
     return { cityId: city.id, cityCreated: city.created, zonesCreated, zonesUpdated, staleZoneSlugs };
+  }
+
+  /** Thành phố đang hoạt động theo slug; không có hoặc đã tắt thì 404 NOT_FOUND. */
+  async resolveCity(slug: string): Promise<CityRef> {
+    const city = await this.repo.findActiveBySlug(slug);
+    if (!city) throw cityNotFound();
+    return { id: city.id, slug: city.slug, name: city.name };
+  }
+
+  /** zoneId → tên cụm, để thẻ địa điểm hiện "Cà phê · Trung tâm". */
+  async zoneNames(cityId: string): Promise<Map<string, string>> {
+    const zones = await this.repo.listZones(cityId);
+    return new Map(zones.map((zone) => [zone.id, zone.name]));
+  }
+
+  /** GET /v1/cities/:city: parse lại bằng CityPublic để chỉ trả đúng các trường công khai. */
+  async getPublic(slug: string): Promise<CityPublic> {
+    const city = await this.repo.findActiveBySlug(slug);
+    if (!city) throw cityNotFound();
+    const zones = await this.repo.listZones(city.id);
+    return CityPublic.parse({ ...city, zones: zones.map(({ slug: zoneSlug, name }) => ({ slug: zoneSlug, name })) });
   }
 }
