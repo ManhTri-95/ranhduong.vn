@@ -3,6 +3,7 @@ export * from './common.js';
 export * from './enums.js';
 export * from './errors.js';
 export * from './geojson.js';
+export * from './itinerary.js';
 export * from './labels.js';
 export * from './opening-hours.js';
 export * from './place.js';
