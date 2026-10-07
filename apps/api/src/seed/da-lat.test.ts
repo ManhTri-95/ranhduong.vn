@@ -37,11 +37,23 @@ describe('DA_LAT_SEED', () => {
       expect(await zones.countDocuments({ cityId: new Types.ObjectId(again.cityId), 'area.type': 'Polygon' })).toBe(4);
     });
 
-    it('các cụm không chồng lên nhau (mỗi điểm trên bản đồ thuộc tối đa một cụm)', async () => {
-      for (const zone of DA_LAT_SEED.zones) {
-        const hits = await zones.find({ area: { $geoIntersects: { $geometry: zone.area } } }, { slug: 1 }).lean();
-        expect(hits.map((h) => h.slug), zone.slug).toEqual([zone.slug]);
+    it('mỗi điểm trong khung bản đồ thuộc đúng một cụm (phủ kín, không khe, không chồng)', async () => {
+      const [west, south, east, north] = DA_LAT_SEED.city.mapBounds;
+      const steps = 14;
+      const misses: string[] = [];
+      for (let i = 0; i < steps; i++) {
+        for (let j = 0; j < steps; j++) {
+          // Lấy tâm từng ô lưới để điểm thử không rơi đúng lên cạnh chung giữa hai cụm.
+          const lng = west + ((i + 0.5) * (east - west)) / steps;
+          const lat = south + ((j + 0.5) * (north - south)) / steps;
+          const point = { type: 'Point', coordinates: [lng, lat] };
+          const hits = await zones.find({ area: { $geoIntersects: { $geometry: point } } }, { slug: 1 }).lean();
+          if (hits.length !== 1) {
+            misses.push(`[${lng.toFixed(4)}, ${lat.toFixed(4)}] → ${hits.map((h) => h.slug).join(', ') || 'không cụm nào'}`);
+          }
+        }
       }
+      expect(misses).toEqual([]);
     });
 
     it('tâm thành phố nằm trong cụm Trung tâm', async () => {
