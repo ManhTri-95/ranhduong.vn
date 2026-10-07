@@ -1,10 +1,13 @@
 import type { PlaceListResponse } from '@ranhduong/contracts';
 import { API_TIMEOUT_MS, useApiBase } from '~/shared/api/client';
 
-/** Query của GET /cities/:city/places; category là chuỗi các danh mục cách nhau bằng dấu phẩy. */
+/** Query của GET /cities/:city/places; category, tags là chuỗi cách nhau bằng dấu phẩy. */
 export interface PlaceListParams {
   q?: string;
   category?: string;
+  zone?: string;
+  tags?: string;
+  cursor?: string;
   limit?: number;
 }
 
