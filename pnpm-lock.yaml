@@ -243,6 +243,9 @@ importers:
       '@nestjs/cli':
         specifier: ^12.0.8
         version: 12.0.8(@types/node@24.19.1)
+      '@oxc-project/runtime':
+        specifier: ^0.153.0
+        version: 0.153.0
       '@ranhduong/config':
         specifier: workspace:*
         version: link:../../packages/config
@@ -255,6 +258,9 @@ importers:
       typescript:
         specifier: ~6.0.3
         version: 6.0.3
+      vitest:
+        specifier: ^5.0.3
+        version: 5.0.3(@types/node@24.19.1)(vite@8.3.3(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2))
 
   apps/web:
     dependencies:
@@ -1121,6 +1127,10 @@ packages:
         optional: true
       rollup-plugin-visualizer:
         optional: true
+
+  '@oxc-project/runtime@0.153.0':
+    resolution: {integrity: sha512-rXJvtlsVG4xJNq64hiaUTIatE7jbBgpa6l4QgmEa2jLgT3ULH9scUBkpsC9N1DfmqixLEyT6DuK6OSXozziIlw==}
+    engines: {node: ^20.19.0 || >=22.12.0}
 
   '@oxc-project/types@0.152.0':
     resolution: {integrity: sha512-oM/5rLBm2tPkg0iBgkH/FOeR3PCDpY19GTgAZjMFM8h9WI9VW7cLgzp6nwtarYKmovavIQZ+Fe/RKX/8C8O/Rw==}
@@ -5662,6 +5672,8 @@ snapshots:
       - vue-tsc
       - webpack
       - yaml
+
+  '@oxc-project/runtime@0.153.0': {}
 
   '@oxc-project/types@0.152.0': {}
 

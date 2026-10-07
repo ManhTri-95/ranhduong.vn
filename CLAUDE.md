@@ -37,6 +37,7 @@ Lệnh gốc (`package.json`):
 pnpm install
 pnpm infra:up                         # MongoDB, Redis, MinIO (docker compose)
 pnpm dev                              # chạy web (:3000), admin (:5174), API (:3001)
+pnpm seed                             # tạo/cập nhật thành phố Đà Lạt và 4 cụm (chạy lại không trùng)
 pnpm turbo run lint typecheck test build   # phải xanh trước khi commit
 pnpm --filter @ranhduong/geo test        # test một package
 ```
@@ -73,7 +74,7 @@ pnpm --filter @ranhduong/geo test        # test một package
 - Logic lịch trình (lọc, chấm điểm, sắp tuyến, xếp giờ, kiểm tra lỗi khi soạn lịch trình mẫu).
 - Điểm thưởng, check-in, quà, voucher, kể cả trường hợp chạy đồng thời.
 - Logic có điều kiện trong `packages/contracts` và `packages/geo` (giờ mở cửa, slug, chống trùng) cũng phải có unit test theo definition of done.
-- `apps/api` hiện chưa có script `test`. Story đầu tiên viết logic API phải thêm Vitest (công cụ test đã chọn trong `docs/decisions.md`) trước.
+- `apps/api` test bằng Vitest (`pnpm --filter @ranhduong/api test`); test tích hợp cần MongoDB (`pnpm infra:up`), mỗi file test lấy database riêng qua `src/testing/mongo.ts`.
 
 **Không ép TDD**: trang hiển thị nội dung, styling, layout theo design system. Kiểm tra bằng typecheck, lint và xem trên trình duyệt ở 390px trước, rồi desktop.
 
@@ -98,5 +99,5 @@ pnpm --filter @ranhduong/geo test        # test một package
 
 ## Trạng thái
 
-- Xong: S01 (khung monorepo, CI, health check, trang `/da-lat` tạm), khung `apps/admin` cho S26.
-- Tiếp theo: S02 hạ tầng (`ranhduong.vn`, `api.ranhduong.vn`, `media.ranhduong.vn`), S03 schema City/Zone/Place, S04 đăng nhập admin.
+- Xong: S01 (khung monorepo, CI, health check, trang `/da-lat` tạm), khung `apps/admin` cho S26, S03 (schema City/Zone/Place, `pnpm seed` Đà Lạt; chờ thử trên staging sau S02, ranh giới cụm chờ chủ dự án duyệt).
+- Tiếp theo: S02 hạ tầng (`ranhduong.vn`, `api.ranhduong.vn`, `media.ranhduong.vn`), S04 đăng nhập admin.

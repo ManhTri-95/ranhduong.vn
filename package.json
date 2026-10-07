@@ -9,6 +9,7 @@
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "lint": "turbo run lint",
+    "seed": "turbo run build --filter=@ranhduong/api && pnpm --filter @ranhduong/api seed",
     "infra:up": "docker compose up -d",
     "infra:down": "docker compose down"
   },

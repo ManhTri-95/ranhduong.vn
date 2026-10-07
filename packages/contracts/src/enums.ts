@@ -16,3 +16,14 @@ export const Transport = z.enum(['motorbike', 'car']);
 /** Cụm khu vực Đà Lạt (slug). */
 export const DalatZone = z.enum(['trung-tam', 'phia-nam', 'phia-bac', 'phia-dong']);
 export type DalatZone = z.infer<typeof DalatZone>;
+
+/** Nguồn ảnh: tự chụp, quán gửi, cộng tác viên, người dùng, Creative Commons (ADR 0013). */
+export const PhotoSource = z.enum(['self', 'owner', 'ctv', 'user', 'cc']);
+export type PhotoSource = z.infer<typeof PhotoSource>;
+
+/** Ai tạo địa điểm. */
+export const PlaceSource = z.enum(['admin', 'ctv', 'user', 'owner']);
+export type PlaceSource = z.infer<typeof PlaceSource>;
+
+export const VipTier = z.enum(['free', 'starter', 'vip']);
+export type VipTier = z.infer<typeof VipTier>;
