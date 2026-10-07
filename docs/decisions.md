@@ -4,6 +4,7 @@ Mỗi quyết định một dòng: chọn gì, vì sao. Đổi quyết định t
 
 | Ngày | Quyết định | Lý do |
 | --- | --- | --- |
+| 2026-10-07 | Trang giới thiệu trước khi ra mắt build tĩnh riêng trong `apps/web/prelaunch`, tái sử dụng CSS `packages/ui`, deploy bằng Wrangler 4.148.0 lên Workers Static Assets | Có trang công khai trước khi backend sẵn sàng; bản sản phẩm Nuxt SSR vẫn theo ADR 0003 |
 | 2026-10-06 | Monorepo Turborepo + pnpm 12 | Một repo cho web, API, package dùng chung; pnpm 12 duyệt build script qua `allowBuilds` trong `pnpm-workspace.yaml` |
 | 2026-10-06 | Node 24 LTS (tối thiểu 22.19) | Yêu cầu của Nuxt 4; Node 22.12+ cho phép `require()` ESM nên API CommonJS dùng được package ESM |
 | 2026-10-06 | TypeScript 6.0, chưa lên 7 | TS 7 (bản viết lại bằng Go) mới ra; chờ Nest CLI, vue-tsc và decorator metadata hỗ trợ ổn định rồi nâng |

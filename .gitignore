@@ -3,6 +3,7 @@ dist
 .output
 .nuxt
 .turbo
+.wrangler
 .env
 .env.*
 !.env.example

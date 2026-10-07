@@ -1,0 +1,14 @@
+{
+  "name": "ranhduong-prelaunch",
+  "account_id": "480adcbbd23ed4b4da40f804166ce84b",
+  "compatibility_date": "2026-10-07",
+  "workers_dev": true,
+  "observability": {
+    "enabled": true,
+    "traces": { "enabled": true }
+  },
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "404-page"
+  }
+}
