@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import mongoose, { type Connection } from 'mongoose';
 
 // Chỉ dùng trong test, không nằm trong build. Local: `pnpm infra:up`; CI: service container mongo.
-const TEST_URI = process.env.MONGODB_TEST_URI ?? 'mongodb://localhost:27017';
+export const TEST_URI = process.env.MONGODB_TEST_URI ?? 'mongodb://localhost:27017';
 
 /**
  * Mở kết nối tới một database riêng, tên ngẫu nhiên, để các file test chạy song song không đụng nhau.
