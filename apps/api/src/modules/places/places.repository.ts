@@ -10,6 +10,7 @@ const CARD_FIELDS = {
   slug: 1,
   name: 1,
   aliases: 1,
+  tags: 1,
   category: 1,
   zoneId: 1,
   practicalNotes: 1,
@@ -25,6 +26,7 @@ interface CardRow {
   slug: string;
   name: string;
   aliases?: string[];
+  tags?: string[];
   category: PlaceCategory;
   zoneId?: Types.ObjectId | null;
   practicalNotes?: string | null;
@@ -60,6 +62,7 @@ export class PlacesRepository {
       slug: d.slug,
       name: d.name,
       aliases: d.aliases ?? [],
+      tags: d.tags ?? [],
       category: d.category,
       zoneId: d.zoneId?.toString(),
       practicalNotes: d.practicalNotes ?? undefined,
