@@ -270,7 +270,7 @@ REST JSON dưới `/v1`, thành phố nằm trong path (`/v1/cities/:city/…`);
 | Method | Path | Quyền | Ghi chú |
 | --- | --- | --- | --- |
 | GET | `/cities/:city` | Công khai | Thông tin thành phố, danh sách zone |
-| GET | `/cities/:city/places` | Công khai | Lọc `category`, `tags`, `zone`, `bbox`, `near=lat,lng&radius`, `q` |
+| GET | `/cities/:city/places` | Công khai | Lọc `category`, `tags` (cách nhau dấu phẩy; phải có đủ mọi thẻ), `zone` (slug cụm; không có thì 404), `q` (không dấu; không dùng cùng `cursor`), `limit`, `cursor`. Trả `items`, `nextCursor`, `tags` (số chỗ theo thẻ). `bbox`, `near=lat,lng&radius` thêm ở S12 |
 | GET | `/cities/:city/places/:slug` | Công khai | Chi tiết, ảnh, voucher đang chạy |
 | GET | `/cities/:city/itineraries/templates` | Công khai | Lọc `days`, `style` |
 | GET | `/itineraries/:shareId` | Công khai | Lịch trình đã chia sẻ. Kèm GET /itineraries/:id/narrative: 204 khi chưa có mô tả, 200 kèm mô tả khi đã xong |
@@ -465,13 +465,15 @@ Trang địa điểm, danh sách và lịch trình mẫu được render SSR và
 | Trang | URL | Cache (Nuxt `routeRules`) | Index |
 | --- | --- | --- | --- |
 | Trang chủ thành phố | `/da-lat` | SWR 1 giờ | Có |
-| Danh mục | `/da-lat/ca-phe`, `/da-lat/an-uong`, `/da-lat/tham-quan` | SWR 1 giờ | Có |
+| Danh mục | `/da-lat/ca-phe`, `/da-lat/an-uong`, `/da-lat/tham-quan`, `/da-lat/hoat-dong` | SWR 1 giờ | Có |
 | Khu vực | `/da-lat/khu-vuc/tuyen-lam` | SWR 1 giờ | Có |
 | Danh sách curate | `/da-lat/top/ca-phe-view-doi` | SWR 1 giờ | Có |
 | Địa điểm | `/da-lat/dia-diem/{slug}` | SWR 1 giờ, xoá cache khi sửa | Có |
 | Lịch trình mẫu | `/da-lat/lich-trinh/{slug}` (ví dụ `3-ngay-2-dem-cap-doi`) | SWR 1 ngày | Có |
 | Lịch trình cá nhân | `/l/{shareId}` | Không cache CDN | `noindex` |
 | Bảng xếp hạng | `/da-lat/bang-xep-hang` | SWR 10 phút | Có |
+
+**Trang lọc và trang sau:** trang danh mục và khu vực nhận `?tags=a,b` (lọc thẻ, gửi bằng form nên bot không đi theo) và `?cursor=…` (trang sau, có link để bot đi tới từng địa điểm). Hai loại này `noindex, follow`, vẫn cache SWR 1 giờ như trang gốc.
 
 **Thẻ và dữ liệu có cấu trúc:**
 
