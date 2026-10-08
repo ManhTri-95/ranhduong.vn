@@ -17,6 +17,12 @@ describe('normalizeUrlForMatch', () => {
     expect(normalizeUrlForMatch('http://m.facebook.com/gialap?ref=bookmarks#top')).toBe('facebook.com/gialap');
     expect(normalizeUrlForMatch('facebook.com/gialap')).toBe('facebook.com/gialap');
   });
+  it('trang Facebook chưa đặt tên (profile.php?id=…) giữ id; hai trang khác id không trùng', () => {
+    expect(normalizeUrlForMatch('https://www.facebook.com/profile.php?id=100000000000001&ref=bookmarks')).toBe('facebook.com/profile.php?id=100000000000001');
+    const subject = { name: 'Giả Lập Một', fanpage: 'https://facebook.com/profile.php?id=100000000000001' };
+    const other = candidate('a', 'Giả Lập Khác', { fanpage: 'https://m.facebook.com/profile.php?id=100000000000002', location: north(5000) });
+    expect(findDuplicates(subject, [other])).toEqual([]);
+  });
 });
 
 describe('findDuplicates', () => {

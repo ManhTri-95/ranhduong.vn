@@ -37,15 +37,21 @@ export interface DuplicateMatch<T> {
   distanceM?: number;
 }
 
-/** Chuẩn hoá link fanpage, website để so: bỏ giao thức, www., m., dấu / cuối, query và #; chữ thường. */
+/**
+ * Chuẩn hoá link fanpage, website để so: bỏ giao thức, www., m., dấu / cuối, query và #; chữ thường.
+ * Riêng trang Facebook chưa đặt tên (profile.php?id=…, story.php?id=…), định danh nằm ở tham số id nên giữ lại.
+ */
 export function normalizeUrlForMatch(url: string): string {
-  return url
+  const bare = url
     .trim()
     .toLowerCase()
     .replace(/^[a-z]+:\/\//, '')
     .replace(/^(www|m|mobile)\./, '')
-    .replace(/[?#].*$/, '')
-    .replace(/\/+$/, '');
+    .replace(/#.*$/, '');
+  const [pathPart = '', query = ''] = bare.split('?');
+  const path = pathPart.replace(/\/+$/, '');
+  const id = /(?:^|&)id=([^&]+)/.exec(query)?.[1];
+  return id && /\/(profile|story)\.php$/.test(path) ? `${path}?id=${id}` : path;
 }
 
 const same = (a: string | undefined, b: string | undefined) => a !== undefined && a !== '' && a === b;
