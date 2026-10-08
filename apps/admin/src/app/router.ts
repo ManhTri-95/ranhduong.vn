@@ -20,8 +20,10 @@ export const router = createRouter({
 });
 
 // Mỗi lần chuyển trang đều hỏi API; API (AdminGuard) mới là nơi quyết định, router chỉ chuyển hướng cho dễ dùng.
-router.beforeEach(async (to) => {
+// Chỉ đổi query trên cùng trang (bộ lọc danh sách) thì không hỏi lại; lần vào đầu tiên `from.matched` rỗng nên vẫn hỏi.
+router.beforeEach(async (to, from) => {
   if (to.meta.public) return true;
+  if (from.matched.length > 0 && to.path === from.path) return true;
   const state = await loadSession();
   if (state.status === 'signed-in') return true;
   const query: Record<string, string> = { returnTo: to.fullPath };

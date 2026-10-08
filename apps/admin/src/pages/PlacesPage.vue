@@ -1,17 +1,20 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
 import { RouterLink } from 'vue-router';
-import { api, type HealthResponse } from '@/shared/api/client';
-
-const health = ref<HealthResponse | null>(null);
-onMounted(async () => {
-  try { health.value = await api<HealthResponse>('/health'); } catch { health.value = null; }
-});
+import RdPlaceList from '@/widgets/place-list/ui/RdPlaceList.vue';
 </script>
 
 <template>
-  <h1 style="margin: 0; font-family: var(--font-display); font-size: 28px">Địa điểm</h1>
-  <RouterLink class="rd-btn rd-btn--primary" to="/dia-diem/moi">Thêm địa điểm</RouterLink>
-  <p style="color: var(--ink-soft)">Danh sách địa điểm làm ở bước sau; mở một địa điểm đã có bằng đường dẫn /dia-diem/{id}.</p>
-  <p style="font-size: 13px; color: var(--ink-soft)">API: {{ health ? `${health.status}, DB ${health.db}` : 'chưa kết nối' }}</p>
+  <div class="page">
+    <header class="head">
+      <h1 class="title">Địa điểm</h1>
+      <RouterLink class="rd-btn rd-btn--primary" to="/dia-diem/moi">Thêm địa điểm</RouterLink>
+    </header>
+    <RdPlaceList />
+  </div>
 </template>
+
+<style scoped>
+.page { display: flex; flex-direction: column; gap: var(--space-5); }
+.head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); }
+.title { margin: 0; font: 700 28px/1.2 var(--font-display); }
+</style>
