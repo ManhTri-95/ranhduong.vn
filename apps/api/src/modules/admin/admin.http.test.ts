@@ -1,4 +1,4 @@
-import { AdminPlace } from '@ranhduong/contracts';
+import { AdminPlace, AdminPlaceListResponse } from '@ranhduong/contracts';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { createAdminTestApp, type AdminTestApp } from '../../testing/admin-app';
 import { fakeCitySeed } from '../../testing/fixtures';
@@ -46,6 +46,7 @@ describe('Route quản trị địa điểm qua HTTP', () => {
       ['GET', '/admin/places/0123456789abcdef01234567'],
       ['POST', `/admin/cities/${CITY}/places`],
       ['GET', `/admin/cities/${CITY}/zones/suggest?lng=0.2&lat=0.2`],
+      ['GET', `/admin/cities/${CITY}/places`],
     ] as const;
     for (const [method, path] of routes) {
       const res = await call(path, { method, signedIn: false, body: method === 'POST' ? DRAFT : undefined });
@@ -89,6 +90,16 @@ describe('Route quản trị địa điểm qua HTTP', () => {
     expect(await res.json()).toMatchObject({
       details: [{ code: 'location_missing' }, { code: 'hours_invalid' }, { code: 'verify_source_missing' }],
     });
+  });
+  it('danh sách địa điểm của thành phố, kèm điều kiện kích hoạt còn thiếu', async () => {
+    await createDraft();
+    const res = await call(`/admin/cities/${CITY}/places`);
+    expect(res.status).toBe(200);
+    const { items } = AdminPlaceListResponse.parse(await res.json());
+    expect(items).toMatchObject([
+      { name: 'Quán Giả Lập', status: 'draft', activationIssues: ['location_missing', 'hours_invalid', 'verify_source_missing'] },
+    ]);
+    expect((await call('/admin/cities/thanh-pho-khong-co/places')).status).toBe(404);
   });
   it('kiểm trùng và gợi ý cụm', async () => {
     const dup = await call(`/admin/cities/${CITY}/places/duplicate-check`, { method: 'POST', body: { name: 'Quán Giả Lập' } });

@@ -3,6 +3,7 @@ import {
   activationIssues,
   normalizeVnPhone,
   type AdminPlace,
+  type AdminPlaceListResponse,
   type DuplicateCheckInput,
   type DuplicateCheckResponse,
   type PlaceEditInput,
@@ -11,7 +12,7 @@ import { findDuplicates, isSlugOf, nextFreeSlug, normalizeName, slugify } from '
 import { isDuplicateKeyError } from '../../shared/db/mongo-errors';
 import { ApiException } from '../../shared/http/api-exception';
 import { CitiesService } from '../cities/cities.service';
-import { editUpdate, toAdminPlace, type EditRow } from './place-edit';
+import { editUpdate, toAdminPlace, toAdminPlaceSummary, type EditRow } from './place-edit';
 import { PlacesRepository } from './places.repository';
 
 /** Số lần đọc lại khi trạng thái, updatedAt hay slug vừa bị request khác đổi. */
@@ -46,6 +47,14 @@ export class PlaceEditorService {
     const row = await this.repo.findForEdit(id);
     if (!row) throw notFound();
     return this.present(row);
+  }
+
+  /** Danh sách admin (S07): mọi địa điểm chưa gộp của thành phố. */
+  async list(citySlug: string): Promise<AdminPlaceListResponse> {
+    const city = await this.cities.resolveCity(citySlug);
+    const [rows, zones] = await Promise.all([this.repo.listForAdmin(city.id), this.cities.zones(city.id)]);
+    const zoneSlugById = new Map(zones.map((z) => [z.id, z.slug]));
+    return { items: rows.map((row) => toAdminPlaceSummary(row, zoneSlugById)) };
   }
 
   /** Tạo nháp: slug từ tên, thêm -2, -3… nếu đã có chỗ dùng (kể cả slug cũ). */

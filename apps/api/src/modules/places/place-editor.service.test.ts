@@ -186,4 +186,26 @@ describe('PlaceEditorService', () => {
       await expect(editor.get(new Types.ObjectId().toString())).rejects.toMatchObject({ body: { code: 'NOT_FOUND' } });
     });
   });
+
+  describe('list', () => {
+    it('mọi địa điểm chưa gộp của thành phố, kèm slug cụm; bỏ chỗ đã gộp và thành phố khác', async () => {
+      const zone = await t.conn.collection('zones').findOne({ cityId: new Types.ObjectId(cityId), slug: 'cum-gia-lap-a' });
+      const otherCityId = (await t.app.get(CitiesService).applySeed(fakeCitySeed({ slug: 'thanh-pho-gia-lap-ba' }))).cityId;
+      await places().insertMany([
+        fakePlaceDoc(cityId, { slug: 'quan-gia-lap-a', name: 'Quán Giả Lập A', zoneId: zone?._id }),
+        fakePlaceDoc(cityId, { slug: 'quan-gia-lap-b', name: 'Quán Giả Lập B', status: 'hidden' }),
+        fakePlaceDoc(cityId, { slug: 'quan-gia-lap-c', name: 'Quán Giả Lập C', status: 'merged' }),
+        fakePlaceDoc(otherCityId, { slug: 'quan-gia-lap-d', name: 'Quán Giả Lập D' }),
+      ]);
+      const { items } = await editor.list(CITY);
+      const rows = [...items].sort((a, b) => a.name.localeCompare(b.name)).map((p) => [p.name, p.status, p.zone]);
+      expect(rows).toEqual([
+        ['Quán Giả Lập A', 'active', 'cum-gia-lap-a'],
+        ['Quán Giả Lập B', 'hidden', undefined],
+      ]);
+    });
+    it('thành phố không có: 404', async () => {
+      await expect(editor.list('thanh-pho-khong-co')).rejects.toMatchObject({ body: { code: 'NOT_FOUND' } });
+    });
+  });
 });

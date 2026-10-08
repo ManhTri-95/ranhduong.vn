@@ -1,7 +1,8 @@
 import { PlaceEditInput } from '@ranhduong/contracts';
 import { Types } from 'mongoose';
 import { describe, expect, it } from 'vitest';
-import { editUpdate, toAdminPlace, type EditRow } from './place-edit';
+import { FAKE_PHOTO } from '../../testing/fixtures';
+import { editUpdate, toAdminPlace, toAdminPlaceSummary, type EditRow } from './place-edit';
 
 describe('editUpdate', () => {
   it('ghi trường có giá trị, $unset trường tuỳ chọn để trống; contact bỏ ô trống', () => {
@@ -84,5 +85,71 @@ describe('toAdminPlace', () => {
     expect(place.cover).toBeUndefined();
     expect(place).not.toHaveProperty('indoor');
     expect(place.alsoCategories).toEqual([]);
+  });
+});
+
+describe('toAdminPlaceSummary', () => {
+  const base: EditRow = {
+    _id: new Types.ObjectId(),
+    cityId: new Types.ObjectId(),
+    status: 'draft',
+    slug: 'quan-gia-lap',
+    name: 'Quán Giả Lập',
+    category: 'cafe',
+  };
+
+  it('nháp chèn thẳng: thiếu mảng, thiếu updatedAt vẫn đọc được; mã điều kiện còn thiếu, mỗi mã một lần', () => {
+    const summary = toAdminPlaceSummary(
+      {
+        ...base,
+        openingHours: [
+          { day: 1, open: '22:00', close: '22:00' },
+          { day: 2, open: '23:00', close: '23:00' },
+        ],
+      },
+      new Map(),
+    );
+    expect(summary).toEqual({
+      id: base._id.toString(),
+      status: 'draft',
+      slug: 'quan-gia-lap',
+      name: 'Quán Giả Lập',
+      aliases: [],
+      category: 'cafe',
+      alsoCategories: [],
+      photoCount: 0,
+      activationIssues: ['location_missing', 'hours_invalid', 'verify_source_missing'],
+      updatedAt: base._id.getTimestamp().toISOString(),
+    });
+  });
+  it('đủ dữ liệu: slug cụm, ngày xác minh ISO, số ảnh; ảnh thiếu nguồn là điều kiện còn thiếu', () => {
+    const zoneId = new Types.ObjectId();
+    const summary = toAdminPlaceSummary(
+      {
+        ...base,
+        status: 'active',
+        zoneId,
+        aliases: ['Mây Giả Lập'],
+        alsoCategories: ['food'],
+        verifySource: 'owner',
+        location: { type: 'Point', coordinates: [0.2, 0.2] },
+        openingHours: [{ day: 1, open: '07:00', close: '22:00' }],
+        photos: [{ key: 'places/gia-lap/1', ...FAKE_PHOTO }, { key: 'places/gia-lap/2', source: 'self' }],
+        lastVerifiedAt: new Date('2026-10-01T03:00:00Z'),
+        updatedAt: new Date('2026-10-02T03:00:00Z'),
+      },
+      new Map([[zoneId.toString(), 'cum-gia-lap-a']]),
+    );
+    expect(summary).toMatchObject({
+      status: 'active',
+      zone: 'cum-gia-lap-a',
+      aliases: ['Mây Giả Lập'],
+      alsoCategories: ['food'],
+      verifySource: 'owner',
+      lastVerifiedAt: '2026-10-01T03:00:00.000Z',
+      updatedAt: '2026-10-02T03:00:00.000Z',
+      photoCount: 2,
+      activationIssues: ['photo_source_missing'],
+    });
   });
 });

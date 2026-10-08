@@ -1,4 +1,13 @@
-import { AdminPlace, type PlaceCategory, type PlaceCover, type PlaceEditInput, type PlaceStatus, type VerifySource } from '@ranhduong/contracts';
+import {
+  activationIssues,
+  AdminPlace,
+  AdminPlaceSummary,
+  type PlaceCategory,
+  type PlaceCover,
+  type PlaceEditInput,
+  type PlaceStatus,
+  type VerifySource,
+} from '@ranhduong/contracts';
 import type { LatLng } from '@ranhduong/geo';
 import { Types } from 'mongoose';
 
@@ -117,6 +126,50 @@ export function toAdminPlace(row: EditRow, zoneSlugById: ReadonlyMap<string, str
     photos: (row.photos ?? []).map((p) => ({ key: p.key, source: opt(p.source), credit: opt(p.credit), license: opt(p.license) })),
     verifySource: opt(row.verifySource),
     lastVerifiedAt: row.lastVerifiedAt?.toISOString(),
+    updatedAt: (row.updatedAt ?? row._id.getTimestamp()).toISOString(),
+  });
+}
+
+/** Các trường đọc cho một dòng danh sách admin (S07); ảnh đọc đủ để kiểm nguồn. */
+export type SummaryRow = Pick<
+  EditRow,
+  | '_id'
+  | 'status'
+  | 'slug'
+  | 'name'
+  | 'aliases'
+  | 'category'
+  | 'alsoCategories'
+  | 'zoneId'
+  | 'location'
+  | 'openingHours'
+  | 'verifySource'
+  | 'lastVerifiedAt'
+  | 'photos'
+  | 'updatedAt'
+>;
+
+/** Document → một dòng danh sách admin: id cụm thành slug, số ảnh, mã điều kiện kích hoạt còn thiếu (mỗi mã một lần). */
+export function toAdminPlaceSummary(row: SummaryRow, zoneSlugById: ReadonlyMap<string, string>): AdminPlaceSummary {
+  const issues = activationIssues({
+    location: row.location,
+    openingHours: row.openingHours ?? [],
+    verifySource: row.verifySource,
+    photos: row.photos ?? [],
+  });
+  return AdminPlaceSummary.parse({
+    id: row._id.toString(),
+    status: row.status,
+    slug: row.slug,
+    name: row.name,
+    aliases: row.aliases ?? [],
+    category: row.category,
+    alsoCategories: row.alsoCategories ?? [],
+    zone: row.zoneId ? zoneSlugById.get(row.zoneId.toString()) : undefined,
+    verifySource: opt(row.verifySource),
+    lastVerifiedAt: row.lastVerifiedAt?.toISOString(),
+    photoCount: row.photos?.length ?? 0,
+    activationIssues: [...new Set(issues.map((issue) => issue.code))],
     updatedAt: (row.updatedAt ?? row._id.getTimestamp()).toISOString(),
   });
 }

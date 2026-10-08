@@ -5,6 +5,7 @@ import {
   PlaceEditInput,
   Slug,
   type AdminPlace,
+  type AdminPlaceListResponse,
   type DuplicateCheckResponse,
 } from '@ranhduong/contracts';
 import { ZodValidationPipe } from '../../shared/http/zod-validation.pipe';
@@ -19,6 +20,11 @@ const idParam = new ZodValidationPipe(ObjectIdString);
 @UseGuards(AdminGuard)
 export class AdminPlacesController {
   constructor(private readonly editor: PlaceEditorService) {}
+
+  @Get('cities/:city/places')
+  list(@Param('city', cityParam) city: string): Promise<AdminPlaceListResponse> {
+    return this.editor.list(city);
+  }
 
   @Post('cities/:city/places')
   create(

@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import type { OpeningSlot, PlaceCategory, PlaceStatus, VerifySource } from '@ranhduong/contracts';
 import { Types } from 'mongoose';
-import type { DuplicateRow, EditRow, PlaceUpdate } from './place-edit';
+import type { DuplicateRow, EditRow, PlaceUpdate, SummaryRow } from './place-edit';
 import type { ListedPlace } from './place-listing';
 import { PLACE_MODEL, type PlaceModel } from './schemas/place.schema';
 
@@ -45,6 +45,23 @@ interface CoverRow {
 
 /** Các trường đọc ra để so trùng. */
 type DuplicateDoc = Pick<EditRow, '_id' | 'name' | 'aliases' | 'status' | 'zoneId' | 'location' | 'contact' | 'ids'>;
+
+/** Trường của một dòng danh sách admin (SummaryRow). */
+const SUMMARY_FIELDS = {
+  status: 1,
+  slug: 1,
+  name: 1,
+  aliases: 1,
+  category: 1,
+  alsoCategories: 1,
+  zoneId: 1,
+  location: 1,
+  openingHours: 1,
+  verifySource: 1,
+  lastVerifiedAt: 1,
+  photos: 1,
+  updatedAt: 1,
+};
 
 /** Lọc trong DB; thẻ, từ khoá, phân trang lọc trong bộ nhớ ở PlacesService. */
 export interface ListFilter {
@@ -98,6 +115,11 @@ export class PlacesRepository {
   /** Địa điểm theo id để sửa trong admin; không có thì null. */
   async findForEdit(id: string): Promise<EditRow | null> {
     return this.places.findById(id).lean<EditRow>();
+  }
+
+  /** Địa điểm chưa gộp của thành phố cho danh sách admin (S07); đọc hết, admin lọc trong trình duyệt (vài trăm điểm). */
+  async listForAdmin(cityId: string): Promise<SummaryRow[]> {
+    return this.places.find({ cityId: new Types.ObjectId(cityId), status: { $ne: 'merged' } }, SUMMARY_FIELDS).lean<SummaryRow[]>();
   }
 
   /** Tạo nháp từ form admin; trùng slug thì Mongo ném E11000 để service tính lại slug. */
