@@ -203,6 +203,8 @@ function onDialogClose(): void {
 .table th { padding: 10px 12px; border-bottom: var(--border); text-align: left; font-size: 13px; font-weight: 600; color: var(--ink-soft); white-space: nowrap; }
 .table td { padding: 6px 12px; border-bottom: var(--border-hair) solid var(--mist); vertical-align: middle; }
 .table tbody tr:last-child td { border-bottom: 0; }
+/* Chip trạng thái không bẻ dòng (bản mẫu AdminPlaces); bảng đã cuộn ngang trong khung. */
+.table .rd-status { white-space: nowrap; }
 .name { display: inline-flex; align-items: center; min-height: var(--tap-min); color: var(--ink); font-weight: 700; }
 .sort { display: inline-flex; align-items: center; gap: var(--space-1); min-height: var(--tap-min); padding: 0; border: 0; background: none; font: inherit; color: inherit; cursor: pointer; }
 .row-actions { white-space: nowrap; text-align: right; }
