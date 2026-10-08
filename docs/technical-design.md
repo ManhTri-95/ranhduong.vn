@@ -311,12 +311,16 @@ REST JSON dưới `/v1`, thành phố nằm trong path (`/v1/cities/:city/…`);
 | GET | `/admin/submissions?status=pending` | Hàng chờ duyệt |
 | POST | `/admin/submissions/:id/approve` hoặc `/reject` | Duyệt, cộng điểm |
 | POST | `/admin/places/:id/merge` | Body `{ intoId }` |
-| POST/PATCH | `/admin/places` | Tạo, sửa, đổi trạng thái |
+| POST | `/admin/cities/:city/places` | Tạo nháp từ form (S05) |
+| GET/PUT | `/admin/places/:id` | Đọc, sửa toàn bộ trường form; địa điểm đã công khai phải giữ đủ điều kiện kích hoạt |
+| POST | `/admin/places/:id/activate` | Nháp sang active khi có toạ độ, giờ hợp lệ, nguồn xác nhận, mọi ảnh có nguồn |
+| POST | `/admin/cities/:city/places/duplicate-check` | Body `{ name, location?, phone?, fanpage?, excludeId? }`; chỗ nghi trùng (mục 9) |
+| GET | `/admin/cities/:city/zones/suggest?lng=&lat=` | Cụm gợi ý cho điểm ghim |
 | POST | `/admin/claims/:id/approve` hoặc `/reject` | Duyệt chủ quán |
 | GET/POST | `/admin/leaderboard/:month` | Xem snapshot, chốt, gán quà |
 | PATCH | `/admin/users/:id/roles` | Đổi vai trò |
 
-**Mã lỗi chính:** `UNAUTHENTICATED`, `FORBIDDEN`, `NOT_FOUND`, `VALIDATION_FAILED`, `RATE_LIMITED`, `CHECKIN_TOO_FAR`, `CHECKIN_LOW_ACCURACY`, `CHECKIN_ALREADY_TODAY`, `DUPLICATE_SUSPECTED`, `VOUCHER_SOLD_OUT`, `VOUCHER_ALREADY_CLAIMED`, `VOUCHER_EXPIRED`, `VOUCHER_OUT_OF_WINDOW`, `CONTACT_REQUIRED`, `NOT_ENOUGH_PLACES`.
+**Mã lỗi chính:** `UNAUTHENTICATED`, `FORBIDDEN`, `NOT_FOUND`, `VALIDATION_FAILED`, `RATE_LIMITED`, `CONFLICT`, `CHECKIN_TOO_FAR`, `CHECKIN_LOW_ACCURACY`, `CHECKIN_ALREADY_TODAY`, `DUPLICATE_SUSPECTED`, `VOUCHER_SOLD_OUT`, `VOUCHER_ALREADY_CLAIMED`, `VOUCHER_EXPIRED`, `VOUCHER_OUT_OF_WINDOW`, `CONTACT_REQUIRED`, `NOT_ENOUGH_PLACES`.
 
 ## 7. Thuật toán lịch trình
 
@@ -424,6 +428,7 @@ export const normalizeName = (s: string) => removeDiacritics(s.toLowerCase())
 3. `score = 0,5 × idMatch + 0,4 × nameSim + 0,1 × near`.
 4. Ngưỡng: từ 0,85 trả `DUPLICATE_SUSPECTED` và chuyển thành đề xuất sửa; 0,6–0,85 trả cảnh báo, khách xác nhận khác thì lưu `userConfirmedDifferent: true`; dưới 0,6 cho qua.
 5. Ngoại lệ chi nhánh: cùng tên chuẩn hoá nhưng cách trên 300m thì không coi là trùng.
+6. Luật thêm (2026-10-08): trong 150 m, tên chuẩn hoá giống từ 0,85 thì báo "có thể trùng" dù điểm dưới 0,6; tên chỉ gồm từ chung (chuẩn hoá ra rỗng) không tính là giống. Form admin (S05) chỉ cảnh báo, không chặn lưu.
 
 **Hàng chờ duyệt:** sắp theo `duplicate.score` giảm dần rồi `createdAt`. Màn hình duyệt hiển thị song song bản gửi và địa điểm nghi trùng, ảnh bằng chứng, khoảng cách GPS lúc gửi.
 
