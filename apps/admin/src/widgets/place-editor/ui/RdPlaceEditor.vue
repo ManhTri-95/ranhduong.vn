@@ -21,6 +21,7 @@ import RdLocationPicker from '@/features/location-picker/ui/RdLocationPicker.vue
 import RdOpeningHoursEditor from '@/features/opening-hours-editor/ui/RdOpeningHoursEditor.vue';
 import { CITY_SLUG } from '@/shared/config';
 import { formatLocalTime } from '@/shared/lib/time';
+import { alsoCategoryChoices } from '../model/also-categories';
 import { usePlaceEditor } from '../model/use-place-editor';
 import { verifySourceOptions } from '../model/verify-options';
 
@@ -57,10 +58,11 @@ const PRICE_OPTIONS = [
   { value: '3', label: '3' },
   { value: '4', label: '4 · đắt nhất' },
 ] as const;
-const INDOOR_OPTIONS = [
+const COVER_OPTIONS = [
   { value: '', label: 'Chưa rõ' },
-  { value: 'indoor', label: 'Trong nhà' },
-  { value: 'outdoor', label: 'Ngoài trời' },
+  { value: 'full', label: 'Trong nhà hoặc có mái che hết' },
+  { value: 'partial', label: 'Có cả chỗ che mưa và chỗ ngoài trời' },
+  { value: 'none', label: 'Ngoài trời, không chỗ che mưa' },
 ] as const;
 
 const categoryOptions = computed(() => {
@@ -69,6 +71,7 @@ const categoryOptions = computed(() => {
   if (current !== '' && !list.includes(current)) list.push(current);
   return list.map((value) => ({ value, label: CATEGORY_LABEL[value] }));
 });
+const alsoOptions = computed(() => alsoCategoryChoices(form.value.category, form.value.alsoCategories));
 const tagOptions = computed(() => [...new Set([...Object.keys(TAG_LABEL), ...form.value.tags])].map((slug) => ({ slug, label: tagLabel(slug) })));
 const verifyOptions = computed(() => verifySourceOptions(form.value.category));
 const boundaryNames = computed(() => (zoneSuggestion.value.kind === 'boundary' ? zoneSuggestion.value.zones.map((z) => z.name).join(' và ') : ''));
@@ -146,6 +149,16 @@ const photoCredit = (photo: AdminPlacePhoto) => [photo.credit, photo.license].fi
         </div>
         <p v-if="errors.category" class="rd-field__error">{{ errors.category }}</p>
       </fieldset>
+      <fieldset class="rd-field">
+        <legend class="rd-field__label">Cũng phục vụ</legend>
+        <div class="rd-choices">
+          <label v-for="option in alsoOptions" :key="option.value" class="rd-choice">
+            <input v-model="form.alsoCategories" type="checkbox" :value="option.value" :disabled="option.disabled" />{{ option.label }}
+          </label>
+        </div>
+        <p class="rd-field__hint">Quán phục vụ thêm loại khác, ví dụ cà phê có cơm trưa; tối đa 2. Hai cơ sở riêng (giờ, menu khác) thì nhập thành hai địa điểm.</p>
+        <p v-if="errors.alsoCategories" class="rd-field__error">{{ errors.alsoCategories }}</p>
+      </fieldset>
       <div class="rd-field">
         <label class="rd-field__label" for="f-address">Địa chỉ</label>
         <input id="f-address" v-model="form.address" class="rd-input" type="text" autocomplete="off" :aria-invalid="!!errors.address" />
@@ -199,12 +212,13 @@ const photoCredit = (photo: AdminPlacePhoto) => [photo.credit, photo.license].fi
         <p class="rd-field__hint">Theo giá đồ uống hoặc món chính.</p>
       </fieldset>
       <fieldset class="rd-field">
-        <legend class="rd-field__label">Trong nhà hay ngoài trời</legend>
-        <div class="rd-choices">
-          <label v-for="option in INDOOR_OPTIONS" :key="option.value" class="rd-choice">
-            <input v-model="form.indoor" type="radio" name="indoor" :value="option.value" />{{ option.label }}
+        <legend class="rd-field__label">Mái che</legend>
+        <div class="options">
+          <label v-for="option in COVER_OPTIONS" :key="option.value" class="rd-choice rd-choice--block">
+            <input v-model="form.cover" type="radio" name="cover" :value="option.value" />{{ option.label }}
           </label>
         </div>
+        <p class="rd-field__hint">Khu che mưa nhỏ (mưa là hết chỗ) thì ghi thêm vào ghi chú thực tế.</p>
       </fieldset>
       <div class="rd-field">
         <label class="rd-field__label" for="f-visit">Thời gian tham quan (phút)</label>

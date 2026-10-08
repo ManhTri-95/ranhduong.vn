@@ -6,6 +6,7 @@ import { activatePlace, checkDuplicates, createPlace, fetchPlace, updatePlace } 
 import { failureMessages, toApiFailure, type ApiFailure } from '@/shared/api/errors';
 import { CITY_SLUG } from '@/shared/config';
 import { readLocalDraft, removeLocalDraft, writeLocalDraft } from '@/shared/lib/local-draft';
+import { withoutPrimary } from './also-categories';
 import { emptyForm, formActivationIssues, formFromPlace, formToInput, PlaceFormState, sameForm, type FieldErrors } from './form';
 import { zoneHint, type ZoneHint } from './zone-hint';
 
@@ -123,6 +124,16 @@ export function usePlaceEditor(initialId: string | null, onCreated: (id: string)
       localTimer = setTimeout(flushLocal, LOCAL_SAVE_MS);
     },
     { deep: true },
+  );
+
+  // Đổi danh mục chính thì bỏ danh mục đó khỏi "Cũng phục vụ" (S27), để không vướng lỗi khi lưu.
+  watch(
+    () => form.value.category,
+    (category) => {
+      if (category !== '' && form.value.alsoCategories.includes(category)) {
+        form.value.alsoCategories = withoutPrimary(form.value.alsoCategories, category);
+      }
+    },
   );
 
   // Kiểm trùng khi tên, ghim, số điện thoại, fanpage đổi; chỉ giữ kết quả của lần gọi mới nhất.

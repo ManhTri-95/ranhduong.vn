@@ -143,3 +143,13 @@ describe('usePlaceEditor: giữ bản đang sửa trên máy', () => {
     expect(storedName(storage)).toBe('Bản Mới Giả Lập');
   });
 });
+
+describe('usePlaceEditor: danh mục phụ', () => {
+  it('đổi danh mục chính sang đúng danh mục đang ở "Cũng phục vụ" thì bỏ nó khỏi danh mục phụ', async () => {
+    const { editor } = await open(memoryStorage());
+    editor.form.value.alsoCategories = ['food', 'activity'];
+    editor.form.value.category = 'food';
+    await vi.advanceTimersByTimeAsync(0);
+    expect(editor.form.value.alsoCategories).toEqual(['activity']);
+  });
+});

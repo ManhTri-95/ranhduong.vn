@@ -11,6 +11,7 @@ const PLACE = AdminPlace.parse({
   name: 'Quán Giả Lập',
   aliases: ['Giả Lập Một', 'Giả Lập Hai'],
   category: 'cafe',
+  alsoCategories: ['food'],
   zone: 'cum-gia-lap-a',
   tags: ['chill'],
   location: { type: 'Point', coordinates: [0.2, 0.3] },
@@ -18,7 +19,7 @@ const PLACE = AdminPlace.parse({
   openingHours: parseOpeningHours('T2-T6 07:00-22:00; T7 18:00-02:00'),
   visitDurationMin: 60,
   bestTime: ['morning'],
-  indoor: false,
+  cover: 'none',
   priceLevel: 2,
   transport: ['motorbike'],
   practicalNotes: 'Ghi chú giả lập.',
@@ -38,6 +39,7 @@ describe('formFromPlace và formToInput', () => {
         name: 'Quán Giả Lập',
         aliases: ['Giả Lập Một', 'Giả Lập Hai'],
         category: 'cafe',
+        alsoCategories: ['food'],
         zone: 'cum-gia-lap-a',
         tags: ['chill'],
         location: { type: 'Point', coordinates: [0.2, 0.3] },
@@ -45,13 +47,22 @@ describe('formFromPlace và formToInput', () => {
         openingHours: PLACE.openingHours,
         visitDurationMin: 60,
         bestTime: ['morning'],
-        indoor: false,
+        cover: 'none',
         priceLevel: 2,
         transport: ['motorbike'],
         practicalNotes: 'Ghi chú giả lập.',
         contact: { phone: '+84900000001', fanpage: 'https://gia-lap.example/fanpage' },
         verifySource: 'admin',
       },
+    });
+  });
+  it('mái che "Chưa rõ" thì không gửi cover; danh mục phụ trùng danh mục chính thì báo ở ô Cũng phục vụ', () => {
+    const result = formToInput({ ...NAMED, cover: '' });
+    expect(result.ok).toBe(true);
+    expect(result.ok ? result.input.cover : 'lỗi').toBeUndefined();
+    expect(formToInput({ ...NAMED, alsoCategories: ['cafe'] })).toMatchObject({
+      ok: false,
+      errors: { alsoCategories: 'Chọn tối đa 2 danh mục phụ, khác danh mục chính' },
     });
   });
   it('form trống: chỉ báo thiếu tên và danh mục (nháp chưa cần toạ độ, giờ)', () => {
