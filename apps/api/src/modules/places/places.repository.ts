@@ -162,13 +162,13 @@ export class PlacesRepository {
   }
 
   /**
-   * Nháp → active, chỉ khi document chưa đổi từ lúc kiểm điều kiện (so updatedAt; null là document chèn thẳng,
-   * chưa có updatedAt); đã đổi thì null. lastVerifiedAt là lúc kích hoạt.
+   * Nháp → active, chỉ khi document chưa đổi từ lúc kiểm điều kiện (so updatedAt; null khớp document chèn thẳng
+   * chưa có updatedAt hoặc updatedAt null); đã đổi thì null. lastVerifiedAt là lúc kích hoạt.
    */
   async activate(id: string, expectedUpdatedAt: Date | null, now: Date): Promise<EditRow | null> {
     return this.places
       .findOneAndUpdate(
-        { _id: new Types.ObjectId(id), status: 'draft', updatedAt: expectedUpdatedAt ?? { $exists: false } },
+        { _id: new Types.ObjectId(id), status: 'draft', updatedAt: expectedUpdatedAt },
         { $set: { status: 'active', lastVerifiedAt: now } },
         { returnDocument: 'after' },
       )
@@ -177,12 +177,12 @@ export class PlacesRepository {
 
   /**
    * Đổi trạng thái (và các trường đi kèm), chỉ khi document còn như lúc đọc: cùng trạng thái, cùng updatedAt
-   * (null là document chèn thẳng, chưa có updatedAt). Đã đổi thì null.
+   * (null khớp document chèn thẳng chưa có updatedAt hoặc updatedAt null). Đã đổi thì null.
    */
   async transition(id: string, expected: { status: PlaceStatus; updatedAt: Date | null }, set: Record<string, unknown>): Promise<EditRow | null> {
     return this.places
       .findOneAndUpdate(
-        { _id: new Types.ObjectId(id), status: expected.status, updatedAt: expected.updatedAt ?? { $exists: false } },
+        { _id: new Types.ObjectId(id), status: expected.status, updatedAt: expected.updatedAt },
         { $set: set },
         { returnDocument: 'after', runValidators: true },
       )

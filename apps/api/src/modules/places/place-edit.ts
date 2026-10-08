@@ -130,24 +130,21 @@ export function toAdminPlace(row: EditRow, zoneSlugById: ReadonlyMap<string, str
   });
 }
 
-/** Các trường đọc cho một dòng danh sách admin (S07); ảnh đọc đủ để kiểm nguồn. */
+/** Ngày giờ ISO từ giá trị đọc trong DB: Date, hoặc chuỗi/số khi bị sửa tay; không đọc được thì undefined. */
+function toIso(value: unknown): string | undefined {
+  if (!(value instanceof Date) && typeof value !== 'string' && typeof value !== 'number') return undefined;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
+}
+
+/**
+ * Các trường đọc cho một dòng danh sách admin (S07); ảnh đọc đủ để kiểm nguồn. Ngày giờ để unknown vì document sửa tay
+ * trong DB có thể lưu chuỗi.
+ */
 export type SummaryRow = Pick<
   EditRow,
-  | '_id'
-  | 'status'
-  | 'slug'
-  | 'name'
-  | 'aliases'
-  | 'category'
-  | 'alsoCategories'
-  | 'zoneId'
-  | 'location'
-  | 'openingHours'
-  | 'verifySource'
-  | 'lastVerifiedAt'
-  | 'photos'
-  | 'updatedAt'
->;
+  '_id' | 'status' | 'slug' | 'name' | 'aliases' | 'category' | 'alsoCategories' | 'zoneId' | 'location' | 'openingHours' | 'verifySource' | 'photos'
+> & { lastVerifiedAt?: unknown; updatedAt?: unknown };
 
 /** Document → một dòng danh sách admin: id cụm thành slug, số ảnh, mã điều kiện kích hoạt còn thiếu (mỗi mã một lần). */
 export function toAdminPlaceSummary(row: SummaryRow, zoneSlugById: ReadonlyMap<string, string>): AdminPlaceSummary {
@@ -167,9 +164,9 @@ export function toAdminPlaceSummary(row: SummaryRow, zoneSlugById: ReadonlyMap<s
     alsoCategories: row.alsoCategories ?? [],
     zone: row.zoneId ? zoneSlugById.get(row.zoneId.toString()) : undefined,
     verifySource: opt(row.verifySource),
-    lastVerifiedAt: row.lastVerifiedAt?.toISOString(),
+    lastVerifiedAt: toIso(row.lastVerifiedAt),
     photoCount: row.photos?.length ?? 0,
     activationIssues: [...new Set(issues.map((issue) => issue.code))],
-    updatedAt: (row.updatedAt ?? row._id.getTimestamp()).toISOString(),
+    updatedAt: toIso(row.updatedAt) ?? row._id.getTimestamp().toISOString(),
   });
 }

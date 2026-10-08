@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import {
   activationIssues,
   normalizeVnPhone,
@@ -33,6 +33,8 @@ function slugBase(name: string): string {
  */
 @Injectable()
 export class PlaceEditorService {
+  private readonly logger = new Logger(PlaceEditorService.name);
+
   constructor(
     private readonly repo: PlacesRepository,
     private readonly cities: CitiesService,
@@ -44,12 +46,23 @@ export class PlaceEditorService {
     return this.present(row);
   }
 
-  /** Danh sách admin (S07): mọi địa điểm chưa gộp của thành phố. */
+  /**
+   * Danh sách admin (S07): mọi địa điểm chưa gộp của thành phố. Document hỏng (sửa tay trong DB: slug, danh mục sai…)
+   * bị bỏ khỏi danh sách và ghi log kèm _id, để một dòng không làm hỏng cả trang.
+   */
   async list(citySlug: string): Promise<AdminPlaceListResponse> {
     const city = await this.cities.resolveCity(citySlug);
     const [rows, zones] = await Promise.all([this.repo.listForAdmin(city.id), this.cities.zones(city.id)]);
     const zoneSlugById = new Map(zones.map((z) => [z.id, z.slug]));
-    return { items: rows.map((row) => toAdminPlaceSummary(row, zoneSlugById)) };
+    const items = rows.flatMap((row) => {
+      try {
+        return [toAdminPlaceSummary(row, zoneSlugById)];
+      } catch (err) {
+        this.logger.warn(`Bỏ địa điểm ${row._id.toString()} khỏi danh sách admin vì dữ liệu sai: ${err instanceof Error ? err.message : String(err)}`);
+        return [];
+      }
+    });
+    return { items };
   }
 
   /** Tạo nháp: slug từ tên, thêm -2, -3… nếu đã có chỗ dùng (kể cả slug cũ). */

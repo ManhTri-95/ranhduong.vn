@@ -152,4 +152,9 @@ describe('toAdminPlaceSummary', () => {
       activationIssues: ['photo_source_missing'],
     });
   });
+  it('ngày lưu dạng chuỗi (sửa tay trong DB) vẫn đọc được; chuỗi không phải ngày thì bỏ, updatedAt lấy theo _id', () => {
+    const summary = toAdminPlaceSummary({ ...base, lastVerifiedAt: '2026-10-01T03:00:00Z', updatedAt: 'khong-phai-ngay' }, new Map());
+    expect(summary.lastVerifiedAt).toBe('2026-10-01T03:00:00.000Z');
+    expect(summary.updatedAt).toBe(base._id.getTimestamp().toISOString());
+  });
 });

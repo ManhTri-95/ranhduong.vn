@@ -75,6 +75,11 @@ describe('PlaceStatusService', () => {
       const reopened = await service.changeStatus(id, 'reopen');
       expect(reopened).toMatchObject({ status: 'active', lastVerifiedAt: NOW.toISOString() });
     });
+    it('document có updatedAt: null (sửa tay trong DB) vẫn đổi được trạng thái, không kẹt 409', async () => {
+      const id = await insert({ ...COMPLETE, updatedAt: null });
+      expect((await service.changeStatus(id, 'hide')).status).toBe('hidden');
+      expect((await service.verify(await insert({ ...PINNED, status: 'draft', updatedAt: null }), 'owner', NOW)).status).toBe('active');
+    });
     it('bấm lại thao tác vừa xong (hai tab, bấm hai lần): trả trạng thái hiện tại, không lỗi', async () => {
       const id = await insert({ ...COMPLETE, status: 'hidden' });
       expect((await service.changeStatus(id, 'hide')).status).toBe('hidden');

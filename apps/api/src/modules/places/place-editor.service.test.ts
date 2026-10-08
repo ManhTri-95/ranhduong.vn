@@ -138,6 +138,10 @@ describe('PlaceEditorService', () => {
       const { insertedId } = await places().insertOne(fakePlaceDoc(cityId, { ...COMPLETE, status: 'draft' }));
       expect((await editor.activate(insertedId.toString())).status).toBe('active');
     });
+    it('document có updatedAt: null (sửa tay trong DB) vẫn kích hoạt được, không kẹt 409', async () => {
+      const { insertedId } = await places().insertOne(fakePlaceDoc(cityId, { ...COMPLETE, status: 'draft', updatedAt: null }));
+      expect((await editor.activate(insertedId.toString())).status).toBe('active');
+    });
     it('trạng thái khác nháp (đã ẩn): 400', async () => {
       const { insertedId } = await places().insertOne(fakePlaceDoc(cityId, { ...COMPLETE, status: 'hidden' }));
       await expect(editor.activate(insertedId.toString())).rejects.toMatchObject({ body: { code: 'VALIDATION_FAILED' } });
@@ -202,6 +206,18 @@ describe('PlaceEditorService', () => {
       expect(rows).toEqual([
         ['Quán Giả Lập A', 'active', 'cum-gia-lap-a'],
         ['Quán Giả Lập B', 'hidden', undefined],
+      ]);
+    });
+    it('một document hỏng (nhập thẳng vào DB) không làm hỏng cả danh sách: bỏ dòng đó, các dòng khác vẫn trả', async () => {
+      await places().insertMany([
+        fakePlaceDoc(cityId, { slug: 'quan-gia-lap-tot', name: 'Quán Giả Lập Tốt' }),
+        fakePlaceDoc(cityId, { slug: 'Sai Slug Giả Lập', name: 'Quán Giả Lập Hỏng', category: 'bar' }),
+        fakePlaceDoc(cityId, { slug: 'quan-gia-lap-ngay-chuoi', name: 'Quán Giả Lập Ngày Chuỗi', lastVerifiedAt: '2026-10-01T03:00:00Z' }),
+      ]);
+      const { items } = await editor.list(CITY);
+      expect(items.map((p) => [p.name, p.lastVerifiedAt]).sort()).toEqual([
+        ['Quán Giả Lập Ngày Chuỗi', '2026-10-01T03:00:00.000Z'],
+        ['Quán Giả Lập Tốt', undefined],
       ]);
     });
     it('thành phố không có: 404', async () => {
