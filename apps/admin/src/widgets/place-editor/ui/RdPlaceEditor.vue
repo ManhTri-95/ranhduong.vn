@@ -309,7 +309,8 @@ const photoCredit = (photo: AdminPlacePhoto) => [photo.credit, photo.license].fi
 .photos li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2); font-size: 14px; }
 .checklist ul { margin: var(--space-2) 0 0; padding-left: var(--space-5); }
 .bar { position: sticky; bottom: 0; z-index: 2; flex-wrap: wrap; }
-.bar .rd-btn { flex: 1 1 140px; }
+/* Hai nút trên một hàng ở 375px, kể cả khi trình duyệt có thanh cuộn. */
+.bar .rd-btn { flex: 1 1 120px; }
 .save-state { flex-basis: 100%; margin: 0; min-height: 18px; font-size: 13px; color: var(--ink-soft); }
 .skeleton { height: 320px; border-radius: var(--radius-card); background: var(--mist); display: flex; align-items: center; justify-content: center; }
 </style>

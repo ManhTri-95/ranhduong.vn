@@ -122,6 +122,11 @@ function applyPaste(): void {
 .day__label { padding: 0; font: 700 14px/20px var(--font-body); }
 .shift { display: grid; grid-template-columns: 1fr 1fr var(--tap-min); gap: var(--space-2); align-items: end; }
 .shift__field { display: flex; flex-direction: column; gap: 4px; font: 600 13px/18px var(--font-body); min-width: 0; }
+/* Máy để giờ 12 tiếng hiện "10:00 PM": bớt đệm ngang để không bị cắt ở 375px. */
+.shift .rd-input { padding: 0 var(--space-2); }
+@media (max-width: 480px) {
+  .shift .rd-input::-webkit-calendar-picker-indicator { display: none; }
+}
 .add { align-self: flex-start; }
 .issue { margin: 0; }
 </style>

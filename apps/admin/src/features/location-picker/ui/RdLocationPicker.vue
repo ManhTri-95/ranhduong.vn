@@ -2,6 +2,8 @@
 import { parseLatLng, type BBox, type LngLat } from '@ranhduong/contracts';
 import type { Map as MapLibreMap } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+// MapLibre tự tìm worker cạnh file của nó (import.meta.url); Vite gộp file đó lại nên phải chỉ đường dẫn worker do Vite xuất ra.
+import mapWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
 import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue';
 import { MAP_STYLE_URL } from '@/shared/config';
 import { bboxContains, expandBBox, formatLatLng, locationAfterMove, roundLngLat } from '../lib/geo-view';
@@ -32,6 +34,7 @@ onMounted(async () => {
     // Tải MapLibre khi form mở (ADR 0008), không nằm trong bundle chính của admin.
     const maplibre = await import('maplibre-gl');
     if (!container.value) return;
+    maplibre.setWorkerUrl(mapWorkerUrl);
     const instance = new maplibre.Map({
       container: container.value,
       style: MAP_STYLE_URL,
@@ -45,6 +48,8 @@ onMounted(async () => {
       boxZoom: false,
       dragRotate: false,
       pitchWithRotate: false,
+      // Ghi nguồn OpenStreetMap luôn hiện (ADR 0008), không thu vào nút (i) khi màn hẹp.
+      attributionControl: { compact: false },
       locale: LOCALE,
     });
     // Phóng to, thu nhỏ quanh tâm: ghim (ở tâm) không bị dời khi chỉ muốn nhìn gần hơn.
@@ -131,6 +136,8 @@ function applyCoords(): void {
 .picker { display: flex; flex-direction: column; gap: var(--space-3); }
 .frame { position: relative; height: 280px; border: var(--border); border-radius: var(--radius-card); overflow: hidden; background: var(--map-land); }
 .map { position: absolute; inset: 0; }
+/* Nút phóng to, thu nhỏ của MapLibre mặc định 29px; vùng bấm tối thiểu 44px. */
+.frame :deep(.maplibregl-ctrl-group button) { width: var(--tap-min); height: var(--tap-min); }
 .center-pin { position: absolute; left: 50%; top: 50%; width: 32px; height: 40px; transform: translate(-50%, -100%); pointer-events: none; z-index: 1; }
 .center-pin--unset path.drop { fill: var(--mist); stroke-dasharray: 4 3; }
 .map-failed { position: absolute; left: var(--space-3); right: var(--space-3); bottom: var(--space-3); z-index: 2; }
