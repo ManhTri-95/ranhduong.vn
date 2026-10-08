@@ -1,4 +1,4 @@
-import { CitySeed } from '@ranhduong/contracts';
+import { CitySeed, PlaceEditInput } from '@ranhduong/contracts';
 import { Types } from 'mongoose';
 
 // Dữ liệu giả cho test, tên rõ là giả, toạ độ quanh [0, 0] để không trùng địa điểm thật nào.
@@ -54,4 +54,9 @@ export function fakePlaceDoc(cityId: string, overrides: Record<string, unknown> 
     ratingCount: 0,
     ...overrides,
   };
+}
+
+/** Thân form giả (PlaceEditInput đã parse): mặc định tên "Quán Giả Lập", danh mục cafe. */
+export function fakeEditInput(overrides: Record<string, unknown> = {}): PlaceEditInput {
+  return PlaceEditInput.parse({ name: 'Quán Giả Lập', category: 'cafe', ...overrides });
 }

@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import type { OpeningSlot, PlaceCategory, VerifySource } from '@ranhduong/contracts';
+import type { OpeningSlot, PlaceCategory, PlaceStatus, VerifySource } from '@ranhduong/contracts';
 import { Types } from 'mongoose';
+import type { EditRow, PlaceUpdate } from './place-edit';
 import type { ListedPlace } from './place-listing';
 import { PLACE_MODEL, type PlaceModel } from './schemas/place.schema';
 
@@ -85,6 +86,64 @@ export class PlacesRepository {
       lastVerifiedAt: d.lastVerifiedAt ?? undefined,
       coverKey: d.photos?.[0]?.key,
     }));
+  }
+
+  /** Địa điểm theo id để sửa trong admin; không có thì null. */
+  async findForEdit(id: string): Promise<EditRow | null> {
+    return this.places.findById(id).lean<EditRow>();
+  }
+
+  /** Tạo nháp từ form admin; trùng slug thì Mongo ném E11000 để service tính lại slug. */
+  async insertDraft(cityId: string, fields: Record<string, unknown>): Promise<string> {
+    const doc = await new this.places({ ...fields, cityId: new Types.ObjectId(cityId), status: 'draft', source: 'admin' }).save();
+    return doc._id.toString();
+  }
+
+  /** Slug và slug cũ (slugHistory) trong thành phố khớp `base` hoặc `base-<số>`, trừ địa điểm `excludeId`. */
+  async takenSlugs(cityId: string, base: string, excludeId?: string): Promise<Set<string>> {
+    // base là slug (chỉ a-z, 0-9, '-') nên đưa thẳng vào RegExp được.
+    const pattern = new RegExp(`^${base}(-\\d+)?$`);
+    const docs = await this.places
+      .find(
+        {
+          cityId: new Types.ObjectId(cityId),
+          ...(excludeId ? { _id: { $ne: new Types.ObjectId(excludeId) } } : {}),
+          $or: [{ slug: pattern }, { slugHistory: pattern }],
+        },
+        { slug: 1, slugHistory: 1 },
+      )
+      .lean();
+    const taken = new Set<string>();
+    for (const doc of docs) {
+      for (const slug of [doc.slug, ...(doc.slugHistory ?? [])]) if (pattern.test(slug)) taken.add(slug);
+    }
+    return taken;
+  }
+
+  /** PUT: thay các trường form, chỉ khi trạng thái vẫn là `expectedStatus`; trạng thái đã đổi thì null. */
+  async replaceEditable(id: string, expectedStatus: PlaceStatus, update: PlaceUpdate): Promise<EditRow | null> {
+    const { $set, $unset } = update;
+    return this.places
+      .findOneAndUpdate(
+        { _id: new Types.ObjectId(id), status: expectedStatus },
+        Object.keys($unset).length > 0 ? { $set, $unset } : { $set },
+        { returnDocument: 'after', runValidators: true },
+      )
+      .lean<EditRow>();
+  }
+
+  /**
+   * Nháp → active, chỉ khi document chưa đổi từ lúc kiểm điều kiện (so updatedAt; null là document chèn thẳng,
+   * chưa có updatedAt); đã đổi thì null. lastVerifiedAt là lúc kích hoạt.
+   */
+  async activate(id: string, expectedUpdatedAt: Date | null, now: Date): Promise<EditRow | null> {
+    return this.places
+      .findOneAndUpdate(
+        { _id: new Types.ObjectId(id), status: 'draft', updatedAt: expectedUpdatedAt ?? { $exists: false } },
+        { $set: { status: 'active', lastVerifiedAt: now } },
+        { returnDocument: 'after' },
+      )
+      .lean<EditRow>();
   }
 
   /** placeId → key ảnh đầu tiên, chỉ địa điểm active có ảnh. */

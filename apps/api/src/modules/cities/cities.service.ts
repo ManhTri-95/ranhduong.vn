@@ -46,6 +46,11 @@ export class CitiesService {
     return zone;
   }
 
+  /** Các cụm của thành phố (id, slug, tên) theo thứ tự seed. */
+  zones(cityId: string): Promise<ZoneRef[]> {
+    return this.repo.listZones(cityId);
+  }
+
   /** zoneId → tên cụm, để thẻ địa điểm hiện "Cà phê · Trung tâm". */
   async zoneNames(cityId: string): Promise<Map<string, string>> {
     const zones = await this.repo.listZones(cityId);

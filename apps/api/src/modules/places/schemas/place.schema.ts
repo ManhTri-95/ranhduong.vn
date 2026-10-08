@@ -45,7 +45,9 @@ export const PlaceSchema = new Schema(
     nameNorm: { type: String, default: '' },
     category: { type: String, enum: PlaceCategory.options, required: true },
     tags: { type: [String], default: [] },
-    location: { type: PointSchema, required: true },
+    // Nháp có thể chưa ghim; kích hoạt mới bắt buộc (activationIssues). Không có toạ độ thì không có trường location,
+    // index 2dsphere bỏ qua document đó.
+    location: { type: PointSchema },
     address: { type: String },
     checkinRadiusM: { type: Number, default: DEFAULT_CHECKIN_RADIUS_M },
     openingHours: { type: [OpeningSlotSchema], default: [] },
