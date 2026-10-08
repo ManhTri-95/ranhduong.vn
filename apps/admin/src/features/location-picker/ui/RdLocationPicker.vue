@@ -6,7 +6,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import mapWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
 import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue';
 import { MAP_STYLE_URL } from '@/shared/config';
-import { bboxContains, expandBBox, formatLatLng, locationAfterMove, roundLngLat } from '../lib/geo-view';
+import { bboxContains, canPinHere, expandBBox, formatLatLng, locationAfterMove, MIN_PIN_ZOOM, roundLngLat, type MoveGesture } from '../lib/geo-view';
 
 const props = defineProps<{ modelValue: LngLat | null; cityCenter: LngLat; cityBounds: BBox }>();
 const emit = defineEmits<{ 'update:modelValue': [value: LngLat | null] }>();
@@ -24,7 +24,10 @@ const LOCALE = {
 
 const container = ref<HTMLDivElement | null>(null);
 const map = shallowRef<MapLibreMap | null>(null);
+const mapLoaded = ref(false);
 const mapFailed = ref(false);
+const zoom = ref(props.modelValue ? 17 : 12);
+const pinAllowed = computed(() => canPinHere({ loaded: mapLoaded.value, failed: mapFailed.value, zoom: zoom.value }));
 const coordText = ref('');
 const coordError = ref<string | null>(null);
 const outside = computed(() => props.modelValue !== null && !bboxContains(props.cityBounds, props.modelValue));
@@ -39,8 +42,9 @@ onMounted(async () => {
       container: container.value,
       style: MAP_STYLE_URL,
       center: props.modelValue ?? props.cityCenter,
-      zoom: props.modelValue ? 17 : 12,
-      minZoom: 9,
+      zoom: zoom.value,
+      // ui-spec mục 6: minZoom khoảng 11; ở mức này khung nhìn còn nằm gọn trong maxBounds nên thu nhỏ không đẩy tâm.
+      minZoom: 11,
       maxBounds: expandBBox(props.cityBounds, PAN_MARGIN_DEG),
       // Form dài: một ngón tay vẫn cuộn trang, hai ngón mới kéo bản đồ.
       cooperativeGestures: true,
@@ -57,9 +61,20 @@ onMounted(async () => {
     instance.touchZoomRotate.enable({ around: 'center' });
     instance.touchZoomRotate.disableRotation();
     instance.addControl(new maplibre.NavigationControl({ showCompass: false }), 'top-right');
+    // Chỉ kéo bản đồ mới dời ghim; phóng to, thu nhỏ không dời (khung maxBounds có thể đẩy tâm đi khi thu nhỏ).
+    let dragging = false;
+    instance.on('dragstart', () => {
+      dragging = true;
+    });
     instance.on('moveend', (event) => {
-      const next = locationAfterMove(props.modelValue, instance.getCenter().toArray(), event.originalEvent !== undefined);
+      const gesture: MoveGesture = dragging ? 'drag' : event.originalEvent ? 'zoom' : 'program';
+      dragging = false;
+      zoom.value = instance.getZoom();
+      const next = locationAfterMove(props.modelValue, instance.getCenter().toArray(), gesture);
       if (next !== props.modelValue) emit('update:modelValue', next);
+    });
+    instance.on('load', () => {
+      mapLoaded.value = true;
     });
     instance.on('error', () => {
       if (!instance.isStyleLoaded()) mapFailed.value = true;
@@ -83,8 +98,14 @@ watch(
 );
 
 function pinHere(): void {
-  if (map.value) emit('update:modelValue', roundLngLat(map.value.getCenter().toArray()));
+  if (map.value && pinAllowed.value) emit('update:modelValue', roundLngLat(map.value.getCenter().toArray()));
 }
+
+const hint = computed(() => {
+  if (props.modelValue) return 'Kéo bản đồ (hai ngón trên điện thoại) cho ghim nằm đúng cửa quán.';
+  if (mapLoaded.value && zoom.value < MIN_PIN_ZOOM) return 'Phóng to tới khi thấy rõ đường, nhà, kéo bản đồ cho ghim nằm đúng chỗ rồi bấm "Ghim ở đây".';
+  return 'Kéo bản đồ cho ghim nằm đúng chỗ rồi bấm "Ghim ở đây".';
+});
 
 function applyCoords(): void {
   const point = parseLatLng(coordText.value);
@@ -108,11 +129,9 @@ function applyCoords(): void {
       </svg>
       <p v-if="mapFailed" class="rd-callout rd-callout--warn map-failed">Chưa tải được bản đồ. Vẫn dán toạ độ bên dưới được.</p>
     </div>
-    <p class="rd-field__hint">
-      {{ modelValue ? 'Kéo bản đồ (hai ngón trên điện thoại) cho ghim nằm đúng cửa quán.' : 'Kéo bản đồ cho ghim nằm đúng chỗ rồi bấm "Ghim ở đây".' }}
-    </p>
+    <p class="rd-field__hint">{{ hint }}</p>
     <div class="actions">
-      <button v-if="!modelValue" type="button" class="rd-btn rd-btn--primary" :disabled="!map" @click="pinHere">Ghim ở đây</button>
+      <button v-if="!modelValue" type="button" class="rd-btn rd-btn--primary" :disabled="!pinAllowed" @click="pinHere">Ghim ở đây</button>
       <template v-else>
         <span class="coords">{{ formatLatLng(modelValue) }}</span>
         <button type="button" class="rd-btn rd-btn--outline" @click="emit('update:modelValue', null)">Bỏ ghim</button>

@@ -1,15 +1,26 @@
 import { parseLatLng } from '@ranhduong/contracts';
 import { describe, expect, it } from 'vitest';
-import { bboxContains, expandBBox, formatLatLng, locationAfterMove, roundLngLat } from './geo-view';
+import { bboxContains, canPinHere, expandBBox, formatLatLng, locationAfterMove, roundLngLat } from './geo-view';
 
 describe('locationAfterMove', () => {
-  it('chưa ghim: phóng to, kéo bản đồ để tìm chỗ không tự đặt toạ độ', () => {
-    expect(locationAfterMove(null, [0.2, 0.2], true)).toBeNull();
-    expect(locationAfterMove(null, [0.2, 0.2], false)).toBeNull();
+  it('chưa ghim: kéo, phóng to bản đồ để tìm chỗ không tự đặt toạ độ', () => {
+    for (const gesture of ['drag', 'zoom', 'program'] as const) {
+      expect(locationAfterMove(null, [0.2, 0.2], gesture), gesture).toBeNull();
+    }
   });
-  it('đã ghim: người dùng kéo bản đồ thì ghim theo tâm; bản đồ tự dịch (sau khi dán toạ độ) thì giữ nguyên', () => {
-    expect(locationAfterMove([0.1, 0.1], [0.2000001234, 0.2], true)).toEqual([0.2, 0.2]);
-    expect(locationAfterMove([0.1, 0.1], [0.2, 0.2], false)).toEqual([0.1, 0.1]);
+  it('đã ghim: chỉ kéo bản đồ mới dời ghim; phóng to, thu nhỏ (kể cả khi khung bản đồ đẩy tâm đi) hay bản đồ tự dịch thì giữ nguyên', () => {
+    expect(locationAfterMove([0.1, 0.1], [0.2000001234, 0.2], 'drag')).toEqual([0.2, 0.2]);
+    expect(locationAfterMove([0.1, 0.1], [0.2, 0.2], 'zoom')).toEqual([0.1, 0.1]);
+    expect(locationAfterMove([0.1, 0.1], [0.2, 0.2], 'program')).toEqual([0.1, 0.1]);
+  });
+});
+
+describe('canPinHere', () => {
+  it('chỉ ghim được khi bản đồ đã tải xong, không lỗi và đủ gần để thấy đường, nhà', () => {
+    expect(canPinHere({ loaded: true, failed: false, zoom: 15 })).toBe(true);
+    expect(canPinHere({ loaded: false, failed: false, zoom: 16 })).toBe(false);
+    expect(canPinHere({ loaded: true, failed: true, zoom: 16 })).toBe(false);
+    expect(canPinHere({ loaded: true, failed: false, zoom: 14.9 })).toBe(false);
   });
 });
 

@@ -21,12 +21,23 @@ export function roundLngLat([lng, lat]: LngLat): LngLat {
   return [round(lng), round(lat)];
 }
 
+/** Bản đồ vừa dịch vì: người dùng kéo; phóng to, thu nhỏ; hoặc code tự dịch (dán toạ độ). */
+export type MoveGesture = 'drag' | 'zoom' | 'program';
+
 /**
- * Toạ độ sau khi bản đồ dừng di chuyển. Chưa ghim thì vẫn chưa ghim: phóng to, kéo để tìm chỗ không được tự đặt
- * toạ độ (chỉ nút "Ghim ở đây" hoặc dán toạ độ mới đặt). Đã ghim thì người dùng kéo bản đồ là dời ghim theo tâm;
- * bản đồ tự dịch (sau khi dán toạ độ) thì giữ nguyên.
+ * Toạ độ sau khi bản đồ dừng di chuyển. Chưa ghim thì vẫn chưa ghim: kéo, phóng to để tìm chỗ không được tự đặt
+ * toạ độ (chỉ nút "Ghim ở đây" hoặc dán toạ độ mới đặt). Đã ghim thì chỉ khi người dùng kéo bản đồ mới dời ghim theo
+ * tâm; phóng to, thu nhỏ không dời ghim, kể cả khi khung giới hạn (maxBounds) đẩy tâm bản đồ đi.
  */
-export function locationAfterMove(current: LngLat | null, center: LngLat, byUser: boolean): LngLat | null {
-  if (current === null || !byUser) return current;
+export function locationAfterMove(current: LngLat | null, center: LngLat, gesture: MoveGesture): LngLat | null {
+  if (current === null || gesture !== 'drag') return current;
   return roundLngLat(center);
+}
+
+/** Mức phóng to tối thiểu để ghim: đủ gần để thấy đường, nhà, tránh ghim nhầm ở mức nhìn cả thành phố. */
+export const MIN_PIN_ZOOM = 15;
+
+/** Nút "Ghim ở đây" chỉ dùng được khi bản đồ đã tải xong, không lỗi và đủ gần (không ghim vào tâm thành phố khi bản đồ trắng). */
+export function canPinHere({ loaded, failed, zoom }: { loaded: boolean; failed: boolean; zoom: number }): boolean {
+  return loaded && !failed && zoom >= MIN_PIN_ZOOM;
 }
