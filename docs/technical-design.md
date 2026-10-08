@@ -208,6 +208,10 @@ flowchart TB
     pl_suspected -->|"xác minh còn mở"| pl_active
     pl_suspected -->|"đã đóng"| pl_closed["closed"]
     pl_active -->|"admin ẩn"| pl_hidden["hidden"]
+    pl_hidden -->|"admin hiện lại"| pl_active
+    pl_active -->|"admin đánh dấu đóng"| pl_closed
+    pl_hidden -->|"admin đánh dấu đóng"| pl_closed
+    pl_closed -->|"admin mở lại"| pl_active
     pl_draft -->|"merge (từ mọi trạng thái)"| pl_merged["merged"]
   end
   subgraph sg_voucher_claim["VoucherClaim · Voucher đã nhận"]
@@ -223,7 +227,7 @@ flowchart TB
   sg_submission ~~~ sg_place ~~~ sg_voucher_claim ~~~ sg_reward
 ```
 
-Trạng thái cuối (`approved`, `rejected`, `merged`, `closed`, `used`, các `expired`) không chuyển tiếp, trừ `closed` khi admin mở lại thủ công; `active` sang `suspected` sau 3 báo cáo đóng cửa khác người trong 14 ngày. Quyền thực hiện từng chuyển đổi theo ma trận ở mục 5.
+Trạng thái cuối (`approved`, `rejected`, `merged`, `closed`, `used`, các `expired`) không chuyển tiếp, trừ `closed` khi admin mở lại thủ công; `active` sang `suspected` sau 3 báo cáo đóng cửa khác người trong 14 ngày. Quyền thực hiện từng chuyển đổi theo ma trận ở mục 5. Nháp không ẩn hay đóng mà xoá hẳn được (S07, chỉ khi còn là nháp); mọi chuyển sang `active` kiểm điều kiện kích hoạt.
 
 ## 5. Xác thực và phân quyền
 
@@ -316,6 +320,10 @@ REST JSON dưới `/v1`, thành phố nằm trong path (`/v1/cities/:city/…`);
 | POST | `/admin/places/:id/activate` | Nháp sang active khi có toạ độ, giờ hợp lệ, nguồn xác nhận, mọi ảnh có nguồn |
 | POST | `/admin/cities/:city/places/duplicate-check` | Body `{ name, location?, phone?, fanpage?, excludeId? }`; chỗ nghi trùng (mục 9) |
 | GET | `/admin/cities/:city/zones/suggest?lng=&lat=` | Cụm gợi ý cho điểm ghim |
+| GET | `/admin/cities/:city/places` | Mọi địa điểm chưa gộp cho danh sách admin (S07), kèm mã điều kiện kích hoạt còn thiếu |
+| POST | `/admin/places/:id/verify` | Body `{ verifySource }`; đặt `lastVerifiedAt`; nháp, chỗ bị nghi ngờ thành active (S07) |
+| POST | `/admin/places/:id/status` | Body `{ action: hide \| unhide \| close \| reopen }` (S07) |
+| DELETE | `/admin/places/:id` | Xoá hẳn, chỉ nháp (S07) |
 | POST | `/admin/claims/:id/approve` hoặc `/reject` | Duyệt chủ quán |
 | GET/POST | `/admin/leaderboard/:month` | Xem snapshot, chốt, gán quà |
 | PATCH | `/admin/users/:id/roles` | Đổi vai trò |
