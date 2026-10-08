@@ -14,7 +14,7 @@ import {
   type PlaceCategory,
   type PlaceStatus,
 } from '@ranhduong/contracts';
-import { computed } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 import { RouterLink } from 'vue-router';
 import RdDuplicateWarning from '@/features/duplicate-warning/ui/RdDuplicateWarning.vue';
 import RdLocationPicker from '@/features/location-picker/ui/RdLocationPicker.vue';
@@ -28,7 +28,19 @@ const props = defineProps<{ placeId: string | null }>();
 const emit = defineEmits<{ created: [id: string] }>();
 
 const editor = usePlaceEditor(props.placeId, (id) => emit('created', id));
-const { load, city, place, form, errors, notice, busy, restorable, duplicates, duplicateFailed, zoneSuggestion, status, dirty, issues } = editor;
+const { load, city, place, form, errors, notice, busy, restorable, localKept, duplicates, duplicateFailed, zoneSuggestion, status, dirty, issues } = editor;
+
+const editorEl = ref<HTMLElement | null>(null);
+const noticeEl = ref<HTMLElement | null>(null);
+// Nút Lưu, Kích hoạt nằm ở thanh dưới, còn thông báo ở đầu form dài: lỗi thì đưa ô sai đầu tiên (hoặc thông báo) vào tầm nhìn.
+watch(notice, async (value) => {
+  if (value?.kind !== 'bad') return;
+  await nextTick();
+  const invalid = editorEl.value?.querySelector<HTMLElement>('[aria-invalid="true"]');
+  const target = invalid ?? noticeEl.value;
+  target?.scrollIntoView({ block: 'center' });
+  target?.focus({ preventScroll: true });
+});
 
 const STATUS_CLASS: Record<PlaceStatus, string> = {
   draft: 'rd-status--draft',
@@ -64,7 +76,7 @@ const differsZone = computed(() => (zoneSuggestion.value.kind === 'differs' ? zo
 const loginReturnTo = computed(() => `/dia-diem/${editor.placeId.value ?? 'moi'}`);
 const saveState = computed(() => {
   if (busy.value) return '';
-  if (dirty.value) return 'Có thay đổi chưa lưu lên máy chủ (đã giữ trên máy này).';
+  if (dirty.value) return localKept.value ? 'Có thay đổi chưa lưu lên máy chủ (đã giữ trên máy này).' : 'Có thay đổi chưa lưu lên máy chủ.';
   return place.value ? 'Đã lưu.' : '';
 });
 const photoComplete = (photo: AdminPlacePhoto) => PlacePhoto.safeParse(photo).success;
@@ -80,7 +92,7 @@ const photoCredit = (photo: AdminPlacePhoto) => [photo.credit, photo.license].fi
     <p class="line">{{ load.message }}</p>
     <button type="button" class="rd-btn rd-btn--outline" @click="editor.retry">Thử lại</button>
   </div>
-  <div v-else class="editor">
+  <div v-else ref="editorEl" class="editor">
     <header class="head">
       <h1 class="title">{{ place ? place.name : 'Thêm địa điểm' }}</h1>
       <span :class="['rd-status', STATUS_CLASS[status]]">{{ PLACE_STATUS_LABEL[status] }}</span>
@@ -100,7 +112,13 @@ const photoCredit = (photo: AdminPlacePhoto) => [photo.credit, photo.license].fi
       </div>
     </div>
 
-    <div v-if="notice" :class="['rd-callout', notice.kind === 'ok' ? 'rd-callout--ok' : 'rd-callout--bad']" :role="notice.kind === 'ok' ? 'status' : 'alert'">
+    <div
+      v-if="notice"
+      ref="noticeEl"
+      tabindex="-1"
+      :class="['rd-callout', 'notice', notice.kind === 'ok' ? 'rd-callout--ok' : 'rd-callout--bad']"
+      :role="notice.kind === 'ok' ? 'status' : 'alert'"
+    >
       <p v-for="(message, i) in notice.messages" :key="i" class="line">{{ message }}</p>
       <RouterLink v-if="notice.login" :to="{ path: '/dang-nhap', query: { returnTo: loginReturnTo } }">Đăng nhập lại</RouterLink>
     </div>

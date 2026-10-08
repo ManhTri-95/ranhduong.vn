@@ -1,5 +1,5 @@
 import { ObjectIdString, type AdminPlace, type CityPublic, type DuplicateMatch, type LngLat } from '@ranhduong/contracts';
-import { computed, onBeforeUnmount, ref, shallowRef, watch } from 'vue';
+import { computed, onScopeDispose, ref, shallowRef, watch } from 'vue';
 import { z } from 'zod';
 import { fetchCity, fetchZoneSuggestions } from '@/entities/city/api/city';
 import { activatePlace, checkDuplicates, createPlace, fetchPlace, updatePlace } from '@/entities/place/api/places';
@@ -35,11 +35,13 @@ export interface Restorable {
 
 const clone = (form: PlaceFormState): PlaceFormState => PlaceFormState.parse(form);
 
-function failureNotice(failure: ApiFailure): Notice {
-  if (failure.status === 401) {
-    return { kind: 'bad', messages: ['Phiên đăng nhập đã hết. Đăng nhập lại, bản đang sửa vẫn được giữ trên máy này.'], login: true };
-  }
-  if (failure.status === 0) return { kind: 'bad', messages: ['Chưa kết nối được máy chủ. Bản đang sửa vẫn được giữ trên máy này, thử lại sau.'] };
+/** Câu lỗi khi lưu; chỉ nói "đã giữ trên máy" khi lần ghi vào máy gần nhất thành công. */
+function failureNotice(failure: ApiFailure, kept: boolean): Notice {
+  const keep = kept
+    ? 'Bản đang sửa vẫn được giữ trên máy này.'
+    : 'Trình duyệt không cho lưu bản đang sửa trên máy, đừng tải lại hay đóng trang trước khi lưu được.';
+  if (failure.status === 401) return { kind: 'bad', messages: ['Phiên đăng nhập đã hết, đăng nhập lại.', keep], login: true };
+  if (failure.status === 0) return { kind: 'bad', messages: ['Chưa kết nối được máy chủ, thử lại sau.', keep] };
   const messages = failureMessages(failure);
   return { kind: 'bad', messages: messages.length > 0 ? messages : ['Chưa lưu được, thử lại.'] };
 }
@@ -65,6 +67,8 @@ export function usePlaceEditor(initialId: string | null, onCreated: (id: string)
   const notice = ref<Notice | null>(null);
   const busy = ref<'save' | 'activate' | null>(null);
   const restorable = shallowRef<Restorable | null>(null);
+  /** Lần ghi bản đang sửa vào máy gần nhất có thành công không. */
+  const localKept = ref(false);
   const duplicates = shallowRef<DuplicateMatch[]>([]);
   const duplicateFailed = ref(false);
   const zoneSuggestion = shallowRef<ZoneHint>({ kind: 'none' });
@@ -96,18 +100,27 @@ export function usePlaceEditor(initialId: string | null, onCreated: (id: string)
     }
   }
 
-  // Tự giữ bản đang sửa trên máy (chủ dự án chọn 2026-10-08). Đang hỏi khôi phục thì chưa ghi đè bản cũ.
+  // Tự giữ bản đang sửa trên máy (chủ dự án chọn 2026-10-08). Đang hỏi khôi phục thì bản cũ đã nằm trong
+  // `restorable`, nên sửa tiếp vẫn ghi đè được; chỉ không xoá bản cũ khi form chưa đổi gì.
   let localTimer: ReturnType<typeof setTimeout> | undefined;
+  function flushLocal(): boolean {
+    clearTimeout(localTimer);
+    localTimer = undefined;
+    if (load.value.kind !== 'ready') return localKept.value;
+    const key = draftKey(placeId.value);
+    if (dirty.value) localKept.value = writeLocalDraft<StoredDraft>(key, { form: form.value, baseUpdatedAt: place.value?.updatedAt ?? null });
+    else if (!restorable.value) {
+      removeLocalDraft(key);
+      localKept.value = false;
+    }
+    return localKept.value;
+  }
   watch(
     form,
     () => {
-      if (load.value.kind !== 'ready' || restorable.value) return;
+      if (load.value.kind !== 'ready') return;
       clearTimeout(localTimer);
-      localTimer = setTimeout(() => {
-        const key = draftKey(placeId.value);
-        if (dirty.value) writeLocalDraft<StoredDraft>(key, { form: form.value, baseUpdatedAt: place.value?.updatedAt ?? null });
-        else removeLocalDraft(key);
-      }, LOCAL_SAVE_MS);
+      localTimer = setTimeout(flushLocal, LOCAL_SAVE_MS);
     },
     { deep: true },
   );
@@ -194,7 +207,7 @@ export function usePlaceEditor(initialId: string | null, onCreated: (id: string)
     const result = formToInput(form.value);
     if (!result.ok) {
       errors.value = result.errors;
-      notice.value = { kind: 'bad', messages: [`Còn ${Object.keys(result.errors).length} ô cần sửa, xem chữ đỏ bên dưới.`] };
+      notice.value = { kind: 'bad', messages: [`Còn ${Object.keys(result.errors).length} ô cần sửa, xem chữ đỏ dưới từng ô.`] };
       return null;
     }
     errors.value = {};
@@ -207,7 +220,10 @@ export function usePlaceEditor(initialId: string | null, onCreated: (id: string)
       saved.value = formFromPlace(updated);
       // Không gõ thêm trong lúc chờ thì lấy giá trị server đã chuẩn hoá (số điện thoại +84…).
       if (JSON.stringify(form.value) === sent) form.value = clone(saved.value);
+      clearTimeout(localTimer);
       removeLocalDraft(draftKey(id));
+      localKept.value = false;
+      restorable.value = null;
       if (!id) {
         placeId.value = updated.id;
         onCreated(updated.id);
@@ -215,7 +231,7 @@ export function usePlaceEditor(initialId: string | null, onCreated: (id: string)
       notice.value = { kind: 'ok', messages: [updated.status === 'draft' ? 'Đã lưu nháp.' : 'Đã lưu thay đổi.'] };
       return updated;
     } catch (err) {
-      notice.value = failureNotice(toApiFailure(err));
+      notice.value = failureNotice(toApiFailure(err), flushLocal());
       return null;
     } finally {
       busy.value = null;
@@ -234,7 +250,7 @@ export function usePlaceEditor(initialId: string | null, onCreated: (id: string)
       form.value = clone(saved.value);
       notice.value = { kind: 'ok', messages: ['Đã kích hoạt.'] };
     } catch (err) {
-      notice.value = failureNotice(toApiFailure(err));
+      notice.value = failureNotice(toApiFailure(err), flushLocal());
     } finally {
       busy.value = null;
     }
@@ -247,13 +263,15 @@ export function usePlaceEditor(initialId: string | null, onCreated: (id: string)
     form.value = clone(local.form);
   }
 
+  /** Bỏ bản cũ trên máy; nếu đã sửa tiếp trên form này thì giữ lại bản đang sửa thay vào chỗ đó. */
   function discardLocal(): void {
-    removeLocalDraft(draftKey(placeId.value));
     restorable.value = null;
+    flushLocal();
   }
 
-  onBeforeUnmount(() => {
-    clearTimeout(localTimer);
+  // Rời form (đổi trang, đóng component) khi chưa tới lượt tự lưu thì ghi ngay vào máy.
+  onScopeDispose(() => {
+    if (localTimer !== undefined) flushLocal();
     clearTimeout(duplicateTimer);
     clearTimeout(zoneTimer);
   });
@@ -269,6 +287,7 @@ export function usePlaceEditor(initialId: string | null, onCreated: (id: string)
     notice,
     busy,
     restorable,
+    localKept,
     duplicates,
     duplicateFailed,
     zoneSuggestion,
