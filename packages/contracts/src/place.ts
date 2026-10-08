@@ -26,6 +26,19 @@ export const PlaceContact = z.object({
 });
 export type PlaceContact = z.infer<typeof PlaceContact>;
 
+/**
+ * Chuẩn hoá số điện thoại Việt Nam về dạng +84… (data-collection mục 4): bỏ khoảng trắng, dấu chấm, gạch, ngoặc;
+ * số bắt đầu bằng 0 hoặc 84 đổi thành +84. Không đọc được thì null.
+ */
+export function normalizeVnPhone(input: string): string | null {
+  const compact = input.replace(/[\s.\-()]/g, '');
+  let local: string | null = null;
+  if (compact.startsWith('+84')) local = compact.slice(3);
+  else if (compact.startsWith('0')) local = compact.slice(1);
+  else if (compact.startsWith('84') && compact.length >= 11) local = compact.slice(2);
+  return local !== null && /^\d{9,10}$/.test(local) ? `+84${local}` : null;
+}
+
 /** Chỉ lưu định danh, không lưu nội dung của Google (ADR 0001). */
 export const PlaceIds = z.object({
   googlePlaceId: z.string().min(1).optional(),
@@ -34,8 +47,8 @@ export const PlaceIds = z.object({
 export type PlaceIds = z.infer<typeof PlaceIds>;
 
 /**
- * Địa điểm như lưu trong DB (technical-design mục 3). Nháp (OSM, import CSV) chỉ cần các trường bắt buộc;
- * điều kiện kích hoạt (toạ độ, giờ, nguồn xác nhận, ảnh có nguồn) kiểm ở S05/S07.
+ * Địa điểm như lưu trong DB (technical-design mục 3). Nháp (form admin, OSM, import CSV) chỉ cần các trường bắt buộc,
+ * kể cả chưa ghim toạ độ; điều kiện kích hoạt kiểm bằng activationIssues (place-admin.ts).
  */
 export const Place = z.object({
   cityId: ObjectIdString,
@@ -48,7 +61,7 @@ export const Place = z.object({
   nameNorm: z.string(),
   category: PlaceCategory,
   tags: z.array(Slug).default([]),
-  location: GeoPoint,
+  location: GeoPoint.optional(),
   address: z.string().trim().min(1).optional(),
   checkinRadiusM: z.number().int().positive().default(DEFAULT_CHECKIN_RADIUS_M),
   openingHours: z.array(OpeningSlot).default([]),

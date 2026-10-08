@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-/** Mã lỗi API (technical-design mục 6); INTERNAL_ERROR cho lỗi hệ thống không lường trước. */
+/** Mã lỗi API (technical-design mục 6); CONFLICT khi bản ghi vừa bị request khác đổi; INTERNAL_ERROR cho lỗi không lường trước. */
 export const ErrorCode = z.enum([
   'UNAUTHENTICATED',
   'FORBIDDEN',
@@ -17,6 +17,7 @@ export const ErrorCode = z.enum([
   'VOUCHER_OUT_OF_WINDOW',
   'CONTACT_REQUIRED',
   'NOT_ENOUGH_PLACES',
+  'CONFLICT',
   'INTERNAL_ERROR',
 ]);
 export type ErrorCode = z.infer<typeof ErrorCode>;

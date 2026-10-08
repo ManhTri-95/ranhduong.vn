@@ -8,4 +8,5 @@ export * from './itinerary.js';
 export * from './labels.js';
 export * from './opening-hours.js';
 export * from './place-cursor.js';
+export * from './place-admin.js';
 export * from './place.js';

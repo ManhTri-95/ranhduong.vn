@@ -31,3 +31,11 @@ export const BBox = z
   .tuple([Lng, Lat, Lng, Lat])
   .refine(([west, south, east, north]) => west < east && south < north, 'Khung bản đồ cần tây < đông và nam < bắc');
 export type BBox = z.infer<typeof BBox>;
+
+/** Đọc toạ độ "lat,lng" như cột latlng của Google Sheet (data-collection mục 5); trả [lng, lat], sai dạng thì null. */
+export function parseLatLng(input: string): LngLat | null {
+  const match = /^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$/.exec(input);
+  if (!match) return null;
+  const parsed = LngLat.safeParse([Number(match[2]), Number(match[1])]);
+  return parsed.success ? parsed.data : null;
+}

@@ -1,4 +1,4 @@
-import type { PlaceCategory } from './enums.js';
+import type { BestTime, PlaceCategory, PlaceStatus, Transport } from './enums.js';
 import type { ItineraryPace, ItineraryTransport } from './itinerary.js';
 
 /** Tên danh mục hiển thị cho người dùng. */
@@ -65,3 +65,25 @@ export function formatTripLength(days: number): string {
 export function itineraryMeta(card: { days: number; transport: ItineraryTransport; pace: ItineraryPace }): string {
   return [formatTripLength(card.days), TRANSPORT_LABEL[card.transport], PACE_LABEL[card.pace]].join(' · ');
 }
+
+/** Thời điểm đẹp để ghé (Place.bestTime). */
+export const BEST_TIME_LABEL: Record<BestTime, string> = {
+  sunrise: 'Bình minh',
+  morning: 'Buổi sáng',
+  afternoon: 'Buổi chiều',
+  sunset: 'Hoàng hôn',
+  evening: 'Buổi tối',
+};
+
+/** Phương tiện tới được địa điểm (Place.transport), viết hoa vì đứng đầu nhãn chọn. */
+export const PLACE_TRANSPORT_LABEL: Record<Transport, string> = { motorbike: 'Xe máy', car: 'Ô tô' };
+
+/** Trạng thái địa điểm trong quản trị (ui-spec mục 12). */
+export const PLACE_STATUS_LABEL: Record<PlaceStatus, string> = {
+  draft: 'Nháp',
+  active: 'Đang hiển thị',
+  suspected: 'Bị nghi ngờ',
+  hidden: 'Đã ẩn',
+  closed: 'Đã đóng cửa',
+  merged: 'Đã gộp',
+};

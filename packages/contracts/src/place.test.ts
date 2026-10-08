@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_CHECKIN_RADIUS_M,
   needsOwnerConfirmation,
+  normalizeVnPhone,
   PHOTO_WIDTHS,
   photoVariantKey,
   Place,
@@ -41,12 +42,17 @@ describe('Place', () => {
       ids: {},
     });
   });
-  it('bắt buộc cityId, slug, name, category, location, source', () => {
-    for (const key of ['cityId', 'slug', 'name', 'category', 'location', 'source']) {
+  it('bắt buộc cityId, slug, name, category, source', () => {
+    for (const key of ['cityId', 'slug', 'name', 'category', 'source']) {
       const rest: Record<string, unknown> = { ...DRAFT };
       delete rest[key];
       expect(Place.safeParse(rest).success, key).toBe(false);
     }
+  });
+  it('nháp chưa ghim toạ độ vẫn hợp lệ (kích hoạt mới bắt buộc toạ độ)', () => {
+    const rest: Record<string, unknown> = { ...DRAFT };
+    delete rest.location;
+    expect(Place.safeParse(rest).success).toBe(true);
   });
   it('ảnh phải có nguồn hợp lệ, người giữ bản quyền và giấy phép', () => {
     expect(Place.safeParse({ ...DRAFT, photos: [FAKE_PHOTO] }).success).toBe(true);
@@ -166,5 +172,19 @@ describe('PlaceListResponse', () => {
     expect(PlaceListResponse.safeParse({ items: [], tags: [{ slug: 'chill', count: 2 }], nextCursor: '0.-.a' }).success).toBe(true);
     expect(PlaceListResponse.safeParse({ items: [] }).success).toBe(false);
     expect(PlaceListResponse.safeParse({ items: [], tags: [{ slug: 'chill', count: 0 }] }).success).toBe(false);
+  });
+});
+
+describe('normalizeVnPhone', () => {
+  it('đưa số trong nước về dạng +84…', () => {
+    expect(normalizeVnPhone('0900 000 001')).toBe('+84900000001');
+    expect(normalizeVnPhone('+84 900.000.001')).toBe('+84900000001');
+    expect(normalizeVnPhone('84900000001')).toBe('+84900000001');
+    expect(normalizeVnPhone('(0900) 000-001')).toBe('+84900000001');
+  });
+  it('không đọc được thì null', () => {
+    for (const text of ['', 'abc', '12345', '+1 202 555 0100', '0900 000 00']) {
+      expect(normalizeVnPhone(text), text).toBeNull();
+    }
   });
 });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BBox, GeoPoint, GeoPolygon } from './geojson.js';
+import { BBox, GeoPoint, GeoPolygon, parseLatLng } from './geojson.js';
 
 const ring = (w: number, s: number, e: number, n: number) => [[w, s], [e, s], [e, n], [w, n], [w, s]];
 
@@ -41,5 +41,17 @@ describe('BBox', () => {
   it('từ chối tây >= đông hoặc nam >= bắc', () => {
     expect(BBox.safeParse([1, 0, 0, 1]).success).toBe(false);
     expect(BBox.safeParse([0, 1, 1, 0]).success).toBe(false);
+  });
+});
+
+describe('parseLatLng', () => {
+  it('đọc "lat,lng" của Google Sheet thành [lng, lat]', () => {
+    expect(parseLatLng('0.2,0.3')).toEqual([0.3, 0.2]);
+    expect(parseLatLng(' -0.25 , 0.5 ')).toEqual([0.5, -0.25]);
+  });
+  it('sai dạng hoặc ngoài phạm vi thì null', () => {
+    for (const text of ['', '0.2', '0.2;0.3', 'abc,def', '91,0', '0,181', '0.2,0.3,0.4']) {
+      expect(parseLatLng(text), text).toBeNull();
+    }
   });
 });
