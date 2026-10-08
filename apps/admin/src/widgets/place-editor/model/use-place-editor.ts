@@ -3,6 +3,7 @@ import { computed, onScopeDispose, ref, shallowRef, watch } from 'vue';
 import { z } from 'zod';
 import { fetchCity, fetchZoneSuggestions } from '@/entities/city/api/city';
 import { activatePlace, checkDuplicates, createPlace, fetchPlace, updatePlace } from '@/entities/place/api/places';
+import { placeDraftKey } from '@/entities/place/model/draft-key';
 import { failureMessages, toApiFailure, type ApiFailure } from '@/shared/api/errors';
 import { CITY_SLUG } from '@/shared/config';
 import { readLocalDraft, removeLocalDraft, writeLocalDraft } from '@/shared/lib/local-draft';
@@ -13,7 +14,6 @@ import { zoneHint, type ZoneHint } from './zone-hint';
 /** Bản đang sửa giữ trên máy: form và updatedAt của bản server lúc bắt đầu sửa (null khi tạo mới). */
 const StoredDraft = z.object({ form: PlaceFormState, baseUpdatedAt: z.string().nullable() });
 type StoredDraft = z.infer<typeof StoredDraft>;
-const draftKey = (id: string | null) => `rd-admin:place-draft:${id ?? 'moi'}`;
 
 /** Chờ ngừng gõ rồi mới ghi vào máy, kiểm trùng, gợi ý cụm. */
 const LOCAL_SAVE_MS = 800;
@@ -89,7 +89,7 @@ export function usePlaceEditor(initialId: string | null, onCreated: (id: string)
       city.value = cityData;
       place.value = placeData;
       saved.value = placeData ? formFromPlace(placeData) : emptyForm();
-      const local = readLocalDraft(draftKey(initialId), StoredDraft);
+      const local = readLocalDraft(placeDraftKey(initialId), StoredDraft);
       if (local && !sameForm(local.value.form, saved.value)) {
         restorable.value = { savedAt: local.savedAt, form: local.value.form, stale: local.value.baseUpdatedAt !== (placeData?.updatedAt ?? null) };
       }
@@ -108,7 +108,7 @@ export function usePlaceEditor(initialId: string | null, onCreated: (id: string)
     clearTimeout(localTimer);
     localTimer = undefined;
     if (load.value.kind !== 'ready') return localKept.value;
-    const key = draftKey(placeId.value);
+    const key = placeDraftKey(placeId.value);
     if (dirty.value) localKept.value = writeLocalDraft<StoredDraft>(key, { form: form.value, baseUpdatedAt: place.value?.updatedAt ?? null });
     else if (!restorable.value) {
       removeLocalDraft(key);
@@ -232,7 +232,7 @@ export function usePlaceEditor(initialId: string | null, onCreated: (id: string)
       // Không gõ thêm trong lúc chờ thì lấy giá trị server đã chuẩn hoá (số điện thoại +84…).
       if (JSON.stringify(form.value) === sent) form.value = clone(saved.value);
       clearTimeout(localTimer);
-      removeLocalDraft(draftKey(id));
+      removeLocalDraft(placeDraftKey(id));
       localKept.value = false;
       restorable.value = null;
       if (!id) {

@@ -12,10 +12,11 @@ import {
   Transport,
   type AdminPlacePhoto,
   type PlaceCategory,
-  type PlaceStatus,
 } from '@ranhduong/contracts';
 import { computed, nextTick, ref, watch } from 'vue';
 import { RouterLink } from 'vue-router';
+import { PLACE_STATUS_CLASS } from '@/entities/place/model/status';
+import { verifySourceOptions } from '@/entities/place/model/verify-options';
 import RdDuplicateWarning from '@/features/duplicate-warning/ui/RdDuplicateWarning.vue';
 import RdLocationPicker from '@/features/location-picker/ui/RdLocationPicker.vue';
 import RdOpeningHoursEditor from '@/features/opening-hours-editor/ui/RdOpeningHoursEditor.vue';
@@ -23,7 +24,6 @@ import { CITY_SLUG } from '@/shared/config';
 import { formatLocalTime } from '@/shared/lib/time';
 import { alsoCategoryChoices } from '../model/also-categories';
 import { usePlaceEditor } from '../model/use-place-editor';
-import { verifySourceOptions } from '../model/verify-options';
 
 const props = defineProps<{ placeId: string | null }>();
 const emit = defineEmits<{ created: [id: string] }>();
@@ -43,14 +43,6 @@ watch(notice, async (value) => {
   target?.focus({ preventScroll: true });
 });
 
-const STATUS_CLASS: Record<PlaceStatus, string> = {
-  draft: 'rd-status--draft',
-  active: 'rd-status--ok',
-  suspected: 'rd-status--bad',
-  hidden: 'rd-status--warn',
-  closed: 'rd-status--warn',
-  merged: 'rd-status--warn',
-};
 const PRICE_OPTIONS = [
   { value: '', label: 'Chưa rõ' },
   { value: '1', label: '1 · rẻ nhất' },
@@ -98,7 +90,7 @@ const photoCredit = (photo: AdminPlacePhoto) => [photo.credit, photo.license].fi
   <div v-else ref="editorEl" class="editor">
     <header class="head">
       <h1 class="title">{{ place ? place.name : 'Thêm địa điểm' }}</h1>
-      <span :class="['rd-status', STATUS_CLASS[status]]">{{ PLACE_STATUS_LABEL[status] }}</span>
+      <span :class="['rd-status', PLACE_STATUS_CLASS[status]]">{{ PLACE_STATUS_LABEL[status] }}</span>
       <p v-if="place" class="rd-field__hint">
         Đường dẫn: ranhduong.vn/{{ CITY_SLUG }}/dia-diem/{{ place.slug }}{{ status === 'draft' ? ' (đổi theo tên cho tới khi kích hoạt)' : '' }}
       </p>
