@@ -1,9 +1,9 @@
 import { z } from 'zod';
 import { ObjectIdString, Slug } from './common.js';
-import { BestTime, PhotoSource, PlaceCategory, PlaceStatus, Transport, VerifySource } from './enums.js';
+import { BestTime, PhotoSource, PlaceCategory, PlaceCover, PlaceStatus, Transport, VerifySource } from './enums.js';
 import { GeoPoint } from './geojson.js';
 import { OpeningSlot, openingHoursIssues } from './opening-hours.js';
-import { PlaceContact, PlacePhoto } from './place.js';
+import { AlsoCategories, alsoCategoriesIssue, PlaceContact, PlacePhoto } from './place.js';
 
 /** Nguồn xác nhận chọn trong form (ADR 0013): owner khi quán đã xác nhận; admin khi chỉ dựa trên Facebook hoặc là điểm công cộng. */
 export const AdminVerifySource = z.enum(['owner', 'admin']);
@@ -19,6 +19,7 @@ export const PlaceEditInput = z.object({
   name: text(120),
   aliases: z.array(text(120)).max(10).default([]),
   category: PlaceCategory,
+  alsoCategories: AlsoCategories.default([]),
   /** Slug cụm trong thành phố. */
   zone: Slug.optional(),
   tags: z.array(Slug).max(20).default([]),
@@ -27,13 +28,17 @@ export const PlaceEditInput = z.object({
   openingHours: z.array(OpeningSlot).max(70).default([]),
   visitDurationMin: z.number().int().min(5).max(720).optional(),
   bestTime: z.array(BestTime).default([]),
-  indoor: z.boolean().optional(),
+  cover: PlaceCover.optional(),
   priceLevel: z.literal([1, 2, 3, 4]).optional(),
   transport: z.array(Transport).default([]),
   practicalNotes: text(1000).optional(),
   contact: PlaceContact.default({}),
   verifySource: AdminVerifySource.optional(),
-});
+})
+  .superRefine((input, ctx) => {
+    const issue = alsoCategoriesIssue(input.category, input.alsoCategories);
+    if (issue) ctx.addIssue({ code: 'custom', path: ['alsoCategories'], message: issue });
+  });
 export type PlaceEditInput = z.infer<typeof PlaceEditInput>;
 
 /** Ảnh như đang lưu, có thể thiếu nguồn (dữ liệu nhập trước); form hiện "Thiếu nguồn" thay vì lỗi. */
@@ -56,6 +61,7 @@ export const AdminPlace = z.object({
   name: z.string(),
   aliases: z.array(z.string()),
   category: PlaceCategory,
+  alsoCategories: z.array(PlaceCategory).default([]),
   zone: Slug.optional(),
   tags: z.array(z.string()),
   location: GeoPoint.optional(),
@@ -63,7 +69,7 @@ export const AdminPlace = z.object({
   openingHours: z.array(z.object({ day: z.number(), open: z.string(), close: z.string() })),
   visitDurationMin: z.number().optional(),
   bestTime: z.array(BestTime),
-  indoor: z.boolean().optional(),
+  cover: PlaceCover.optional(),
   priceLevel: z.number().optional(),
   transport: z.array(Transport),
   practicalNotes: z.string().optional(),

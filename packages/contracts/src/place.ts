@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { ObjectIdString, Slug } from './common.js';
-import { BestTime, PhotoSource, PlaceCategory, PlaceSource, PlaceStatus, Transport, VerifySource, VipTier } from './enums.js';
+import { BestTime, PhotoSource, PlaceCategory, PlaceCover, PlaceSource, PlaceStatus, Transport, VerifySource, VipTier } from './enums.js';
 import { GeoPoint } from './geojson.js';
 import { OpeningSlot } from './opening-hours.js';
 import { PlaceCursor } from './place-cursor.js';
@@ -46,6 +46,19 @@ export const PlaceIds = z.object({
 });
 export type PlaceIds = z.infer<typeof PlaceIds>;
 
+/** Số danh mục phụ tối đa của một địa điểm. */
+export const MAX_ALSO_CATEGORIES = 2;
+
+/** Danh mục phụ: quán phục vụ thêm loại khác (ví dụ cà phê có cơm trưa); danh mục chính vẫn quyết định ghim, tem. */
+export const AlsoCategories = z.array(PlaceCategory).max(MAX_ALSO_CATEGORIES, `Tối đa ${MAX_ALSO_CATEGORIES} danh mục phụ`);
+
+/** Lỗi của danh mục phụ so với danh mục chính; null là hợp lệ. */
+export function alsoCategoriesIssue(category: PlaceCategory, alsoCategories: readonly PlaceCategory[]): string | null {
+  if (alsoCategories.includes(category)) return 'Danh mục phụ không được trùng danh mục chính';
+  if (new Set(alsoCategories).size !== alsoCategories.length) return 'Danh mục phụ bị lặp';
+  return null;
+}
+
 /**
  * Địa điểm như lưu trong DB (technical-design mục 3). Nháp (form admin, OSM, import CSV) chỉ cần các trường bắt buộc,
  * kể cả chưa ghim toạ độ; điều kiện kích hoạt kiểm bằng activationIssues (place-admin.ts).
@@ -60,6 +73,7 @@ export const Place = z.object({
   /** normalizeName(name) của packages/geo, dùng chống trùng; có thể rỗng khi tên chỉ gồm từ chung. */
   nameNorm: z.string(),
   category: PlaceCategory,
+  alsoCategories: AlsoCategories.default([]),
   tags: z.array(Slug).default([]),
   location: GeoPoint.optional(),
   address: z.string().trim().min(1).optional(),
@@ -67,7 +81,7 @@ export const Place = z.object({
   openingHours: z.array(OpeningSlot).default([]),
   visitDurationMin: z.number().int().positive().optional(),
   bestTime: z.array(BestTime).default([]),
-  indoor: z.boolean().optional(),
+  cover: PlaceCover.optional(),
   priceLevel: z.literal([1, 2, 3, 4]).optional(),
   transport: z.array(Transport).default([]),
   practicalNotes: z.string().trim().min(1).optional(),
@@ -86,7 +100,11 @@ export const Place = z.object({
   /** Chỉ từ đánh giá trên nền tảng, không lấy rating của Google. */
   ratingAvg: z.number().min(1).max(5).optional(),
   ratingCount: z.number().int().min(0).default(0),
-});
+})
+  .superRefine((place, ctx) => {
+    const issue = alsoCategoriesIssue(place.category, place.alsoCategories);
+    if (issue) ctx.addIssue({ code: 'custom', path: ['alsoCategories'], message: issue });
+  });
 export type Place = z.infer<typeof Place>;
 
 /** Chiều rộng các bản WebP sinh khi upload (S06, ui-spec mục 11). */
@@ -107,11 +125,28 @@ export function needsOwnerConfirmation(place: { category: PlaceCategory; verifyS
   return place.category !== 'attraction' && place.verifySource !== 'owner';
 }
 
+/** Địa điểm phục vụ danh mục `c`: là danh mục chính hoặc một danh mục phụ (trang danh mục, chỗ ăn trong lịch trình). */
+export function servesCategory(place: { category: PlaceCategory; alsoCategories?: readonly PlaceCategory[] }, c: PlaceCategory): boolean {
+  return place.category === c || (place.alsoCategories ?? []).includes(c);
+}
+
+/** Trời mưa vẫn có chỗ ngồi: che hết hoặc che một phần (chế độ mưa, chip "Trú mưa được"). Chưa rõ thì không tính. */
+export function rainSafe(place: { cover?: PlaceCover }): boolean {
+  return place.cover === 'full' || place.cover === 'partial';
+}
+
+/** Có chỗ ngồi ngoài trời: che một phần hoặc không che (chip "Ngoài trời"). Chưa rõ thì không tính. */
+export function hasOpenAir(place: { cover?: PlaceCover }): boolean {
+  return place.cover === 'partial' || place.cover === 'none';
+}
+
 /** Thẻ địa điểm ngang trên trang chủ, trang danh mục, trang tìm kiếm (ui-spec mục 4). */
 export const PlaceCard = z.object({
   slug: Slug,
   name: z.string(),
   category: PlaceCategory,
+  /** Danh mục phụ, chỉ có khi khác rỗng: thẻ ghi "Cà phê, Ăn uống". */
+  alsoCategories: z.array(PlaceCategory).optional(),
   zoneName: z.string().optional(),
   /** Câu đầu của practicalNotes, hiện bằng chữ viết tay. */
   note: z.string().optional(),

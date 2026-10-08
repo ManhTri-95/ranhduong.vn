@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_CHECKIN_RADIUS_M,
+  hasOpenAir,
   needsOwnerConfirmation,
   normalizeVnPhone,
   PHOTO_WIDTHS,
@@ -8,6 +9,8 @@ import {
   Place,
   PlaceListQuery,
   PlaceListResponse,
+  rainSafe,
+  servesCategory,
 } from './place.js';
 
 // Dữ liệu giả, tên rõ là giả; toạ độ quanh [0, 0].
@@ -186,5 +189,36 @@ describe('normalizeVnPhone', () => {
     for (const text of ['', 'abc', '12345', '+1 202 555 0100', '0900 000 00']) {
       expect(normalizeVnPhone(text), text).toBeNull();
     }
+  });
+});
+
+describe('danh mục phụ', () => {
+  it('nháp có tối đa 2 danh mục phụ, không lặp, khác danh mục chính', () => {
+    expect(Place.parse(DRAFT).alsoCategories).toEqual([]);
+    expect(Place.safeParse({ ...DRAFT, alsoCategories: ['food'] }).success).toBe(true);
+    expect(Place.safeParse({ ...DRAFT, alsoCategories: ['food', 'activity', 'attraction'] }).success).toBe(false);
+    expect(Place.safeParse({ ...DRAFT, alsoCategories: ['cafe'] }).success).toBe(false);
+    expect(Place.safeParse({ ...DRAFT, alsoCategories: ['food', 'food'] }).success).toBe(false);
+  });
+  it('servesCategory: đúng với danh mục chính hoặc một danh mục phụ', () => {
+    const place = { category: 'cafe', alsoCategories: ['food'] } as const;
+    expect(servesCategory(place, 'cafe')).toBe(true);
+    expect(servesCategory(place, 'food')).toBe(true);
+    expect(servesCategory(place, 'attraction')).toBe(false);
+    expect(servesCategory({ category: 'food' }, 'food')).toBe(true);
+  });
+});
+
+describe('mức mái che', () => {
+  it('chỉ nhận full, partial, none; trường indoor cũ bị bỏ', () => {
+    expect(Place.safeParse({ ...DRAFT, cover: 'partial' }).success).toBe(true);
+    expect(Place.safeParse({ ...DRAFT, cover: 'mot-phan' }).success).toBe(false);
+    expect(Place.parse({ ...DRAFT, indoor: true })).not.toHaveProperty('indoor');
+  });
+  it('rainSafe và hasOpenAir suy ra từ mức mái che; chưa rõ thì cả hai sai', () => {
+    expect([rainSafe({ cover: 'full' }), hasOpenAir({ cover: 'full' })]).toEqual([true, false]);
+    expect([rainSafe({ cover: 'partial' }), hasOpenAir({ cover: 'partial' })]).toEqual([true, true]);
+    expect([rainSafe({ cover: 'none' }), hasOpenAir({ cover: 'none' })]).toEqual([false, true]);
+    expect([rainSafe({}), hasOpenAir({})]).toEqual([false, false]);
   });
 });

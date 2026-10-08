@@ -14,6 +14,7 @@ describe('PlaceEditInput', () => {
       name: 'Quán Giả Lập',
       category: 'cafe',
       aliases: [],
+      alsoCategories: [],
       tags: [],
       openingHours: [],
       bestTime: [],
@@ -36,7 +37,19 @@ describe('PlaceEditInput', () => {
     expect(PlaceEditInput.safeParse({ ...base, location: { type: 'Point', coordinates: [0.2, 95] } }).success).toBe(false);
     expect(PlaceEditInput.safeParse({ ...base, zone: 'Cụm A' }).success).toBe(false);
     expect(PlaceEditInput.safeParse({ ...base, visitDurationMin: 4 }).success).toBe(false);
-    expect(PlaceEditInput.safeParse({ ...base, visitDurationMin: 90, priceLevel: 2, indoor: false, location: POINT }).success).toBe(true);
+    expect(PlaceEditInput.safeParse({ ...base, visitDurationMin: 90, priceLevel: 2, cover: 'none', location: POINT }).success).toBe(true);
+  });
+  it('danh mục phụ: tối đa 2, không lặp, khác danh mục chính; lỗi nằm ở alsoCategories', () => {
+    const base = { name: 'Quán Giả Lập', category: 'cafe' };
+    expect(PlaceEditInput.parse({ ...base, alsoCategories: ['food'] }).alsoCategories).toEqual(['food']);
+    const same = PlaceEditInput.safeParse({ ...base, alsoCategories: ['cafe'] });
+    expect(same.success).toBe(false);
+    if (!same.success) expect(same.error.issues.map((i) => i.path.join('.'))).toEqual(['alsoCategories']);
+    expect(PlaceEditInput.safeParse({ ...base, alsoCategories: ['food', 'activity', 'attraction'] }).success).toBe(false);
+  });
+  it('mức mái che thay cho trong nhà/ngoài trời', () => {
+    expect(PlaceEditInput.parse({ name: 'Quán Giả Lập', category: 'cafe', cover: 'partial' }).cover).toBe('partial');
+    expect(PlaceEditInput.safeParse({ name: 'Quán Giả Lập', category: 'cafe', cover: true }).success).toBe(false);
   });
 });
 
@@ -81,6 +94,7 @@ describe('AdminPlace', () => {
       updatedAt: '2026-10-08T03:00:00.000Z',
     };
     expect(AdminPlace.safeParse(stored).success).toBe(true);
+    expect(AdminPlace.parse(stored).alsoCategories).toEqual([]);
   });
 });
 

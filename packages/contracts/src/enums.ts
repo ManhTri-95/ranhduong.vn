@@ -29,3 +29,7 @@ export type PlaceSource = z.infer<typeof PlaceSource>;
 
 export const VipTier = z.enum(['free', 'starter', 'vip']);
 export type VipTier = z.infer<typeof VipTier>;
+
+/** Mức mái che (thay cho trong nhà/ngoài trời): full che hết; partial có cả chỗ che mưa và chỗ ngoài trời; none không chỗ che mưa. */
+export const PlaceCover = z.enum(['full', 'partial', 'none']);
+export type PlaceCover = z.infer<typeof PlaceCover>;

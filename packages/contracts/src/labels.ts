@@ -1,4 +1,4 @@
-import type { BestTime, PlaceCategory, PlaceStatus, Transport } from './enums.js';
+import type { BestTime, PlaceCategory, PlaceCover, PlaceStatus, Transport } from './enums.js';
 import type { ItineraryPace, ItineraryTransport } from './itinerary.js';
 
 /** Tên danh mục hiển thị cho người dùng. */
@@ -86,4 +86,11 @@ export const PLACE_STATUS_LABEL: Record<PlaceStatus, string> = {
   hidden: 'Đã ẩn',
   closed: 'Đã đóng cửa',
   merged: 'Đã gộp',
+};
+
+/** Chip mái che trên trang địa điểm. */
+export const COVER_LABEL: Record<PlaceCover, string> = {
+  full: 'Trong nhà',
+  partial: 'Trong nhà và ngoài trời',
+  none: 'Ngoài trời',
 };
