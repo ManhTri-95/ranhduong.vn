@@ -3,6 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule } from './config/config.module';
 import { loadEnv } from './config/env';
 import { HealthController } from './health/health.controller';
+import { AdminModule } from './modules/admin/admin.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CitiesModule } from './modules/cities/cities.module';
 import { ItinerariesModule } from './modules/itineraries/itineraries.module';
@@ -22,6 +23,7 @@ const env = loadEnv();
     PlacesModule,
     ItinerariesModule,
     AuthModule,
+    AdminModule,
   ],
   controllers: [HealthController],
 })
