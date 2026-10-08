@@ -78,7 +78,8 @@ Mỗi quán ghi đủ các trường dưới đây trong khoảng 10 phút; trư
 | Link fanpage, Instagram, TikTok |  | Dùng để chống trùng và liên hệ |
 | Mức giá | Menu, bình luận | 1–4, dựa trên giá đồ uống hoặc món chính |
 | Danh mục, tags | Ảnh và mô tả của quán | Ví dụ: chill, view đồi, sống ảo, gia đình |
-| Trong nhà / ngoài trời | Ảnh không gian | Dùng cho phương án khi trời mưa |
+| Danh mục phụ | Menu, ảnh món | Quán phục vụ thêm loại khác (ví dụ cà phê có cơm trưa), tối đa 2. Hai cơ sở riêng (giờ, menu khác, khác chủ) thì ghi thành hai dòng |
+| Mái che | Ảnh không gian | full: trong nhà hoặc che hết; partial: có cả chỗ che mưa và chỗ ngoài trời; none: ngoài trời, không chỗ che. Dùng cho phương án khi trời mưa |
 | Ghi chú thực tế | Bình luận của khách | Viết bằng lời của bạn: đường dốc, chỗ đậu xe, giờ đông |
 | Ngày bài đăng gần nhất | Dòng thời gian | Dùng để đánh giá fanpage còn hoạt động |
 
@@ -100,13 +101,14 @@ Tuần 1–2 dùng một Google Sheet; khi form nhập liệu trong admin xong (
 | name | name | Cà phê Mây |
 | aliases | aliases | Phân cách bằng dấu ;, ví dụ May Coffee; Mây Café |
 | category | category | Dropdown: attraction, cafe, food, activity |
+| also_category | alsoCategories | Danh mục phụ, tối đa 2, cách nhau ;, khác category |
 | zone | zoneId | Dropdown: trung-tam, phia-nam, phia-bac, phia-dong |
 | address | address | Địa chỉ đầy đủ |
 | latlng | location | lat,lng lấy bằng cách ghim trên bản đồ, ví dụ 11.9404,108.4583 |
 | hours | openingHours | Theo định dạng bên dưới |
 | visit\_min | visitDurationMin | Số phút, ví dụ 60 |
 | best\_time | bestTime | sunrise; morning; afternoon; sunset; evening |
-| indoor | indoor | Dropdown: yes, no |
+| cover | cover | Dropdown: full, partial, none |
 | price | priceLevel | Dropdown: 1, 2, 3, 4 |
 | tags | tags | Chỉ dùng tags có trong tab "Tags", phân cách bằng ; |
 | transport | transport | motorbike; car |
@@ -129,7 +131,7 @@ Các cột theo dõi (script bỏ qua): batch (1/2), last\_post\_date, status, c
 
 **Google Drive:** một thư mục riêng tư cho dự án; mỗi quán một thư mục con đặt theo id và tên (ví dụ `D012-ca-phe-may`), chứa ảnh quán gửi và ảnh chụp màn hình tin nhắn đồng ý. Khi import, ảnh được upload lên R2; ảnh chụp tin nhắn giữ lại trên Drive làm bằng chứng.
 
-**Chuyển vào admin (story S21 trong backlog):** export tab "Địa điểm" ra CSV, chạy script import: chỉ lấy các dòng có status là "Đã xác nhận", "Sẵn sàng đăng" hoặc "Đăng chưa xác nhận" và imported khác yes; validate bằng schema Zod; tạo `Place` dạng nháp với `verifySource` là owner (quán đã xác nhận) hoặc admin (còn lại); in báo cáo các dòng lỗi định dạng. Sau đó bạn vào admin upload ảnh, kích hoạt, rồi đánh dấu imported = yes trong Sheet.
+**Chuyển vào admin (story S21 trong backlog):** export tab "Địa điểm" ra CSV, chạy script import: chỉ lấy các dòng có status là "Đã xác nhận", "Sẵn sàng đăng" hoặc "Đăng chưa xác nhận" và imported khác yes; validate bằng schema Zod; tạo `Place` dạng nháp với `verifySource` là owner (quán đã xác nhận) hoặc admin (còn lại); in báo cáo các dòng lỗi định dạng. Sau đó bạn vào admin upload ảnh, kích hoạt, rồi đánh dấu imported = yes trong Sheet. Sheet cũ còn cột indoor thì yes thành cover full, no thành cover none.
 
 **Bảo mật:** Sheet và thư mục Drive chứa số điện thoại và tin nhắn với chủ quán, nên luôn để riêng tư, không chia sẻ bằng link công khai.
 

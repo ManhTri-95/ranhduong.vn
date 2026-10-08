@@ -59,7 +59,7 @@ Story P1 (S13 tìm kiếm không dấu) chèn vào tuần nào còn dư giờ. S
 
 ## 4. Backlog
 
-26 story, tổng khoảng 137 giờ; phần P0 khoảng 126 giờ. Làm theo thứ tự ID, vì công cụ nhập liệu phải xong sớm để chuyển dữ liệu từ Google Sheet vào admin từ cuối tuần 2.
+27 story, tổng khoảng 141 giờ; phần P0 khoảng 130 giờ. Làm theo thứ tự ID, vì công cụ nhập liệu phải xong sớm để chuyển dữ liệu từ Google Sheet vào admin từ cuối tuần 2.
 
 | ID | Epic | Story | Tiêu chí nghiệm thu | Giờ | Ưu tiên | Trạng thái |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -69,7 +69,7 @@ Story P1 (S13 tìm kiếm không dấu) chèn vào tuần nào còn dư giờ. S
 | S04 | Nhập liệu | Đăng nhập admin bằng Google | Chỉ email trong danh sách được dùng admin.ranhduong.vn; email khác bị từ chối ở cả Cloudflare Access và API | 4 | P0 | Code xong (nhánh `feat/S04-admin-google-login`, chưa mở PR); chờ S02, S26 để cấu hình Cloudflare Access và thử staging |
 | S05 | Nhập liệu | Form tạo và sửa địa điểm trên điện thoại | Ghim vị trí trên bản đồ; giờ mở cửa theo từng ngày; zone, tags, mức giá, trong nhà/ngoài trời, ghi chú thực tế; lưu nháp; dùng tốt ở màn hình 375px; ô dán giờ theo mẫu Google Sheet; cảnh báo nghi trùng dưới ô tên; chọn nguồn xác nhận; chỉ kích hoạt khi đủ toạ độ, giờ hợp lệ, nguồn xác nhận và mọi ảnh có nguồn (Spec UI mục 12) | 12 | P0 | Code xong (nhánh `feat/S05-place-form` dựa trên S04, chưa mở PR); chờ thử staging (S02) và điện thoại thật |
 | S06 | Nhập liệu | Upload ảnh | Presigned URL R2; chỉ JPEG, PNG, WebP dưới 8MB; sinh WebP 400/800/1200; xoá EXIF vị trí; bắt buộc chọn nguồn ảnh | 6 | P0 | Chưa làm |
-| S07 | Nhập liệu | Danh sách và xác minh trong admin | Lọc theo trạng thái, zone, danh mục; nút "Đã xác minh" cập nhật lastVerifiedAt và verifySource; chuyển draft sang active; chọn quán đã xác nhận (owner) hay chỉ dựa trên Facebook (admin); tab trạng thái có số đếm; hành động theo trạng thái (Hoàn thiện, Xác minh, Xem báo cáo) | 4 | P0 | Chưa làm |
+| S07 | Nhập liệu | Danh sách và xác minh trong admin | Lọc theo trạng thái, zone, danh mục (tính cả danh mục phụ, S27); nút "Đã xác minh" cập nhật lastVerifiedAt và verifySource; chuyển draft sang active; chọn quán đã xác nhận (owner) hay chỉ dựa trên Facebook (admin); tab trạng thái có số đếm; hành động theo trạng thái (Hoàn thiện, Xác minh, Xem báo cáo) | 4 | P0 | Chưa làm |
 | S08 | Nhập liệu | Import OSM làm nháp | Script Overpass lấy quán cà phê, quán ăn, điểm tham quan trong Đà Lạt; tạo draft có osmId; chạy lại không trùng | 4 | P0 | Chưa làm |
 | S09 | Web khách | Trang chủ Đà Lạt | Danh mục, danh sách nổi bật, lịch trình mẫu, ô tìm kiếm; render SSR | 6 | P0 | Chưa làm |
 | S10 | Web khách | Trang danh mục và khu vực | Lọc theo tags; phân trang cursor; URL đúng mục 11 tài liệu kỹ thuật | 6 | P0 | Chưa làm |
@@ -83,12 +83,13 @@ Story P1 (S13 tìm kiếm không dấu) chèn vào tuần nào còn dư giờ. S
 | S18 | Đo lường | Tracking và báo cáo | POST /events, bộ đếm Redis, cron gộp vào place\_metrics; Umami hoặc PostHog cho traffic; màn hình admin hiển thị lượt bấm chỉ đường theo tuần | 6 | P0 | Chưa làm |
 | S19 | Vận hành | Giám sát và backup | Sentry cho web và API; uptime check; mongodump hằng đêm lên R2 giữ 14 bản; thử khôi phục một lần | 3 | P0 | Chưa làm |
 | S20 | Pháp lý | Trang điều khoản, quyền riêng tư, ghi nguồn | Trang tĩnh có link ở footer; ghi nguồn OSM trên bản đồ và nguồn ảnh trên trang địa điểm | 2 | P0 | Chưa làm |
-| S21 | Nhập liệu | Import CSV từ Google Sheet | Đọc CSV theo cột và định dạng giờ mở cửa trong tài liệu quy trình (mục 5); chỉ lấy dòng có status hợp lệ và imported khác yes; validate bằng Zod; tạo Place nháp với verifySource owner hoặc admin; không tạo trùng khi chạy lại (theo id Sheet, osmId, số điện thoại); màn hình 3 bước với bảng lỗi kèm cách sửa và bảng nghi trùng (Bỏ qua dòng, Vẫn tạo) | 3 | P0 | Chưa làm |
+| S21 | Nhập liệu | Import CSV từ Google Sheet | Đọc CSV theo cột và định dạng giờ mở cửa trong tài liệu quy trình (mục 5); chỉ lấy dòng có status hợp lệ và imported khác yes; validate bằng Zod; tạo Place nháp với verifySource owner hoặc admin; đọc cột `also_category`, `cover` (Sheet cũ có cột `indoor`: yes thành full, no thành none); không tạo trùng khi chạy lại (theo id Sheet, osmId, số điện thoại); màn hình 3 bước với bảng lỗi kèm cách sửa và bảng nghi trùng (Bỏ qua dòng, Vẫn tạo) | 3 | P0 | Chưa làm |
 | S22 | UI | Style bản đồ phong cách sổ tay | Style JSON sửa từ positron bằng Maputnik theo mục 6 Spec UI; ẩn POI của OSM; sprite ghim theo danh mục; gom cụm; ghim đang chọn có hiệu ứng rơi; style lưu trong repo | 6 | P0 | Chưa làm |
 | S23 | UI | Giao diện theo mùa | City.seasons lưu trong DB, admin sửa được; endpoint /now trả mùa hiện tại; token --accent đổi theo mùa; banner mùa trên trang chủ đẩy lịch trình nổi bật (mục 7 Spec UI) | 3 | P0 | Chưa làm |
-| S24 | UI | Ô thời tiết và chế độ mưa | Gọi API thời tiết phía server, cache Redis 15 phút; ánh xạ mã WMO sang 4 trạng thái; chế độ mưa hiện liên kết quán trong nhà và chọn sẵn chip Trong nhà trên bản đồ; lỗi thì ẩn ô | 4 | P1 | Chưa làm |
+| S24 | UI | Ô thời tiết và chế độ mưa | Gọi API thời tiết phía server, cache Redis 15 phút; ánh xạ mã WMO sang 4 trạng thái; chế độ mưa hiện liên kết quán trú mưa được (mái che hết hoặc một phần, S27) và chọn sẵn chip Trú mưa được trên bản đồ; lỗi thì ẩn ô | 4 | P1 | Chưa làm |
 | S25 | UI | Chuyển động | Nét đứt tự vẽ và mốc hiện ra khi cuộn tới; ghim rơi; minh hoạ mùa lắc nhẹ; tắt hết khi người dùng bật giảm chuyển động (mục 8 Spec UI) | 3 | P1 | Chưa làm |
 | S26 | Nền tảng | Dựng app admin riêng | apps/admin (Vue 3 + Vite, FSD) build tĩnh lên Cloudflare Pages tại admin.ranhduong.vn; Cloudflare Access chỉ cho email được phép; API bật CORS có credentials cho ranhduong.vn và admin.ranhduong.vn, kiểm Origin cùng danh sách; layout thanh bên theo Spec UI mục 12 | 5 | P0 | Chưa làm |
+| S27 | Nhập liệu | Danh mục phụ và mức mái che | Tối đa 2 danh mục phụ, khác danh mục chính; quán hiện ở trang của danh mục chính và phụ, thẻ ghi đủ danh mục, tìm không dấu theo cả danh mục phụ; mức mái che (che hết, một phần, không che) thay trong nhà/ngoài trời; form admin "Cũng phục vụ", "Mái che"; cột Sheet `also_category`, `cover` | 4 | P0 | Code xong (nhánh `feat/S27-also-categories` dựa trên S05, chưa mở PR) |
 
 ## 5. Dữ liệu và nội dung
 

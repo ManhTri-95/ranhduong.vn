@@ -92,12 +92,12 @@ type PlaceStatus = 'draft' | 'active' | 'suspected' | 'hidden' | 'closed' | 'mer
 interface Place {
   cityId; zoneId; slug: string; slugHistory: string[];   // slug duy nhất trong city
   name: string; aliases: string[]; nameNorm: string;   // nameNorm cho chống trùng
-  category: PlaceCategory; tags: string[];
+  category: PlaceCategory; alsoCategories: PlaceCategory[]; tags: string[];   // danh mục phụ, tối đa 2, khác category (S27)
   location: GeoPoint; address: string; checkinRadiusM: number;  // mặc định 100
   openingHours: { day: 0 | 1 | 2 | 3 | 4 | 5 | 6; open: string; close: string }[]; // '07:00'
   visitDurationMin: number;
   bestTime: ('sunrise' | 'morning' | 'afternoon' | 'sunset' | 'evening')[];
-  indoor: boolean; priceLevel: 1 | 2 | 3 | 4; transport: ('motorbike' | 'car')[];
+  cover?: 'full' | 'partial' | 'none'; priceLevel: 1 | 2 | 3 | 4; transport: ('motorbike' | 'car')[];
   practicalNotes?: string;
   contact: { phone?: string; fanpage?: string; website?: string };
   ids: { googlePlaceId?: string; osmId?: string };
@@ -270,7 +270,7 @@ REST JSON dưới `/v1`, thành phố nằm trong path (`/v1/cities/:city/…`);
 | Method | Path | Quyền | Ghi chú |
 | --- | --- | --- | --- |
 | GET | `/cities/:city` | Công khai | Thông tin thành phố, danh sách zone |
-| GET | `/cities/:city/places` | Công khai | Lọc `category`, `tags` (cách nhau dấu phẩy; phải có đủ mọi thẻ), `zone` (slug cụm; không có thì 404), `q` (không dấu; không dùng cùng `cursor`), `limit`, `cursor`. Trả `items`, `nextCursor`, `tags` (số chỗ theo thẻ). `bbox`, `near=lat,lng&radius` thêm ở S12 |
+| GET | `/cities/:city/places` | Công khai | Lọc `category` (khớp danh mục chính hoặc danh mục phụ), `tags` (cách nhau dấu phẩy; phải có đủ mọi thẻ), `zone` (slug cụm; không có thì 404), `q` (không dấu; không dùng cùng `cursor`), `limit`, `cursor`. Trả `items`, `nextCursor`, `tags` (số chỗ theo thẻ). `bbox`, `near=lat,lng&radius` thêm ở S12 |
 | GET | `/cities/:city/places/:slug` | Công khai | Chi tiết, ảnh, voucher đang chạy |
 | GET | `/cities/:city/itineraries/templates` | Công khai | Lọc `days`, `style` |
 | GET | `/itineraries/:shareId` | Công khai | Lịch trình đã chia sẻ. Kèm GET /itineraries/:id/narrative: 204 khi chưa có mô tả, 200 kèm mô tả khi đã xong |
@@ -337,7 +337,7 @@ Thuật toán chạy hoàn toàn trong bộ nhớ của API (khoảng 200 địa
 | Đệm mỗi lần di chuyển | 10 phút | Gửi xe, đi bộ |
 | Số điểm tham quan/ngày | Thong thả: 4; dày: 6 | Chưa tính 2 bữa ăn |
 | Bữa trưa / tối | 11:30–13:00 / 18:00–19:30 |  |
-| Chiều mùa mưa (tháng 5–11) | 13:00–17:00 ưu tiên `indoor` |  |
+| Chiều mùa mưa (tháng 5–11) | 13:00–17:00 ưu tiên `cover` full rồi partial |  |
 | Thời gian di chuyển | `distance_matrix` theo phương tiện; taxi dùng `car` | Thiếu cạnh: chim bay × 1,4 ÷ 25 km/h |
 
 **Các bước:**
@@ -350,7 +350,7 @@ Thuật toán chạy hoàn toàn trong bộ nhớ của API (khoảng 200 địa
 6. **Chọn điểm trong ngày:** lấy top theo điểm trong zone đã gán, đủ số điểm theo nhịp độ; điểm `sunrise` ghim đầu ngày, điểm `evening` ghim cuối ngày.
 7. **Sắp thứ tự:** nearest neighbor từ nơi lưu trú, rồi 2-opt giảm tổng phút di chuyển; điểm ghim giữ nguyên vị trí.
 8. **Xếp giờ:** đi tuần tự cộng thời gian di chuyển, đệm, thời gian tham quan; vi phạm giờ mở cửa thì thử đổi chỗ với điểm kề, vẫn vi phạm thì bỏ điểm có điểm số thấp nhất.
-9. **Chèn bữa ăn:** chọn quán `food` có `detour = t(A,X) + t(X,B) − t(A,B)` nhỏ nhất giữa hai điểm quanh khung giờ ăn, đúng mức giá và gu.
+9. **Chèn bữa ăn:** chọn quán phục vụ ăn uống (`servesCategory(p, 'food')`) có `detour = t(A,X) + t(X,B) − t(A,B)` nhỏ nhất giữa hai điểm quanh khung giờ ăn, đúng mức giá và gu.
 10. **Điểm tiện đường:** với mỗi cặp điểm liên tiếp, ứng viên chưa chọn có detour dưới 10 phút được gắn làm gợi ý tuỳ chọn.
 11. **VIP:** tối đa 2 điểm/ngày, chỉ khi điểm số nằm trong 30% cao nhất của slot đó; gắn `isVip` để hiển thị nhãn "Đối tác".
 12. **Kiểm tra cuối:** ngày nào dưới 3 điểm tham quan thì trả `NOT_ENOUGH_PLACES` kèm gợi ý giảm số ngày hoặc bỏ bớt tags.
@@ -483,7 +483,7 @@ Trang địa điểm, danh sách và lịch trình mẫu được render SSR và
 **Thẻ và dữ liệu có cấu trúc:**
 
 - Mỗi trang có `title`, `description`, `canonical`, Open Graph; ảnh OG sinh sẵn từ ảnh bìa (1200×630).
-- Địa điểm: JSON-LD `TouristAttraction`, `CafeOrCoffeeShop`, `Restaurant` hoặc `LodgingBusiness` với `name`, `address`, `geo`, `openingHoursSpecification`, `aggregateRating` (chỉ từ đánh giá trên nền tảng, chỉ khi có từ 3 đánh giá).
+- Địa điểm: JSON-LD `TouristAttraction`, `CafeOrCoffeeShop`, `Restaurant` hoặc `LodgingBusiness` với `name`, `address`, `geo`, `openingHoursSpecification`, `aggregateRating` (chỉ từ đánh giá trên nền tảng, chỉ khi có từ 3 đánh giá); địa điểm có danh mục phụ thì `@type` là mảng theo thứ tự danh mục chính rồi phụ.
 - Lịch trình mẫu: JSON-LD `TouristTrip` với `itinerary` là `ItemList` các địa điểm theo thứ tự.
 - Danh sách: JSON-LD `ItemList`; mọi trang có `BreadcrumbList`.
 

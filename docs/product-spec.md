@@ -109,7 +109,7 @@ Lát 1 ra mắt với 80–100 địa điểm Đà Lạt được xác minh, m�
 | opening\_hours | Theo ngày trong tuần |
 | visit\_duration\_min | Thời gian tham quan đề xuất |
 | best\_time | Bình minh, buổi sáng, hoàng hôn, buổi tối |
-| weather\_sensitivity | Ngoài trời / trong nhà |
+| cover | Mái che: che hết / một phần / không che |
 | price\_level, transport | Mức giá; xe máy, ô tô |
 | practical\_notes | Đường dốc, chỗ đậu xe, bàn view đẹp |
 | phone, fanpage, google\_place\_id, osm\_id | Định danh để chống trùng và xác minh |
@@ -302,7 +302,7 @@ Lịch trình mẫu do người curate là nền; lịch trình cá nhân đư�
 4. Ràng buộc giờ: săn mây lúc 4–6h là điểm đầu, chợ đêm là điểm cuối, tôn trọng giờ mở cửa.
 5. Chèn bữa ăn 11h30–13h và 18h–19h30, chọn quán gần điểm trước và điểm sau.
 6. Gợi ý điểm tiện đường khi detour = d(A,X) + d(X,B) − d(A,B) dưới 10 phút.
-7. Ngày đi rơi vào mùa mưa (khoảng tháng 5–11): ưu tiên điểm trong nhà buổi chiều.
+7. Ngày đi rơi vào mùa mưa (khoảng tháng 5–11): ưu tiên điểm trú mưa được (che hết, rồi một phần) buổi chiều.
 8. LLM model rẻ viết lời mô tả từ kết quả đã sắp xếp.
 
 Khi cần ràng buộc khung giờ chặt hơn (VRPTW), chuyển sang Google OR-Tools chạy qua microservice Python.

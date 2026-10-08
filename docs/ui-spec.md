@@ -122,11 +122,11 @@ Component dùng chung nằm ở `packages/ui` (Vue 3), dùng cho cả web khách
 | Đối tác | Viền 1.5px `--ink`, không nền | Địa điểm VIP trong lịch trình và danh sách |
 | Tiện đường | Nền `--accent` | Điểm có detour dưới 10 phút |
 | Theo mùa | Nền `--accent` | Lịch trình, banner theo mùa |
-| Thuộc tính (Ngoài trời, Sống ảo…) | Nền `--mist` | Tags trên trang địa điểm, lịch trình |
+| Thuộc tính (mái che: Trong nhà, Trong nhà và ngoài trời, Ngoài trời; Sống ảo…) | Nền `--mist` | Tags và mức mái che (`COVER_LABEL`) trên trang địa điểm, lịch trình |
 
 **Thẻ:**
 
-- **Thẻ địa điểm ngang:** ảnh 96×96 bên trái; tên, danh mục và khu vực, một câu ghi chú viết tay (nếu có), chip trạng thái.
+- **Thẻ địa điểm ngang:** ảnh 96×96 bên trái; tên, danh mục (chính rồi phụ, ví dụ "Cà phê, Ăn uống") và khu vực, một câu ghi chú viết tay (nếu có), chip trạng thái.
 - **Thẻ lịch trình:** rộng 250px, cuộn ngang; ảnh 120px; chip, tên, "số ngày · phương tiện · nhịp độ".
 - **Banner theo mùa:** viền 2px `--ink`; chip mùa, tiêu đề Lora, mô tả, liên kết lịch trình; hình minh hoạ 96×96 bên phải có chuyển động lắc nhẹ.
 - **Ô thời tiết "Đà Lạt lúc này":** nền `--ink`, chữ sáng; biểu tượng theo trạng thái, tiêu đề "trạng thái · nhiệt độ", một câu gợi ý.
@@ -151,7 +151,7 @@ Sáu màn hình trong bản mẫu; URL theo mục 11 tài liệu thiết kế k�
 | Màn hình | URL | Thành phần chính (từ trên xuống) | Lát |
 | --- | --- | --- | --- |
 | Trang chủ thành phố | `/da-lat` | Header (logo, chọn thành phố) · Đà Lạt lúc này · tiêu đề "Đà Lạt hôm nay ghé đâu?" · banner theo mùa · tìm kiếm · chip danh mục · lịch trình mẫu · Chỗ dân ở đây hay ngồi · nút nổi "Xem bản đồ" | 1 |
-| Bản đồ | `/da-lat/ban-do` | Bản đồ phong cách sổ tay toàn màn hình · nút quay lại + tìm quanh đây · chip lọc (Cà phê, Đang mở, Trong nhà…) · ghim · bottom sheet thẻ địa điểm | 1 |
+| Bản đồ | `/da-lat/ban-do` | Bản đồ phong cách sổ tay toàn màn hình · nút quay lại + tìm quanh đây · chip lọc (Cà phê, Đang mở, Trú mưa được…) · ghim · bottom sheet thẻ địa điểm | 1 |
 | Lịch trình | `/da-lat/lich-trinh/{slug}`, `/l/{shareId}` | Tiêu đề, mô tả, chip · mốc theo giờ nối nét đứt · ghi chú · nhãn Đối tác, Tiện đường · thanh hành động: Tạo vé để chia sẻ + Chỉ đường điểm tiếp theo | 1 (mẫu), 2 (tạo theo yêu cầu, vé) |
 | Địa điểm | `/da-lat/dia-diem/{slug}` | Ảnh + tem góc phải · tên, danh mục, khu vực · chip thuộc tính · thẻ trạng thái mở cửa · Người địa phương nói · lời mời check-in lấy tem · Tiện đường ghé thêm · bản đồ nhỏ · nguồn ảnh · thanh Chỉ đường + Lưu | 1 (tem trang trí: khi có minh hoạ) |
 | Vé lịch trình | Ảnh tạo từ `/l/{shareId}` | Xem mục 9 | 2 |
@@ -218,7 +218,7 @@ Khi hai mùa trùng nhau (mùa mưa và đầu mùa dã quỳ), mùa hoa đượ
 | Nhiều mây | Mã 2, 3 | Trời mát, đi dạo quanh hồ là vừa. |
 | Mưa | Mã 51–67, 80–82, 95–99, hoặc khả năng mưa từ 60% trong 3 giờ tới | Chiều nay mưa, ghé quán trong nhà cho ấm. |
 
-**Chế độ mưa:** hiện liên kết "Quán trong nhà gần bạn" dưới ô thời tiết; bản đồ mở với chip "Trong nhà" chọn sẵn; điểm ngoài trời trong lịch trình buổi chiều có thêm gợi ý điểm trong nhà gần đó.
+**Chế độ mưa:** hiện liên kết "Quán trú mưa được gần bạn" dưới ô thời tiết; bản đồ mở với chip "Trú mưa được" chọn sẵn (mái che hết hoặc một phần); điểm không có mái che trong lịch trình buổi chiều có thêm gợi ý điểm trú mưa được gần đó.
 
 **Nguồn dữ liệu:** Open-Meteo dễ dùng và không cần API key, nhưng gói miễn phí dành cho mục đích phi thương mại; web có affiliate và gói trả phí nên cần kiểm tra điều khoản và cân nhắc gói trả phí hoặc nhà cung cấp khác trước khi ra mắt. API gọi phía server, cache Redis 15 phút, nên mỗi thành phố chỉ khoảng 100 lượt gọi mỗi ngày. Lỗi hoặc hết hạn cache thì ẩn ô thời tiết, không hiện số liệu cũ.
 
@@ -307,7 +307,7 @@ Quản trị dùng cùng token với web khách nhưng dày thông tin hơn: ch�
 | Màn hình | URL | Thiết bị | Nội dung chính | Story |
 | --- | --- | --- | --- | --- |
 | Danh sách địa điểm | `admin.ranhduong.vn/dia-diem` | Desktop | Tab trạng thái có số đếm (Tất cả, Nháp, Đang hiển thị, Bị nghi ngờ, Cần xác minh lại); tìm theo tên; lọc cụm, danh mục, nguồn xác nhận; bảng tên, danh mục, cụm, trạng thái, xác nhận, xác minh lần cuối, số ảnh; hành động theo trạng thái (Sửa, Hoàn thiện, Xác minh, Xem báo cáo) | S07 |
-| Form địa điểm | `admin.ranhduong.vn/dia-diem/{id}` | Điện thoại trước | Thông tin cơ bản, cảnh báo nghi trùng ngay dưới ô tên; ghim vị trí bằng cách kéo bản đồ; ô dán giờ mở cửa theo mẫu Google Sheet kèm bảng từng ngày (Đóng, Mở cả ngày, thêm ca); tags, mức giá, thời gian tham quan, trong nhà hoặc ngoài trời, ghi chú thực tế; ảnh bắt buộc chọn nguồn; xác nhận (quán, Facebook, điểm công cộng); thanh dưới Lưu nháp và Kích hoạt; tự lưu nháp | S05, S06 |
+| Form địa điểm | `admin.ranhduong.vn/dia-diem/{id}` | Điện thoại trước | Thông tin cơ bản, cảnh báo nghi trùng ngay dưới ô tên; ghim vị trí bằng cách kéo bản đồ; ô dán giờ mở cửa theo mẫu Google Sheet kèm bảng từng ngày (Đóng, Mở cả ngày, thêm ca); tags, mức giá, thời gian tham quan, danh mục phụ (Cũng phục vụ), mái che (che hết, một phần, không), ghi chú thực tế; ảnh bắt buộc chọn nguồn; xác nhận (quán, Facebook, điểm công cộng); thanh dưới Lưu nháp và Kích hoạt; tự lưu nháp | S05, S06 |
 | Import CSV | `admin.ranhduong.vn/import` | Desktop | 3 bước (Tải file, Kiểm tra, Tạo nháp); tóm tắt sẵn sàng, lỗi, nghi trùng; bảng lỗi kèm cách sửa; bảng nghi trùng với Bỏ qua dòng hoặc Vẫn tạo | S21 |
 | Soạn lịch trình mẫu | `admin.ranhduong.vn/lich-trinh/{id}` | Desktop | Đầu trang: tên, trạng thái, số ngày, mùa, phong cách, phương tiện, nhịp độ, slug; ba cột: kho địa điểm kéo thả, lịch trình theo ngày, xem trước điện thoại và Google | S15 |
 
@@ -335,7 +335,7 @@ Chip trạng thái luôn có chữ và chấm tròn, không chỉ dựa vào mà
 | Thiếu bữa trưa (11:30–13:30) hoặc bữa tối (18:00–20:00) khi lịch trình đi qua khung giờ đó | Nhắc | 1 |
 | Kết thúc sau 21:30 | Nhắc | 1 |
 | Hai cụm không kề nhau trong một ngày | Nhắc | Sau |
-| Điểm ngoài trời buổi chiều trong lịch trình mùa mưa | Nhắc | Sau |
+| Điểm không có mái che buổi chiều trong lịch trình mùa mưa | Nhắc | Sau |
 
 **Tự tính giờ:** giờ điểm sau = giờ điểm trước + thời gian tham quan + thời gian di chuyển ước lượng (chim bay × 1,4 ÷ 25 km/h, làm tròn 5 phút). Giờ sửa tay được giữ nguyên và có dấu nhỏ "đã sửa tay"; các điểm sau vẫn tính lại từ đó.
 
