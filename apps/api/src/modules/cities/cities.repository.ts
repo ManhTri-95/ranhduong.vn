@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import type { CityInput, ZoneInput } from '@ranhduong/contracts';
+import { GeoPolygon, type CityInput, type LngLat, type ZoneInput } from '@ranhduong/contracts';
 import { Types } from 'mongoose';
 import { CITY_MODEL, type CityModel } from './schemas/city.schema';
 import { ZONE_MODEL, type ZoneModel } from './schemas/zone.schema';
@@ -64,6 +64,13 @@ export class CitiesRepository {
   async listZones(cityId: string): Promise<{ id: string; slug: string; name: string }[]> {
     const docs = await this.zones.find({ cityId: new Types.ObjectId(cityId) }, { slug: 1, name: 1 }).sort({ _id: 1 }).lean();
     return docs.map((d) => ({ id: d._id.toString(), slug: d.slug, name: d.name }));
+  }
+
+  /** Polygon các cụm của thành phố theo thứ tự seed, để gợi ý cụm khi ghim. */
+  async listZoneAreas(cityId: string): Promise<{ slug: string; name: string; rings: LngLat[][] }[]> {
+    const docs = await this.zones.find({ cityId: new Types.ObjectId(cityId) }, { slug: 1, name: 1, area: 1 }).sort({ _id: 1 }).lean();
+    // Cụm đã qua CitySeed khi ghi; parse lại để có kiểu [lng, lat].
+    return docs.map((d) => ({ slug: d.slug, name: d.name, rings: GeoPolygon.parse(d.area).coordinates }));
   }
 
   /** Cụm theo slug trong một thành phố; null nếu không có. */

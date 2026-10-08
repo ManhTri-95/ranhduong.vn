@@ -1,5 +1,14 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
-import { CityPublic, CitySeed, type CityRef, type CitySeedResult, type ZoneRef } from '@ranhduong/contracts';
+import {
+  CityPublic,
+  CitySeed,
+  type CityRef,
+  type CitySeedResult,
+  type LngLat,
+  type ZoneRef,
+  type ZoneSuggestResponse,
+} from '@ranhduong/contracts';
+import { suggestZones } from '@ranhduong/geo';
 import { ApiException } from '../../shared/http/api-exception';
 import { CitiesRepository } from './cities.repository';
 
@@ -49,6 +58,13 @@ export class CitiesService {
   /** Các cụm của thành phố (id, slug, tên) theo thứ tự seed. */
   zones(cityId: string): Promise<ZoneRef[]> {
     return this.repo.listZones(cityId);
+  }
+
+  /** Cụm gợi ý cho điểm ghim (decisions 2026-10-07): chứa điểm, trên cạnh chung thì cả hai, ngoài khung thì gần nhất. */
+  async zoneSuggestions(citySlug: string, point: LngLat): Promise<ZoneSuggestResponse> {
+    const city = await this.resolveCity(citySlug);
+    const areas = await this.repo.listZoneAreas(city.id);
+    return { zones: suggestZones(areas.map(({ slug, name, rings }) => ({ ref: { slug, name }, rings })), point) };
   }
 
   /** zoneId → tên cụm, để thẻ địa điểm hiện "Cà phê · Trung tâm". */

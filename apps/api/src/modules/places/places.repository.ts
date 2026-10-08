@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import type { OpeningSlot, PlaceCategory, PlaceStatus, VerifySource } from '@ranhduong/contracts';
 import { Types } from 'mongoose';
-import type { EditRow, PlaceUpdate } from './place-edit';
+import type { DuplicateRow, EditRow, PlaceUpdate } from './place-edit';
 import type { ListedPlace } from './place-listing';
 import { PLACE_MODEL, type PlaceModel } from './schemas/place.schema';
 
@@ -40,6 +40,9 @@ interface CoverRow {
   _id: Types.ObjectId;
   photos?: { key: string }[];
 }
+
+/** Các trường đọc ra để so trùng. */
+type DuplicateDoc = Pick<EditRow, '_id' | 'name' | 'aliases' | 'status' | 'zoneId' | 'location' | 'contact' | 'ids'>;
 
 /** Lọc trong DB; thẻ, từ khoá, phân trang lọc trong bộ nhớ ở PlacesService. */
 export interface ListFilter {
@@ -144,6 +147,35 @@ export class PlacesRepository {
         { returnDocument: 'after' },
       )
       .lean<EditRow>();
+  }
+
+  /** Địa điểm chưa gộp của thành phố, đủ trường để chấm điểm trùng; đọc hết rồi so trong bộ nhớ (vài trăm điểm). */
+  async listForDuplicateCheck(cityId: string, excludeId?: string): Promise<DuplicateRow[]> {
+    const docs = await this.places
+      .find(
+        {
+          cityId: new Types.ObjectId(cityId),
+          status: { $ne: 'merged' },
+          ...(excludeId ? { _id: { $ne: new Types.ObjectId(excludeId) } } : {}),
+        },
+        { name: 1, aliases: 1, status: 1, zoneId: 1, location: 1, contact: 1, ids: 1 },
+      )
+      .lean<DuplicateDoc[]>();
+    return docs.map((d) => {
+      const [lng, lat] = d.location?.coordinates ?? [];
+      return {
+        id: d._id.toString(),
+        name: d.name,
+        aliases: d.aliases ?? [],
+        status: d.status,
+        zoneId: d.zoneId?.toString(),
+        location: lng !== undefined && lat !== undefined ? { lng, lat } : undefined,
+        phone: d.contact?.phone ?? undefined,
+        fanpage: d.contact?.fanpage ?? undefined,
+        osmId: d.ids?.osmId ?? undefined,
+        googlePlaceId: d.ids?.googlePlaceId ?? undefined,
+      };
+    });
   }
 
   /** placeId → key ảnh đầu tiên, chỉ địa điểm active có ảnh. */

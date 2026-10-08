@@ -142,6 +142,35 @@ describe('PlaceEditorService', () => {
     });
   });
 
+  describe('checkDuplicates', () => {
+    // Cách m mét về phía bắc của [0.2, 0.2] (gần xích đạo 1° vĩ độ ≈ 111 195 m).
+    const near = (m: number) => ({ type: 'Point' as const, coordinates: [0.2, 0.2 + m / 111_195] as [number, number] });
+
+    it('cùng tên ở gần: có thể trùng, kèm tên cụm và khoảng cách; bỏ qua chỗ đã gộp và thành phố khác', async () => {
+      const zone = await t.conn.collection('zones').findOne({ cityId: new Types.ObjectId(cityId), slug: 'cum-gia-lap-a' });
+      const otherCityId = (await t.app.get(CitiesService).applySeed(fakeCitySeed({ slug: 'thanh-pho-gia-lap-hai' }))).cityId;
+      await places().insertMany([
+        fakePlaceDoc(cityId, { slug: 'gia-lap-may', name: 'Giả Lập Mây', zoneId: zone?._id }),
+        fakePlaceDoc(cityId, { slug: 'gia-lap-may-cu', name: 'Giả Lập Mây', status: 'merged' }),
+        fakePlaceDoc(otherCityId, { slug: 'gia-lap-may', name: 'Giả Lập Mây' }),
+      ]);
+      const { matches } = await editor.checkDuplicates(CITY, { name: 'Cà phê Giả Lập Mây', location: near(50) });
+      expect(matches).toEqual([
+        { id: expect.any(String), name: 'Giả Lập Mây', status: 'active', zoneName: 'Cụm Giả Lập A', distanceM: 50, score: 0.47, level: 'possible' },
+      ]);
+    });
+    it('số điện thoại gõ kiểu trong nước vẫn khớp số +84 đã lưu: rất có thể trùng', async () => {
+      await places().insertOne(fakePlaceDoc(cityId, { name: 'Giả Lập Mây', contact: { phone: '+84900000001' } }));
+      const { matches } = await editor.checkDuplicates(CITY, { name: 'Giả Lập Mây', phone: '0900 000 001' });
+      expect(matches.map((m) => m.level)).toEqual(['likely']);
+    });
+    it('không so với chính địa điểm đang sửa', async () => {
+      const { insertedId } = await places().insertOne(fakePlaceDoc(cityId, { name: 'Giả Lập Mây' }));
+      const { matches } = await editor.checkDuplicates(CITY, { name: 'Giả Lập Mây', location: near(0), excludeId: insertedId.toString() });
+      expect(matches).toEqual([]);
+    });
+  });
+
   describe('get', () => {
     it('đọc được địa điểm có ảnh thiếu nguồn, không có updatedAt; id không có thì 404', async () => {
       const { insertedId } = await places().insertOne(fakePlaceDoc(cityId, { photos: [{ key: 'places/gia-lap/1', source: 'self' }] }));

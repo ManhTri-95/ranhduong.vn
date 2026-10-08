@@ -1,6 +1,13 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
-import { activationIssues, type AdminPlace, type PlaceEditInput } from '@ranhduong/contracts';
-import { isSlugOf, nextFreeSlug, normalizeName, slugify } from '@ranhduong/geo';
+import {
+  activationIssues,
+  normalizeVnPhone,
+  type AdminPlace,
+  type DuplicateCheckInput,
+  type DuplicateCheckResponse,
+  type PlaceEditInput,
+} from '@ranhduong/contracts';
+import { findDuplicates, isSlugOf, nextFreeSlug, normalizeName, slugify } from '@ranhduong/geo';
 import { isDuplicateKeyError } from '../../shared/db/mongo-errors';
 import { ApiException } from '../../shared/http/api-exception';
 import { CitiesService } from '../cities/cities.service';
@@ -9,6 +16,8 @@ import { PlacesRepository } from './places.repository';
 
 /** Số lần đọc lại khi trạng thái, updatedAt hay slug vừa bị request khác đổi. */
 const MAX_ATTEMPTS = 3;
+/** Số chỗ nghi trùng trả về tối đa. */
+const MAX_DUPLICATES = 5;
 
 const notFound = () => new ApiException('NOT_FOUND', HttpStatus.NOT_FOUND, 'Không tìm thấy địa điểm');
 const busy = () => new ApiException('CONFLICT', HttpStatus.CONFLICT, 'Địa điểm vừa được sửa ở nơi khác. Tải lại trang rồi thử lại.');
@@ -104,6 +113,31 @@ export class PlaceEditorService {
       if (activated) return this.present(activated);
     }
     throw busy();
+  }
+
+  /** Chỗ nghi trùng trong thành phố (technical-design mục 9 và luật tên giống, decisions 2026-10-08), điểm cao trước. */
+  async checkDuplicates(citySlug: string, input: DuplicateCheckInput): Promise<DuplicateCheckResponse> {
+    const city = await this.cities.resolveCity(citySlug);
+    const [rows, zoneNames] = await Promise.all([this.repo.listForDuplicateCheck(city.id, input.excludeId), this.cities.zoneNames(city.id)]);
+    const [lng, lat] = input.location?.coordinates ?? [];
+    const subject = {
+      name: input.name,
+      location: lng !== undefined && lat !== undefined ? { lng, lat } : undefined,
+      phone: input.phone ? (normalizeVnPhone(input.phone) ?? undefined) : undefined,
+      fanpage: input.fanpage || undefined,
+    };
+    const matches = findDuplicates(subject, rows.map((row) => ({ ...row, ref: row })));
+    return {
+      matches: matches.slice(0, MAX_DUPLICATES).map(({ ref, score, level, distanceM }) => ({
+        id: ref.id,
+        name: ref.name,
+        status: ref.status,
+        zoneName: ref.zoneId === undefined ? undefined : zoneNames.get(ref.zoneId),
+        distanceM: distanceM === undefined ? undefined : Math.round(distanceM),
+        score: Math.round(score * 100) / 100,
+        level,
+      })),
+    };
   }
 
   private async zoneId(cityId: string, slug: string | undefined): Promise<string | undefined> {
