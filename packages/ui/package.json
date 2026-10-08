@@ -4,6 +4,7 @@
   "private": true,
   "exports": {
     "./tokens.css": "./src/tokens.css",
-    "./components.css": "./src/components.css"
+    "./components.css": "./src/components.css",
+    "./admin.css": "./src/admin.css"
   }
 }

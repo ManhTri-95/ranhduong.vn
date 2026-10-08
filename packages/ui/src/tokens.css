@@ -43,6 +43,13 @@
   --shadow-note: 0 2px 0 var(--note-edge);
   --shadow-float: 0 6px 16px rgba(30, 58, 47, 0.25);
   --page-gutter: 20px;
+  /* Màu trạng thái, chỉ dùng trong quản trị (ui-spec mục 12): chữ / nền. */
+  --status-ok: #1F6B3F;
+  --status-ok-bg: #DCEFE2;
+  --status-warn: #6E4A00;
+  --status-warn-bg: #FCEFB4;
+  --status-bad: #8E2F22;
+  --status-bad-bg: #F6DAD5;
 }
 
 [data-season='maianhdao'] { --accent: #E58FA8; }

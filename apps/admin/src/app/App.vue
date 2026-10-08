@@ -44,10 +44,21 @@ body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(
 .sub { font-size: 12px; opacity: .8; padding: 0 10px 18px; }
 .nav { color: var(--paper-raised); text-decoration: none; height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 10px; font-size: 14px; }
 .nav.router-link-active { background: rgba(255, 253, 248, .14); font-weight: 700; }
-.main { flex: 1; padding: 28px 32px; }
+.main { flex: 1; min-width: 0; padding: 28px 32px; }
 :focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
 .account { margin-top: auto; display: flex; flex-direction: column; gap: 6px; padding: 0 10px; }
 .email { font-size: 12px; overflow-wrap: anywhere; }
 .logout { min-height: 44px; border: 1.5px solid var(--paper-raised); border-radius: var(--radius-chip); background: transparent; color: var(--paper-raised); font: inherit; font-size: 14px; cursor: pointer; }
 .logout-error { font-size: 12px; }
+
+/* Điện thoại: thanh bên thành thanh trên cùng, nội dung một cột (form địa điểm dùng trên điện thoại, ui-spec mục 12). */
+@media (max-width: 767px) {
+  .layout { flex-direction: column; }
+  .side { width: auto; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding: 8px var(--page-gutter); }
+  .logo { font-size: 18px; padding: 0; }
+  .sub, .email { display: none; }
+  .nav { padding: 0 10px; }
+  .account { margin: 0 0 0 auto; flex-direction: row; align-items: center; padding: 0; }
+  .main { padding: 16px var(--page-gutter) 0; }
+}
 </style>

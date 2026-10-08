@@ -4,5 +4,9 @@ declare module '*.vue' {
   const component: DefineComponent<object, object, unknown>;
   export default component;
 }
-interface ImportMetaEnv { readonly VITE_API_BASE: string }
+interface ImportMetaEnv {
+  readonly VITE_API_BASE: string;
+  /** Style MapLibre cho bản đồ ghim; để trống thì dùng positron của OpenFreeMap. */
+  readonly VITE_MAP_STYLE_URL?: string;
+}
 interface ImportMeta { readonly env: ImportMetaEnv }

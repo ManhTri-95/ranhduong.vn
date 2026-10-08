@@ -1,4 +1,6 @@
 import '@ranhduong/ui/tokens.css';
+import '@ranhduong/ui/components.css';
+import '@ranhduong/ui/admin.css';
 import { createApp } from 'vue';
 import App from './App.vue';
 import { router } from './router';
