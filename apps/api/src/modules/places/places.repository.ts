@@ -175,6 +175,26 @@ export class PlacesRepository {
       .lean<EditRow>();
   }
 
+  /**
+   * Đổi trạng thái (và các trường đi kèm), chỉ khi document còn như lúc đọc: cùng trạng thái, cùng updatedAt
+   * (null là document chèn thẳng, chưa có updatedAt). Đã đổi thì null.
+   */
+  async transition(id: string, expected: { status: PlaceStatus; updatedAt: Date | null }, set: Record<string, unknown>): Promise<EditRow | null> {
+    return this.places
+      .findOneAndUpdate(
+        { _id: new Types.ObjectId(id), status: expected.status, updatedAt: expected.updatedAt ?? { $exists: false } },
+        { $set: set },
+        { returnDocument: 'after', runValidators: true },
+      )
+      .lean<EditRow>();
+  }
+
+  /** Xoá hẳn, chỉ khi còn là nháp; false khi không có hoặc không còn là nháp. */
+  async deleteDraft(id: string): Promise<boolean> {
+    const { deletedCount } = await this.places.deleteOne({ _id: new Types.ObjectId(id), status: 'draft' });
+    return deletedCount === 1;
+  }
+
   /** Địa điểm chưa gộp của thành phố, đủ trường để chấm điểm trùng; đọc hết rồi so trong bộ nhớ (vài trăm điểm). */
   async listForDuplicateCheck(cityId: string, excludeId?: string): Promise<DuplicateRow[]> {
     const docs = await this.places

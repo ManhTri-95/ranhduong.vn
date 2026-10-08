@@ -47,6 +47,9 @@ describe('Route quản trị địa điểm qua HTTP', () => {
       ['POST', `/admin/cities/${CITY}/places`],
       ['GET', `/admin/cities/${CITY}/zones/suggest?lng=0.2&lat=0.2`],
       ['GET', `/admin/cities/${CITY}/places`],
+      ['POST', '/admin/places/0123456789abcdef01234567/verify'],
+      ['POST', '/admin/places/0123456789abcdef01234567/status'],
+      ['DELETE', '/admin/places/0123456789abcdef01234567'],
     ] as const;
     for (const [method, path] of routes) {
       const res = await call(path, { method, signedIn: false, body: method === 'POST' ? DRAFT : undefined });
@@ -100,6 +103,41 @@ describe('Route quản trị địa điểm qua HTTP', () => {
       { name: 'Quán Giả Lập', status: 'draft', activationIssues: ['location_missing', 'hours_invalid', 'verify_source_missing'] },
     ]);
     expect((await call('/admin/cities/thanh-pho-khong-co/places')).status).toBe(404);
+  });
+  it('xoá nháp không có Origin: 403, không xoá', async () => {
+    const place = await createDraft();
+    const res = await call(`/admin/places/${place.id}`, { method: 'DELETE', withOrigin: false });
+    expect(res.status).toBe(403);
+    expect(await t.conn.collection('places').countDocuments()).toBe(1);
+  });
+  it('xoá nháp, xác minh, ẩn qua HTTP; chỗ đã công khai không xoá được', async () => {
+    const draft = await createDraft();
+    expect((await call(`/admin/places/${draft.id}`, { method: 'DELETE' })).status).toBe(204);
+    expect(await t.conn.collection('places').countDocuments()).toBe(0);
+
+    const pinned = {
+      ...DRAFT,
+      location: { type: 'Point', coordinates: [0.2, 0.2] },
+      openingHours: [{ day: 1, open: '07:00', close: '22:00' }],
+    };
+    const place = AdminPlace.parse(await (await call(`/admin/cities/${CITY}/places`, { method: 'POST', body: pinned })).json());
+    const verified = await call(`/admin/places/${place.id}/verify`, { method: 'POST', body: { verifySource: 'owner' } });
+    expect(verified.status).toBe(200);
+    expect(AdminPlace.parse(await verified.json())).toMatchObject({ status: 'active', verifySource: 'owner' });
+    const hidden = await call(`/admin/places/${place.id}/status`, { method: 'POST', body: { action: 'hide' } });
+    expect(hidden.status).toBe(200);
+    expect(AdminPlace.parse(await hidden.json()).status).toBe('hidden');
+    const notDraft = await call(`/admin/places/${place.id}`, { method: 'DELETE' });
+    expect(notDraft.status).toBe(400);
+    expect(await t.conn.collection('places').countDocuments()).toBe(1);
+  });
+  it('thân sai: 400 VALIDATION_FAILED có path', async () => {
+    const place = await createDraft();
+    const status = await call(`/admin/places/${place.id}/status`, { method: 'POST', body: { action: 'merge' } });
+    expect(status.status).toBe(400);
+    expect(await status.json()).toMatchObject({ code: 'VALIDATION_FAILED', details: [{ path: 'action' }] });
+    const verify = await call(`/admin/places/${place.id}/verify`, { method: 'POST', body: { verifySource: 'ctv' } });
+    expect(await verify.json()).toMatchObject({ code: 'VALIDATION_FAILED', details: [{ path: 'verifySource' }] });
   });
   it('kiểm trùng và gợi ý cụm', async () => {
     const dup = await call(`/admin/cities/${CITY}/places/duplicate-check`, { method: 'POST', body: { name: 'Quán Giả Lập' } });

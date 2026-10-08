@@ -1,4 +1,4 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import {
   activationIssues,
   normalizeVnPhone,
@@ -10,19 +10,14 @@ import {
 } from '@ranhduong/contracts';
 import { findDuplicates, isSlugOf, nextFreeSlug, normalizeName, slugify } from '@ranhduong/geo';
 import { isDuplicateKeyError } from '../../shared/db/mongo-errors';
-import { ApiException } from '../../shared/http/api-exception';
 import { CitiesService } from '../cities/cities.service';
 import { editUpdate, toAdminPlace, toAdminPlaceSummary, type EditRow } from './place-edit';
+import { MAX_ATTEMPTS, placeBusy as busy, placeInvalid as invalid, placeNotFound as notFound } from './place-errors';
 import { PlacesRepository } from './places.repository';
 
-/** Số lần đọc lại khi trạng thái, updatedAt hay slug vừa bị request khác đổi. */
-const MAX_ATTEMPTS = 3;
 /** Số chỗ nghi trùng trả về tối đa. */
 const MAX_DUPLICATES = 5;
 
-const notFound = () => new ApiException('NOT_FOUND', HttpStatus.NOT_FOUND, 'Không tìm thấy địa điểm');
-const busy = () => new ApiException('CONFLICT', HttpStatus.CONFLICT, 'Địa điểm vừa được sửa ở nơi khác. Tải lại trang rồi thử lại.');
-const invalid = (message: string, details?: unknown) => new ApiException('VALIDATION_FAILED', HttpStatus.BAD_REQUEST, message, details);
 const invalidField = (path: string, message: string) => invalid('Dữ liệu gửi lên không hợp lệ', [{ path, message }]);
 
 /** Gốc slug từ tên; tên không có chữ cái hay chữ số (ví dụ chỉ có biểu tượng) thì không tạo được đường dẫn. */
@@ -162,7 +157,8 @@ export class PlaceEditorService {
     return nextFreeSlug(base, await this.repo.takenSlugs(cityId, base, current._id.toString()));
   }
 
-  private async present(row: EditRow): Promise<AdminPlace> {
+  /** Document → AdminPlace (id cụm thành slug); PlaceStatusService cũng dùng. */
+  async present(row: EditRow): Promise<AdminPlace> {
     const zones = await this.cities.zones(row.cityId.toString());
     return toAdminPlace(row, new Map(zones.map((z) => [z.id, z.slug])));
   }
