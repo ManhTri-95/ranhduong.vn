@@ -20,6 +20,7 @@ const place = (overrides: Partial<ListedPlace> = {}): ListedPlace => ({
   aliases: [],
   tags: [],
   category: 'cafe',
+  alsoCategories: [],
   openingHours: [],
   ...overrides,
 });
@@ -196,5 +197,16 @@ describe('lọc và đếm thẻ', () => {
       { slug: 'view-doi', count: 1 },
     ]);
     expect(countTags([])).toEqual([]);
+  });
+});
+
+describe('danh mục phụ trên thẻ và khi tìm', () => {
+  it('thẻ chỉ có alsoCategories khi khác rỗng', () => {
+    expect(toPlaceCard(place({ alsoCategories: ['food'] }), new Map()).alsoCategories).toEqual(['food']);
+    expect(toPlaceCard(place(), new Map())).not.toHaveProperty('alsoCategories');
+  });
+  it('tìm "an uong" ra quán có danh mục phụ ăn uống, không kéo theo quán chỉ là cà phê', () => {
+    const list = [place({ slug: 'cafe-co-com', alsoCategories: ['food'] }), place({ slug: 'cafe-thuan' })];
+    expect(searchPlaces(list, 'an uong').map((p) => p.slug)).toEqual(['cafe-co-com']);
   });
 });

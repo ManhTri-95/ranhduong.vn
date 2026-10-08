@@ -75,6 +75,14 @@ describe('PlaceEditorService', () => {
       expect(doc).not.toHaveProperty('address');
       expect(doc?.nameNorm).toBe('gia lap moi');
     });
+    it('lưu danh mục phụ và mức mái che; gửi lại không có thì xoá', async () => {
+      const created = await editor.create(CITY, fakeEditInput({ alsoCategories: ['food'], cover: 'partial' }));
+      expect(created).toMatchObject({ alsoCategories: ['food'], cover: 'partial' });
+      const cleared = await editor.update(created.id, fakeEditInput());
+      expect(cleared.alsoCategories).toEqual([]);
+      expect(cleared.cover).toBeUndefined();
+      expect(await dbDoc(created.id)).not.toHaveProperty('cover');
+    });
     it('nháp: tên đổi mà gốc slug như cũ thì giữ slug', async () => {
       const created = await editor.create(CITY, fakeEditInput({ name: 'Quán Giả Lập' }));
       expect((await editor.update(created.id, fakeEditInput({ name: 'quán giả lập' }))).slug).toBe(created.slug);

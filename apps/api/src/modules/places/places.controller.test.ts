@@ -74,6 +74,21 @@ describe('GET /v1/cities/:city/places', () => {
     ]);
   });
 
+  it('danh mục phụ: trang Ăn uống có quán cà phê có đồ ăn, quán chỉ cà phê thì không; lọc nhiều danh mục không lặp; tìm "an uong"', async () => {
+    await places().insertMany([
+      fakePlaceDoc(cityId, { slug: 'cafe-co-com', category: 'cafe', alsoCategories: ['food'], verifySource: 'owner' }),
+      fakePlaceDoc(cityId, { slug: 'cafe-thuan', category: 'cafe' }),
+      fakePlaceDoc(cityId, { slug: 'quan-an', category: 'food' }),
+    ]);
+    const food = (await get(`/cities/${CITY}/places?category=food`)).body as PlaceListResponse;
+    expect(food.items.map((p) => p.slug).sort()).toEqual(['cafe-co-com', 'quan-an']);
+    expect(food.items.find((p) => p.slug === 'cafe-co-com')?.alsoCategories).toEqual(['food']);
+    expect(slugs((await get(`/cities/${CITY}/places?category=cafe,food`)).body).sort()).toEqual(['cafe-co-com', 'cafe-thuan', 'quan-an']);
+    const found = slugs((await get(`/cities/${CITY}/places?q=${encodeURIComponent('an uong')}`)).body);
+    expect(found).toEqual(expect.arrayContaining(['cafe-co-com', 'quan-an']));
+    expect(found).not.toContain('cafe-thuan');
+  });
+
   it('lọc nhiều danh mục và giới hạn số kết quả', async () => {
     await places().insertMany([
       fakePlaceDoc(cityId, { slug: 'cafe-1', verifySource: 'owner' }),

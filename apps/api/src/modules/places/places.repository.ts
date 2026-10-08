@@ -13,6 +13,7 @@ const CARD_FIELDS = {
   aliases: 1,
   tags: 1,
   category: 1,
+  alsoCategories: 1,
   zoneId: 1,
   practicalNotes: 1,
   openingHours: 1,
@@ -29,6 +30,7 @@ interface CardRow {
   aliases?: string[];
   tags?: string[];
   category: PlaceCategory;
+  alsoCategories?: PlaceCategory[];
   zoneId?: Types.ObjectId | null;
   practicalNotes?: string | null;
   openingHours?: OpeningSlot[];
@@ -70,7 +72,8 @@ export class PlacesRepository {
         {
           cityId: new Types.ObjectId(cityId),
           status: 'active',
-          ...(filter.categories ? { category: { $in: filter.categories } } : {}),
+          // Danh mục chính hoặc một danh mục phụ (S27); $or trả mỗi địa điểm một lần.
+          ...(filter.categories ? { $or: [{ category: { $in: filter.categories } }, { alsoCategories: { $in: filter.categories } }] } : {}),
           ...(filter.zoneId ? { zoneId: new Types.ObjectId(filter.zoneId) } : {}),
         },
         CARD_FIELDS,
@@ -82,6 +85,7 @@ export class PlacesRepository {
       aliases: d.aliases ?? [],
       tags: d.tags ?? [],
       category: d.category,
+      alsoCategories: d.alsoCategories ?? [],
       zoneId: d.zoneId?.toString(),
       practicalNotes: d.practicalNotes ?? undefined,
       openingHours: (d.openingHours ?? []).map(({ day, open, close }) => ({ day, open, close })),

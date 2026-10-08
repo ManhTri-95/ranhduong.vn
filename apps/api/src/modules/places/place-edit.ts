@@ -1,4 +1,4 @@
-import { AdminPlace, type PlaceCategory, type PlaceEditInput, type PlaceStatus, type VerifySource } from '@ranhduong/contracts';
+import { AdminPlace, type PlaceCategory, type PlaceCover, type PlaceEditInput, type PlaceStatus, type VerifySource } from '@ranhduong/contracts';
 import type { LatLng } from '@ranhduong/geo';
 import { Types } from 'mongoose';
 
@@ -11,6 +11,7 @@ export interface EditRow {
   name: string;
   aliases?: string[];
   category: PlaceCategory;
+  alsoCategories?: PlaceCategory[];
   zoneId?: Types.ObjectId | null;
   tags?: string[];
   location?: { type: 'Point'; coordinates: number[] } | null;
@@ -18,7 +19,7 @@ export interface EditRow {
   openingHours?: { day: number; open: string; close: string }[];
   visitDurationMin?: number | null;
   bestTime?: string[];
-  indoor?: boolean | null;
+  cover?: PlaceCover | null;
   priceLevel?: number | null;
   transport?: string[];
   practicalNotes?: string | null;
@@ -65,6 +66,7 @@ export function editUpdate(input: PlaceEditInput, derived: { nameNorm: string; s
     slug: derived.slug,
     aliases: input.aliases,
     category: input.category,
+    alsoCategories: input.alsoCategories,
     tags: input.tags,
     openingHours: input.openingHours,
     bestTime: input.bestTime,
@@ -76,7 +78,7 @@ export function editUpdate(input: PlaceEditInput, derived: { nameNorm: string; s
     location: input.location,
     address: input.address,
     visitDurationMin: input.visitDurationMin,
-    indoor: input.indoor,
+    cover: input.cover,
     priceLevel: input.priceLevel,
     practicalNotes: input.practicalNotes,
     verifySource: input.verifySource,
@@ -98,6 +100,7 @@ export function toAdminPlace(row: EditRow, zoneSlugById: ReadonlyMap<string, str
     name: row.name,
     aliases: row.aliases ?? [],
     category: row.category,
+    alsoCategories: row.alsoCategories ?? [],
     zone: row.zoneId ? zoneSlugById.get(row.zoneId.toString()) : undefined,
     tags: row.tags ?? [],
     location: row.location ? { type: 'Point', coordinates: row.location.coordinates } : undefined,
@@ -105,7 +108,7 @@ export function toAdminPlace(row: EditRow, zoneSlugById: ReadonlyMap<string, str
     openingHours: (row.openingHours ?? []).map(({ day, open, close }) => ({ day, open, close })),
     visitDurationMin: opt(row.visitDurationMin),
     bestTime: row.bestTime ?? [],
-    indoor: opt(row.indoor),
+    cover: opt(row.cover),
     priceLevel: opt(row.priceLevel),
     transport: row.transport ?? [],
     practicalNotes: opt(row.practicalNotes),

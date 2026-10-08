@@ -18,6 +18,7 @@ export interface ListedPlace {
   aliases: string[];
   tags: string[];
   category: PlaceCategory;
+  alsoCategories: PlaceCategory[];
   zoneId?: string;
   practicalNotes?: string;
   openingHours: OpeningSlot[];
@@ -83,7 +84,10 @@ export function countTags(places: ListedPlace[]): TagCount[] {
 /** Lọc theo từ khoá không dấu: khớp tên tốt hơn đứng trước, cùng mức khớp thì theo thứ tự nổi bật. */
 export function searchPlaces(places: ListedPlace[], q: string): ListedPlace[] {
   return places
-    .map((place) => ({ place, score: matchScore(q, place.name, [...place.aliases, CATEGORY_LABEL[place.category]]) }))
+    .map((place) => {
+      const labels = [place.category, ...place.alsoCategories].map((c) => CATEGORY_LABEL[c]);
+      return { place, score: matchScore(q, place.name, [...place.aliases, ...labels]) };
+    })
     .filter((ranked) => ranked.score > 0)
     .sort((a, b) => b.score - a.score || compareFeatured(a.place, b.place))
     .map((ranked) => ranked.place);
@@ -108,6 +112,7 @@ export function toPlaceCard(place: ListedPlace, zoneNames: ReadonlyMap<string, s
     slug: place.slug,
     name: place.name,
     category: place.category,
+    ...(place.alsoCategories.length > 0 ? { alsoCategories: place.alsoCategories } : {}),
     zoneName: place.zoneId ? zoneNames.get(place.zoneId) : undefined,
     note: cardNote(place.practicalNotes),
     openingHours: place.openingHours,

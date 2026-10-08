@@ -4,14 +4,15 @@ import { describe, expect, it } from 'vitest';
 import { editUpdate, toAdminPlace, type EditRow } from './place-edit';
 
 describe('editUpdate', () => {
-  it('ghi trường có giá trị (kể cả false), $unset trường tuỳ chọn để trống; contact bỏ ô trống', () => {
+  it('ghi trường có giá trị, $unset trường tuỳ chọn để trống; contact bỏ ô trống', () => {
     const zoneId = new Types.ObjectId().toString();
     const input = PlaceEditInput.parse({
       name: 'Quán Giả Lập',
       category: 'cafe',
+      alsoCategories: ['food'],
       address: 'Địa chỉ giả lập',
       contact: { phone: '+84900000001' },
-      indoor: false,
+      cover: 'none',
     });
     const { $set, $unset } = editUpdate(input, { nameNorm: 'gia lap', slug: 'quan-gia-lap', zoneId });
     expect($set).toMatchObject({
@@ -19,7 +20,8 @@ describe('editUpdate', () => {
       nameNorm: 'gia lap',
       slug: 'quan-gia-lap',
       address: 'Địa chỉ giả lập',
-      indoor: false,
+      cover: 'none',
+      alsoCategories: ['food'],
       contact: { phone: '+84900000001' },
     });
     expect(String($set.zoneId)).toBe(zoneId);
@@ -28,6 +30,7 @@ describe('editUpdate', () => {
   it('không có cụm thì $unset zoneId', () => {
     const { $unset } = editUpdate(PlaceEditInput.parse({ name: 'Quán Giả Lập', category: 'cafe' }), { nameNorm: 'gia lap', slug: 'quan-gia-lap' });
     expect($unset).toHaveProperty('zoneId', '');
+    expect($unset).toHaveProperty('cover', '');
   });
 });
 
@@ -54,6 +57,7 @@ describe('toAdminPlace', () => {
       name: 'Quán Giả Lập',
       aliases: [],
       category: 'cafe',
+      alsoCategories: [],
       zone: 'cum-gia-lap-a',
       tags: [],
       openingHours: [],
@@ -64,5 +68,21 @@ describe('toAdminPlace', () => {
       photos: [{ key: 'places/gia-lap/1', source: 'self' }],
       updatedAt: '2026-10-08T03:00:00.000Z',
     });
+  });
+  it('document cũ còn trường indoor: bỏ qua, mái che là chưa rõ', () => {
+    const legacy = {
+      _id: new Types.ObjectId('0123456789abcdef01234567'),
+      cityId: new Types.ObjectId(),
+      status: 'draft' as const,
+      slug: 'quan-gia-lap',
+      name: 'Quán Giả Lập',
+      category: 'cafe' as const,
+      indoor: true,
+      updatedAt: new Date('2026-10-08T03:00:00Z'),
+    };
+    const place = toAdminPlace(legacy, new Map());
+    expect(place.cover).toBeUndefined();
+    expect(place).not.toHaveProperty('indoor');
+    expect(place.alsoCategories).toEqual([]);
   });
 });
