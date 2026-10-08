@@ -10,6 +10,7 @@ import {
   sortRows,
   tabCounts,
   visibleRows,
+  withKnownZone,
   type ListFilters,
 } from './filters';
 
@@ -159,5 +160,15 @@ describe('sortRows, visibleRows', () => {
     const rows = [row({ name: 'Bãi Giả Lập', status: 'draft' }), row({ name: 'Ấp Giả Lập', status: 'draft' }), row({ name: 'Cầu Giả Lập' })];
     expect(names(visibleRows(rows, filters({ tab: 'draft', sort: 'name' }), NOW))).toEqual(['Ấp Giả Lập', 'Bãi Giả Lập']);
     expect(names(rows)).toEqual(['Bãi Giả Lập', 'Ấp Giả Lập', 'Cầu Giả Lập']);
+  });
+});
+
+describe('withKnownZone', () => {
+  it('cụm trong URL không còn trong thành phố (slug cũ, đã đổi ranh giới): về "Mọi cụm"; cụm có thật, "Chưa chọn cụm", "Mọi cụm" giữ nguyên', () => {
+    const zones = ['cum-gia-lap-a', 'cum-gia-lap-b'];
+    expect(withKnownZone(filters({ zone: 'cum-da-bo' }), zones)).toEqual(filters());
+    expect(withKnownZone(filters({ zone: 'cum-gia-lap-a', tab: 'draft' }), zones)).toEqual(filters({ zone: 'cum-gia-lap-a', tab: 'draft' }));
+    expect(withKnownZone(filters({ zone: NO_ZONE }), zones).zone).toBe(NO_ZONE);
+    expect(withKnownZone(filters(), zones).zone).toBe('');
   });
 });

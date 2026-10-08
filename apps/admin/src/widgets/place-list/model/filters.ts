@@ -65,6 +65,15 @@ export function filtersFromQuery(query: Readonly<Record<string, unknown>>): List
   };
 }
 
+/**
+ * Cụm trong URL không còn trong thành phố (slug cũ sau khi đổi ranh giới cụm) thì về "Mọi cụm", để link cũ không ra
+ * danh sách trống. Gọi khi đã tải xong các cụm.
+ */
+export function withKnownZone(filters: ListFilters, zoneSlugs: readonly string[]): ListFilters {
+  if (filters.zone === '' || filters.zone === NO_ZONE || zoneSlugs.includes(filters.zone)) return filters;
+  return { ...filters, zone: '' };
+}
+
 /** Ngược lại của filtersFromQuery: chỉ ghi giá trị khác mặc định để URL ngắn. */
 export function filtersToQuery(filters: ListFilters): Record<string, string> {
   const query: Record<string, string> = {};

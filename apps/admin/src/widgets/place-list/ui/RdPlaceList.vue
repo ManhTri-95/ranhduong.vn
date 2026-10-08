@@ -6,7 +6,18 @@ import { statusChip, verifySourceLabel } from '@/entities/place/model/status';
 import { primaryAction, stepFor, type DialogStep, type PlaceAction } from '@/features/place-status/model/actions';
 import RdPlaceActionsDialog from '@/features/place-status/ui/RdPlaceActionsDialog.vue';
 import { daysAgoText } from '@/shared/lib/time';
-import { filtersFromQuery, filtersToQuery, LIST_TABS, NO_ZONE, tabCounts, VERIFY_FILTERS, visibleRows, type ListFilters, type ListSort } from '../model/filters';
+import {
+  filtersFromQuery,
+  filtersToQuery,
+  LIST_TABS,
+  NO_ZONE,
+  tabCounts,
+  VERIFY_FILTERS,
+  visibleRows,
+  withKnownZone,
+  type ListFilters,
+  type ListSort,
+} from '../model/filters';
 import { usePlaceList } from '../model/use-place-list';
 
 const route = useRoute();
@@ -16,6 +27,10 @@ const { load, rows, zones, reload } = usePlaceList();
 /** Bộ lọc ghi vào query URL; quay lại từ form thì trang dựng lại từ query nên giữ nguyên. */
 const filters = ref<ListFilters>(filtersFromQuery(route.query));
 watch(filters, (value) => void router.replace({ query: filtersToQuery(value) }), { deep: true });
+// Đã tải xong các cụm: cụm cũ trong URL không còn thì về "Mọi cụm".
+watch(zones, (list) => {
+  filters.value = withKnownZone(filters.value, list.map((zone) => zone.slug));
+});
 
 /** Mốc cho "Cần xác minh lại" và "N ngày trước"; lấy lại mỗi lần tải danh sách. */
 const now = ref(new Date());
