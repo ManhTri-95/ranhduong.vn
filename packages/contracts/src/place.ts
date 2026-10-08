@@ -125,6 +125,20 @@ export function needsOwnerConfirmation(place: { category: PlaceCategory; verifyS
   return place.category !== 'attraction' && place.verifySource !== 'owner';
 }
 
+/** Quá số ngày này kể từ lần xác minh cuối thì cần xác minh lại (backlog S07, S11; technical-design mục 7). */
+export const VERIFY_MAX_AGE_DAYS = 90;
+const DAY_MS = 86_400_000;
+
+/**
+ * Cần xác minh lại: chưa xác minh, ngày không đọc được, hoặc đã quá VERIFY_MAX_AGE_DAYS ngày tính tới `now`.
+ * Nhận Date (API) hoặc chuỗi ISO (admin, web).
+ */
+export function verificationStale(lastVerifiedAt: Date | string | undefined, now: Date): boolean {
+  if (lastVerifiedAt === undefined) return true;
+  const time = new Date(lastVerifiedAt).getTime();
+  return Number.isNaN(time) || now.getTime() - time > VERIFY_MAX_AGE_DAYS * DAY_MS;
+}
+
 /** Địa điểm phục vụ danh mục `c`: là danh mục chính hoặc một danh mục phụ (trang danh mục, chỗ ăn trong lịch trình). */
 export function servesCategory(place: { category: PlaceCategory; alsoCategories?: readonly PlaceCategory[] }, c: PlaceCategory): boolean {
   return place.category === c || (place.alsoCategories ?? []).includes(c);

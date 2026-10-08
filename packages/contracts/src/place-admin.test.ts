@@ -1,6 +1,20 @@
 import { describe, expect, it } from 'vitest';
+import { PlaceStatus } from './enums.js';
 import { parseOpeningHours } from './opening-hours.js';
-import { activationIssues, AdminPlace, DuplicateCheckInput, PlaceEditInput, ZoneSuggestQuery } from './place-admin.js';
+import {
+  activationIssues,
+  AdminPlace,
+  AdminPlaceSummary,
+  canVerify,
+  DuplicateCheckInput,
+  PlaceEditInput,
+  PlaceStatusInput,
+  PlaceVerifyInput,
+  statusActionsFor,
+  statusActionTarget,
+  statusAfter,
+  ZoneSuggestQuery,
+} from './place-admin.js';
 
 // Dữ liệu giả, tên rõ là giả; toạ độ quanh [0, 0].
 const POINT = { type: 'Point', coordinates: [0.2, 0.2] };
@@ -111,5 +125,77 @@ describe('ZoneSuggestQuery', () => {
     for (const query of [{ lng: '', lat: '0' }, { lng: 'abc', lat: '0' }, { lng: '181', lat: '0' }, { lng: '0', lat: '91' }, { lng: '0' }]) {
       expect(ZoneSuggestQuery.safeParse(query).success, JSON.stringify(query)).toBe(false);
     }
+  });
+});
+
+describe('đổi trạng thái địa điểm', () => {
+  it('statusAfter: ẩn, hiện lại, đã đóng cửa (từ đang hiển thị, bị nghi ngờ, đã ẩn), mở lại', () => {
+    expect(statusAfter('active', 'hide')).toBe('hidden');
+    expect(statusAfter('hidden', 'unhide')).toBe('active');
+    expect(statusAfter('active', 'close')).toBe('closed');
+    expect(statusAfter('suspected', 'close')).toBe('closed');
+    expect(statusAfter('hidden', 'close')).toBe('closed');
+    expect(statusAfter('closed', 'reopen')).toBe('active');
+  });
+  it('statusAfter: không làm được với nháp (xoá thay vì ẩn), chỗ đã gộp, thao tác không hợp trạng thái', () => {
+    expect(statusAfter('draft', 'hide')).toBeNull();
+    expect(statusAfter('draft', 'close')).toBeNull();
+    expect(statusAfter('merged', 'reopen')).toBeNull();
+    expect(statusAfter('active', 'reopen')).toBeNull();
+    expect(statusAfter('closed', 'hide')).toBeNull();
+    expect(statusAfter('closed', 'unhide')).toBeNull();
+  });
+  it('statusActionsFor: các thao tác làm được, theo thứ tự hiện trong admin', () => {
+    expect(statusActionsFor('active')).toEqual(['hide', 'close']);
+    expect(statusActionsFor('hidden')).toEqual(['unhide', 'close']);
+    expect(statusActionsFor('suspected')).toEqual(['close']);
+    expect(statusActionsFor('closed')).toEqual(['reopen']);
+    expect(statusActionsFor('draft')).toEqual([]);
+    expect(statusActionsFor('merged')).toEqual([]);
+  });
+  it('statusActionTarget: trạng thái đích của thao tác', () => {
+    expect(statusActionTarget('hide')).toBe('hidden');
+    expect(statusActionTarget('close')).toBe('closed');
+    expect(statusActionTarget('unhide')).toBe('active');
+    expect(statusActionTarget('reopen')).toBe('active');
+  });
+  it('canVerify: xác minh được nháp, chỗ đang hiển thị, chỗ bị nghi ngờ', () => {
+    expect(PlaceStatus.options.filter(canVerify)).toEqual(['draft', 'active', 'suspected']);
+  });
+  it('thân request: nguồn xác nhận chỉ owner hoặc admin; thao tác phải có trong danh sách', () => {
+    expect(PlaceVerifyInput.safeParse({ verifySource: 'owner' }).success).toBe(true);
+    expect(PlaceVerifyInput.safeParse({ verifySource: 'ctv' }).success).toBe(false);
+    expect(PlaceVerifyInput.safeParse({}).success).toBe(false);
+    expect(PlaceStatusInput.safeParse({ action: 'hide' }).success).toBe(true);
+    expect(PlaceStatusInput.safeParse({ action: 'merge' }).success).toBe(false);
+  });
+});
+
+describe('AdminPlaceSummary', () => {
+  const base = {
+    id: '0123456789abcdef01234567',
+    status: 'draft',
+    slug: 'quan-gia-lap',
+    name: 'Quán Giả Lập',
+    aliases: [],
+    category: 'cafe',
+    alsoCategories: ['food'],
+    photoCount: 0,
+    activationIssues: ['location_missing', 'verify_source_missing'],
+    updatedAt: '2026-10-08T03:00:00.000Z',
+  };
+  it('đọc một dòng danh sách; cụm, nguồn, ngày xác minh tuỳ chọn', () => {
+    const row = AdminPlaceSummary.parse(base);
+    expect(row.zone).toBeUndefined();
+    expect(row.lastVerifiedAt).toBeUndefined();
+    expect(row.activationIssues).toEqual(['location_missing', 'verify_source_missing']);
+    expect(AdminPlaceSummary.parse({ ...base, zone: 'cum-gia-lap-a', verifySource: 'owner', lastVerifiedAt: '2026-10-01T03:00:00.000Z' })).toMatchObject({
+      zone: 'cum-gia-lap-a',
+      verifySource: 'owner',
+    });
+  });
+  it('số ảnh âm, mã điều kiện lạ: lỗi', () => {
+    expect(AdminPlaceSummary.safeParse({ ...base, photoCount: -1 }).success).toBe(false);
+    expect(AdminPlaceSummary.safeParse({ ...base, activationIssues: ['khong-co'] }).success).toBe(false);
   });
 });

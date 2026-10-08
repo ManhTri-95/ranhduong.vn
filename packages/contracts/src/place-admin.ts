@@ -162,3 +162,71 @@ export type ZoneSuggestQuery = z.infer<typeof ZoneSuggestQuery>;
 /** Cụm gợi ý cho điểm ghim (decisions 2026-10-07): một cụm, hai cụm khi nằm trên cạnh chung, rỗng khi thành phố chưa có cụm. */
 export const ZoneSuggestResponse = z.object({ zones: z.array(z.object({ slug: Slug, name: z.string() })) });
 export type ZoneSuggestResponse = z.infer<typeof ZoneSuggestResponse>;
+
+/** Đổi trạng thái trong danh sách admin (S07, technical-design mục 4); gộp làm sau. */
+export const PlaceStatusAction = z.enum(['hide', 'unhide', 'close', 'reopen']);
+export type PlaceStatusAction = z.infer<typeof PlaceStatusAction>;
+
+/**
+ * hide: đang hiển thị → đã ẩn; unhide: đã ẩn → đang hiển thị; close: đang hiển thị, bị nghi ngờ hoặc đã ẩn → đã đóng cửa
+ * (lát 1 chưa có báo cáo nên admin tự đánh dấu); reopen: đã đóng cửa → đang hiển thị. Nháp thì xoá, không ẩn hay đóng.
+ */
+const STATUS_TRANSITIONS: Record<PlaceStatusAction, { from: readonly PlaceStatus[]; to: PlaceStatus }> = {
+  hide: { from: ['active'], to: 'hidden' },
+  unhide: { from: ['hidden'], to: 'active' },
+  close: { from: ['active', 'suspected', 'hidden'], to: 'closed' },
+  reopen: { from: ['closed'], to: 'active' },
+};
+
+/** Trạng thái đích của `action`. */
+export function statusActionTarget(action: PlaceStatusAction): PlaceStatus {
+  return STATUS_TRANSITIONS[action].to;
+}
+
+/** Trạng thái sau khi làm `action` từ `from`; null khi không làm được. */
+export function statusAfter(from: PlaceStatus, action: PlaceStatusAction): PlaceStatus | null {
+  const transition = STATUS_TRANSITIONS[action];
+  return transition.from.includes(from) ? transition.to : null;
+}
+
+/** Các thao tác đổi trạng thái làm được từ `status`, theo thứ tự hiện trong admin. */
+export function statusActionsFor(status: PlaceStatus): PlaceStatusAction[] {
+  return PlaceStatusAction.options.filter((action) => statusAfter(status, action) !== null);
+}
+
+/** Xác minh (đặt nguồn xác nhận, ngày xác minh rồi cho hiển thị) làm được với nháp, chỗ đang hiển thị, chỗ bị nghi ngờ. */
+export function canVerify(status: PlaceStatus): boolean {
+  return status === 'draft' || status === 'active' || status === 'suspected';
+}
+
+/** Thân POST /v1/admin/places/:id/verify. */
+export const PlaceVerifyInput = z.object({ verifySource: AdminVerifySource });
+export type PlaceVerifyInput = z.infer<typeof PlaceVerifyInput>;
+
+/** Thân POST /v1/admin/places/:id/status. */
+export const PlaceStatusInput = z.object({ action: PlaceStatusAction });
+export type PlaceStatusInput = z.infer<typeof PlaceStatusInput>;
+
+/** Một dòng của danh sách địa điểm trong admin (S07). Ngày giờ là chuỗi ISO. */
+export const AdminPlaceSummary = z.object({
+  id: ObjectIdString,
+  status: PlaceStatus,
+  slug: Slug,
+  name: z.string(),
+  aliases: z.array(z.string()),
+  category: PlaceCategory,
+  alsoCategories: z.array(PlaceCategory),
+  /** Slug cụm; không có khi chưa chọn cụm. */
+  zone: Slug.optional(),
+  verifySource: VerifySource.optional(),
+  lastVerifiedAt: z.iso.datetime().optional(),
+  photoCount: z.number().int().min(0),
+  /** Điều kiện kích hoạt còn thiếu, mỗi mã một lần; rỗng là đủ. */
+  activationIssues: z.array(ActivationIssueCode),
+  updatedAt: z.iso.datetime(),
+});
+export type AdminPlaceSummary = z.infer<typeof AdminPlaceSummary>;
+
+/** GET /v1/admin/cities/:city/places: mọi địa điểm chưa gộp của thành phố; admin lọc, đếm, xếp trong trình duyệt. */
+export const AdminPlaceListResponse = z.object({ items: z.array(AdminPlaceSummary) });
+export type AdminPlaceListResponse = z.infer<typeof AdminPlaceListResponse>;

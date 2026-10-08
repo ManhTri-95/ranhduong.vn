@@ -11,6 +11,7 @@ import {
   PlaceListResponse,
   rainSafe,
   servesCategory,
+  verificationStale,
 } from './place.js';
 
 // Dữ liệu giả, tên rõ là giả; toạ độ quanh [0, 0].
@@ -220,5 +221,21 @@ describe('mức mái che', () => {
     expect([rainSafe({ cover: 'partial' }), hasOpenAir({ cover: 'partial' })]).toEqual([true, true]);
     expect([rainSafe({ cover: 'none' }), hasOpenAir({ cover: 'none' })]).toEqual([false, true]);
     expect([rainSafe({}), hasOpenAir({})]).toEqual([false, false]);
+  });
+});
+
+describe('verificationStale', () => {
+  const now = new Date('2026-10-08T03:00:00Z');
+  const daysBefore = (days: number, extraMs = 0) => new Date(now.getTime() - days * 86_400_000 - extraMs);
+
+  it('chưa xác minh hoặc ngày không đọc được: cần xác minh lại', () => {
+    expect(verificationStale(undefined, now)).toBe(true);
+    expect(verificationStale('khong-phai-ngay', now)).toBe(true);
+  });
+  it('đúng 90 ngày chưa cần; quá 90 ngày thì cần; nhận Date hoặc chuỗi ISO', () => {
+    expect(verificationStale(daysBefore(90), now)).toBe(false);
+    expect(verificationStale(daysBefore(90, 1), now)).toBe(true);
+    expect(verificationStale(daysBefore(90, 1).toISOString(), now)).toBe(true);
+    expect(verificationStale(daysBefore(1).toISOString(), now)).toBe(false);
   });
 });
