@@ -1,13 +1,14 @@
 <script setup lang="ts">
-import { CATEGORY_LABEL, openStatus, type PlaceCard } from '@ranhduong/contracts';
+import { openStatus, type PlaceCard } from '@ranhduong/contracts';
 import { computed } from 'vue';
 import { photoSrcset, photoUrl } from '~/shared/lib/media';
 import { openStatusText, type OpenStatusText } from '../lib/open-status-text';
+import { placeMeta } from '../lib/place-meta';
 
 const props = defineProps<{ place: PlaceCard; href: string; now: Date | null }>();
 const mediaBase = useRuntimeConfig().public.mediaBase;
 
-const meta = computed(() => [CATEGORY_LABEL[props.place.category], props.place.zoneName].filter(Boolean).join(' · '));
+const meta = computed(() => placeMeta(props.place));
 // now chỉ có sau khi chạy trên trình duyệt (useClientNow), nên HTML cache SWR không chứa trạng thái cũ.
 const status = computed<OpenStatusText>(() => (props.now ? openStatusText(openStatus(props.place.openingHours, props.now)) : {}));
 </script>
