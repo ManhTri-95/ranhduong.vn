@@ -162,6 +162,7 @@ interface Itinerary {
   paramsHash: string; templateId?: ObjectId;
   days: { day: number; zoneIds: ObjectId[]; stops: { placeId; start: string; end: string; travelMinFromPrev: number; locked: boolean; isVip: boolean; kind: 'visit' | 'meal' }[] }[];
   narrative?: string; shareId: string; visibility: 'public' | 'unlisted';
+  status: 'draft' | 'published';   // web chỉ đọc lịch trình mẫu đã published
 }
 interface ItineraryEvent { itineraryId; placeId; action: 'swap_out' | 'swap_in' | 'skip' | 'keep' | 'lock'; at: Date }
 interface DistanceEdge { cityId; from: ObjectId; to: ObjectId; mode: 'motorbike' | 'car'; minutes: number; meters: number }
@@ -276,7 +277,7 @@ REST JSON dưới `/v1`, thành phố nằm trong path (`/v1/cities/:city/…`);
 | GET | `/cities/:city` | Công khai | Thông tin thành phố, danh sách zone |
 | GET | `/cities/:city/places` | Công khai | Lọc `category` (khớp danh mục chính hoặc danh mục phụ), `tags` (cách nhau dấu phẩy; phải có đủ mọi thẻ), `zone` (slug cụm; không có thì 404), `q` (không dấu; không dùng cùng `cursor`), `limit`, `cursor`. Trả `items`, `nextCursor`, `tags` (số chỗ theo thẻ). `bbox`, `near=lat,lng&radius` thêm ở S12 |
 | GET | `/cities/:city/places/:slug` | Công khai | Chi tiết, ảnh, voucher đang chạy |
-| GET | `/cities/:city/itineraries/templates` | Công khai | Lọc `days`, `style` |
+| GET | `/cities/:city/itineraries/templates` | Công khai | S09: chỉ mẫu `published` có slug của thành phố active; `limit` tối đa 20. Lọc `days`, `style` thêm khi có trang cần |
 | GET | `/itineraries/:shareId` | Công khai | Lịch trình đã chia sẻ. Kèm GET /itineraries/:id/narrative: 204 khi chưa có mô tả, 200 kèm mô tả khi đã xong |
 | POST | `/cities/:city/itineraries` | Công khai, rate limit | Tạo theo yêu cầu từ `params`; trả về lịch trình |
 | PATCH | `/itineraries/:id` | Người tạo (user hoặc guest) | Đổi thứ tự, khoá điểm |
@@ -328,7 +329,7 @@ REST JSON dưới `/v1`, thành phố nằm trong path (`/v1/cities/:city/…`);
 | GET/POST | `/admin/leaderboard/:month` | Xem snapshot, chốt, gán quà |
 | PATCH | `/admin/users/:id/roles` | Đổi vai trò |
 
-**Mã lỗi chính:** `UNAUTHENTICATED`, `FORBIDDEN`, `NOT_FOUND`, `VALIDATION_FAILED`, `RATE_LIMITED`, `CONFLICT`, `CHECKIN_TOO_FAR`, `CHECKIN_LOW_ACCURACY`, `CHECKIN_ALREADY_TODAY`, `DUPLICATE_SUSPECTED`, `VOUCHER_SOLD_OUT`, `VOUCHER_ALREADY_CLAIMED`, `VOUCHER_EXPIRED`, `VOUCHER_OUT_OF_WINDOW`, `CONTACT_REQUIRED`, `NOT_ENOUGH_PLACES`.
+**Mã lỗi chính:** `UNAUTHENTICATED`, `FORBIDDEN`, `NOT_FOUND`, `VALIDATION_FAILED`, `RATE_LIMITED`, `CONFLICT`, `CHECKIN_TOO_FAR`, `CHECKIN_LOW_ACCURACY`, `CHECKIN_ALREADY_TODAY`, `DUPLICATE_SUSPECTED`, `VOUCHER_SOLD_OUT`, `VOUCHER_ALREADY_CLAIMED`, `VOUCHER_EXPIRED`, `VOUCHER_OUT_OF_WINDOW`, `CONTACT_REQUIRED`, `NOT_ENOUGH_PLACES`, `INTERNAL_ERROR`.
 
 ## 7. Thuật toán lịch trình
 
@@ -485,6 +486,11 @@ Trang địa điểm, danh sách và lịch trình mẫu được render SSR và
 | Lịch trình mẫu | `/da-lat/lich-trinh/{slug}` (ví dụ `3-ngay-2-dem-cap-doi`) | SWR 1 ngày | Có |
 | Lịch trình cá nhân | `/l/{shareId}` | Không cache CDN | `noindex` |
 | Bảng xếp hạng | `/da-lat/bang-xep-hang` | SWR 10 phút | Có |
+| Tìm kiếm | `/da-lat/tim-kiem?q=` | Không cache (`no-store`) | `noindex, follow` |
+
+**Tìm kiếm S09:** form GET chạy khi chưa có JavaScript; từ khoá cắt còn 100 ký tự, khớp không dấu trong bộ nhớ trên địa điểm `active`, tối đa 20 kết quả. Từ khoá rỗng chỉ hiện hướng dẫn, không gọi API danh sách. Gợi ý khi gõ và Atlas Search để S13.
+
+**Trang chủ S09:** mục "Chỗ dân ở đây hay ngồi" lấy tối đa 6 quán cà phê, ăn uống `active` (tính cả danh mục phụ): quán đã xác nhận (`owner`) trước, rồi xác minh gần nhất. Lịch trình chỉ hiện mẫu `published`. Trạng thái mở cửa tính theo giờ Việt Nam trên trình duyệt sau hydrate để HTML cache không giữ giờ cũ. Khi API lỗi lúc SSR, trang giữ khung, có nút Thử lại và trả `503`, `cache-control: no-store`.
 
 **Trang lọc và trang sau:** trang danh mục và khu vực nhận `?tags=a,b` (lọc thẻ, gửi bằng form nên bot không đi theo) và `?cursor=…` (trang sau, có link để bot đi tới từng địa điểm). Hai loại này `noindex, follow`, vẫn cache SWR 1 giờ như trang gốc.
 
