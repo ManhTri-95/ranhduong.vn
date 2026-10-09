@@ -54,12 +54,15 @@ export class PlacesService {
     const city = await this.cities.resolveCity(citySlug);
     const zone = query.zone ? await this.cities.resolveZone(city.id, query.zone) : undefined;
     const [places, zoneNames] = await Promise.all([
-      this.repo.listActive(city.id, { categories: query.category, zoneId: zone?.id }),
+      this.repo.listActive(city.id, { categories: query.category, zoneId: zone?.id, bbox: query.bbox, near: query.near, radius: query.radius }),
       this.cities.zoneNames(city.id),
     ]);
     const wanted = query.tags ?? [];
     const filtered = places.filter((place) => hasAllTags(place, wanted));
-    const toCard = (place: ListedPlace) => toPlaceCard(place, zoneNames);
+    const toCard = (place: ListedPlace) => ({
+      ...toPlaceCard(place, zoneNames),
+      ...(place.location ? { location: place.location } : {}),
+    });
     const tags = countTags(places);
     if (query.q) return { items: searchPlaces(filtered, query.q).slice(0, query.limit).map(toCard), tags };
     const page = pageByFeatured(filtered, query.cursor, query.limit);

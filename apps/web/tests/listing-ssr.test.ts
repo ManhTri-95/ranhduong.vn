@@ -24,6 +24,7 @@ const detailPlace = {
 };
 let apiFailed = false;
 let detailFailed = false;
+let mapFailed = false;
 const api = createServer((req, res) => {
   res.setHeader('content-type', 'application/json');
   const url = new URL(req.url ?? '/', 'http://127.0.0.1');
@@ -32,8 +33,9 @@ const api = createServer((req, res) => {
   } else if (url.pathname === '/v1/cities/da-lat') {
     res.end(JSON.stringify(city));
   } else if (url.pathname === '/v1/cities/da-lat/places') {
+    if (url.searchParams.has('bbox') && mapFailed) return res.writeHead(503).end(JSON.stringify({ code: 'INTERNAL_ERROR', message: 'Lỗi bản đồ Giả Lập' }));
     res.end(JSON.stringify({
-      items: url.searchParams.has('cursor') ? items.slice(20) : url.searchParams.has('tags') ? items.slice(0, 5) : items.slice(0, 20),
+      items: url.searchParams.has('bbox') ? items.map((place) => ({ ...place, location: { type: 'Point', coordinates: [0.5, 0.5] } })) : url.searchParams.has('cursor') ? items.slice(20) : url.searchParams.has('tags') ? items.slice(0, 5) : items.slice(0, 20),
       nextCursor: url.searchParams.has('cursor') || url.searchParams.has('tags') ? undefined : cursor,
       tags: [{ slug: 'chill', count: 25 }],
     }));
@@ -52,6 +54,28 @@ const api = createServer((req, res) => {
   } else {
     res.writeHead(404).end(JSON.stringify({ code: 'NOT_FOUND', message: 'Không tìm thấy thành phố Giả Lập' }));
   }
+});
+
+describe('S12 map production SSR', () => {
+  it('renders category filters, an accessible place list and visible map attribution', async () => {
+    const response = await fetch(`${base}/da-lat/ban-do?category=food`);
+    expect(response.status).toBe(200);
+    const html = await response.text();
+    for (const text of ['Bản đồ', 'Cà phê', 'Ăn uống', 'Quán Giả Lập 1', 'OpenStreetMap', 'OpenFreeMap', 'method="get"', '/da-lat/dia-diem/quan-gia-lap-1']) expect(html).toContain(text);
+    expect(html).not.toContain('<canvas');
+  });
+  it('returns 404 for a missing city', async () => {
+    expect((await fetch(`${base}/khong-co/ban-do`)).status).toBe(404);
+  });
+  it('returns 503 no-store and retry when the map data API fails', async () => {
+    mapFailed = true;
+    try {
+      const response = await fetch(`${base}/da-lat/ban-do?audit=map-down`);
+      expect(response.status).toBe(503);
+      expect(response.headers.get('cache-control')).toBe('no-store');
+      expect(await response.text()).toContain('Thử lại');
+    } finally { mapFailed = false; }
+  });
 });
 
 describe('S11 detail production SSR', () => {

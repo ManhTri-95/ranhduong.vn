@@ -9,6 +9,9 @@ export interface PlaceListParams {
   tags?: string;
   cursor?: string;
   limit?: number;
+  bbox?: string;
+  near?: string;
+  radius?: number;
 }
 
 /** GET /cities/:city/places. `immediate: false` khi chưa cần gọi (trang tìm kiếm chưa có từ khoá). */

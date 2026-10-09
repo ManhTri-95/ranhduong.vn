@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { ObjectIdString, Slug } from './common.js';
 import { BestTime, PhotoSource, PlaceCategory, PlaceCover, PlaceSource, PlaceStatus, Transport, VerifySource, VipTier } from './enums.js';
-import { GeoPoint } from './geojson.js';
+import { BBox, GeoPoint, LngLat } from './geojson.js';
 import { OpeningSlot } from './opening-hours.js';
 import { PlaceCursor } from './place-cursor.js';
 
@@ -170,6 +170,8 @@ export const PlaceCard = z.object({
   /** true: dòng trạng thái thay bằng "Thông tin chưa được quán xác nhận". */
   unconfirmed: z.boolean(),
   coverKey: z.string().optional(),
+  /** Chỉ trả khi lọc theo bbox hoặc near, dùng cho ghim bản đồ công khai. */
+  location: GeoPoint.optional(),
 });
 export type PlaceCard = z.infer<typeof PlaceCard>;
 
@@ -190,6 +192,11 @@ function commaList<T extends z.ZodType<unknown, string>>(item: T) {
     .pipe(z.array(item).optional());
 }
 
+/** Không ép chuỗi rỗng thành số 0 khi đọc toạ độ query. */
+const CoordinateQuery = z.string().transform((value) => value.split(',').map((part) => part.trim() ? Number(part) : Number.NaN));
+const BBoxQuery = CoordinateQuery.pipe(BBox);
+const NearQuery = CoordinateQuery.transform((parts) => parts.length === 2 ? [parts[1], parts[0]] : parts).pipe(LngLat);
+
 /** Query của GET /v1/cities/:city/places. */
 export const PlaceListQuery = z
   .object({
@@ -208,9 +215,19 @@ export const PlaceListQuery = z
     zone: Slug.optional(),
     /** `nextCursor` của trang trước. */
     cursor: PlaceCursor.optional(),
+    bbox: BBoxQuery.optional(),
+    /** Near nhận lat,lng; kết quả đã parse là [lng,lat]. */
+    near: NearQuery.optional(),
+    radius: z.coerce.number().min(1).max(50_000).optional(),
     limit: z.coerce.number().int().min(1).max(50).default(20),
   })
   .superRefine((query, ctx) => {
+    if (query.bbox && query.near) {
+      ctx.addIssue({ code: 'custom', path: ['bbox'], message: 'Chỉ chọn khung nhìn hoặc bán kính quanh một điểm' });
+    }
+    if (Boolean(query.near) !== (query.radius !== undefined)) {
+      ctx.addIssue({ code: 'custom', path: ['radius'], message: 'Cần gửi near và radius cùng nhau' });
+    }
     // Kết quả tìm xếp theo độ khớp chứ không theo thứ tự nổi bật, nên chưa phân trang được (S13).
     if (query.q && query.cursor) {
       ctx.addIssue({ code: 'custom', path: ['cursor'], message: 'Tìm theo từ khoá chưa phân trang được' });

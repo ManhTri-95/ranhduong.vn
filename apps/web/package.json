@@ -20,6 +20,7 @@
     "@ranhduong/contracts": "workspace:*",
     "@ranhduong/geo": "workspace:*",
     "@ranhduong/ui": "workspace:*",
+    "maplibre-gl": "6.13.0",
     "nuxt": "^4.5.2",
     "vue": "^3.5.43"
   },

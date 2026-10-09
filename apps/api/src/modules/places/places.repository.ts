@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import type { OpeningSlot, Place, PlaceCategory, PlaceStatus, VerifySource } from '@ranhduong/contracts';
+import type { BBox, GeoPoint, LngLat, OpeningSlot, Place, PlaceCategory, PlaceStatus, VerifySource } from '@ranhduong/contracts';
 import { Types } from 'mongoose';
 import type { DuplicateRow, EditRow, PlaceUpdate, SummaryRow } from './place-edit';
 import type { ListedPlace } from './place-listing';
@@ -38,6 +38,7 @@ interface CardRow {
   verifySource?: VerifySource | null;
   lastVerifiedAt?: Date | null;
   photos?: { key: string }[];
+  location?: GeoPoint;
 }
 interface CoverRow {
   _id: Types.ObjectId;
@@ -68,6 +69,9 @@ const SUMMARY_FIELDS = {
 export interface ListFilter {
   categories?: PlaceCategory[];
   zoneId?: string;
+  bbox?: BBox;
+  near?: LngLat;
+  radius?: number;
 }
 
 /** Lớp dữ liệu của module places: chỉ file này import model Place. */
@@ -122,6 +126,11 @@ export class PlacesRepository {
    * Đọc hết rồi xếp trong bộ nhớ: lát 1 có vài trăm điểm mỗi thành phố (đổi khi quá khoảng 1.000 điểm).
    */
   async listActive(cityId: string, filter: ListFilter = {}): Promise<ListedPlace[]> {
+    const geographic = filter.bbox
+      ? { location: { $geoWithin: { $box: [[filter.bbox[0], filter.bbox[1]], [filter.bbox[2], filter.bbox[3]]] } } }
+      : filter.near && filter.radius !== undefined
+        ? { location: { $geoWithin: { $centerSphere: [filter.near, filter.radius / 6_371_008.8] } } }
+        : {};
     const docs = await this.places
       .find(
         {
@@ -130,8 +139,9 @@ export class PlacesRepository {
           // Danh mục chính hoặc một danh mục phụ (S27); $or trả mỗi địa điểm một lần.
           ...(filter.categories ? { $or: [{ category: { $in: filter.categories } }, { alsoCategories: { $in: filter.categories } }] } : {}),
           ...(filter.zoneId ? { zoneId: new Types.ObjectId(filter.zoneId) } : {}),
+          ...geographic,
         },
-        CARD_FIELDS,
+        { ...CARD_FIELDS, ...(filter.bbox || filter.near ? { location: 1 } : {}) },
       )
       .lean<CardRow[]>();
     return docs.map((d) => ({
@@ -147,6 +157,7 @@ export class PlacesRepository {
       verifySource: d.verifySource ?? undefined,
       lastVerifiedAt: d.lastVerifiedAt ?? undefined,
       coverKey: d.photos?.[0]?.key,
+      location: d.location,
     }));
   }
 

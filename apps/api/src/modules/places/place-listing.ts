@@ -3,6 +3,7 @@ import {
   encodePlaceCursor,
   needsOwnerConfirmation,
   type FeaturedKey,
+  type GeoPoint,
   type OpeningSlot,
   type PlaceCard,
   type PlaceCategory,
@@ -25,6 +26,7 @@ export interface ListedPlace {
   verifySource?: VerifySource;
   lastVerifiedAt?: Date;
   coverKey?: string;
+  location?: GeoPoint;
 }
 
 /** Khoá xếp hạng nổi bật của một địa điểm (cũng là nội dung cursor phân trang). */
