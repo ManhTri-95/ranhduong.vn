@@ -13,7 +13,8 @@
     "postinstall": "nuxt prepare",
     "lint": "eslint . --max-warnings 0",
     "test": "vitest run",
-    "typecheck": "nuxt typecheck"
+    "test:ssr": "vitest run --config vitest.ssr.config.ts",
+    "typecheck": "nuxt typecheck && tsc -p tsconfig.ssr.json --noEmit"
   },
   "dependencies": {
     "@ranhduong/contracts": "workspace:*",

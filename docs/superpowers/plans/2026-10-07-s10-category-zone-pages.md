@@ -10,6 +10,19 @@
 
 **Spec:** `docs/backlog.md` S10 (*Lọc theo tags; phân trang cursor; URL đúng mục 11 tài liệu kỹ thuật*), `docs/technical-design.md` mục 3 (Place, index), 6 (API, quy ước cursor `?cursor=&limit=` tối đa 50), 11 (URL, cache, index), `docs/ui-spec.md` mục 3 (giọng văn), 4 (chip danh mục, thẻ địa điểm), 5 (trạng thái đang tải, rỗng, lỗi; desktop 2–3 cột), 11 (truy cập, hiệu năng), `docs/product-spec.md` mục cụm khu vực, `docs/data-collection.md` (tab "Tags"), ADR 0010, 0011. Nền S09: `docs/superpowers/plans/2026-10-07-s09-city-home.md`.
 
+## Tiếp tục sau kiểm tra ngày 2026-10-09
+
+Task 1–7 đã có commit trên `main` local; nhánh S10 đã cập nhật từ `main` và `origin/main`. Kiểm tra mới chạy 20 task lint/typecheck/test/build thành công, 703 test qua. Tuy nhiên, bản production trả 200 cho trang danh mục/khu vực nhưng thiếu cache SWR: route tĩnh `/da-lat` che nhánh `/:city/...` trong router radix3 của Nitro 2.13.4, nên request rơi vào renderer `/**` không cache. Các ô bên dưới là tiến độ lần kiểm tra này; checkbox trong các task cũ là hướng dẫn thực hiện ban đầu.
+
+- [x] Đối chiếu code, test và commit Task 1–7; cập nhật nhánh S10 từ main.
+- [x] Kiểm tra nền toàn repo: lint, typecheck, test, build.
+- [x] Thêm `tests/listing-ssr.test.ts`, cấu hình Vitest SSR riêng và lệnh `test:ssr`; bản cũ có 15 test lỗi cache/no-store và 1 test qua.
+- [x] Sửa 4 route danh mục và route khu vực dùng `/da-lat/...` như trang chủ; thêm thành phố sau phải thêm rule tương ứng. Giữ nguyên URL công khai. Sửa thêm hook lỗi Nitro để 404 HTML/JSON luôn `no-store`.
+- [x] Build lại, chạy test SSR kiểm header và cache HTML thật, query tách biệt, noindex, 404/503 no-store và tìm kiếm không cache. Thêm lệnh này vào CI sau build.
+- [x] Kiểm local SSR với API/MongoDB thật (27 request) và Chrome 390px/desktop, gồm form GET khi tắt JavaScript, tải thêm và retry; chi tiết ở `docs/runbooks/category-zone-pages.md`.
+- [x] Cập nhật backlog, CLAUDE.md, decisions và runbook; kiểm cuối 20 task thành công, 703 test unit/tích hợp và 20 test SSR qua. Review độc lập không phát hiện lỗi runtime thêm; đã bổ sung strict typecheck cho test và kiểm server test độc lập với biến Nitro kế thừa.
+- [ ] DoD bên ngoài local: push/merge lên main remote, CI, staging (S02), điện thoại thật và Sentry 24 giờ.
+
 ## Điều kiện trước khi bắt đầu
 
 S10 dùng lại gần hết phần S09 làm (endpoint `/places`, `PlaceCard`, `RdPlaceList`, `RdCityHeader`, `useCity`, `page-status`). Ngày lập plan, nhánh `feat/S09-city-home` còn thiếu Task 13 (trang `/da-lat/tim-kiem`) và Task 14 (tài liệu, CI) của plan S09, và chưa merge vào `main`.

@@ -33,12 +33,13 @@ export default defineNuxtConfig({
     // làm renderer mặc định cache cả trang tìm kiếm dù route đó có cache:false.
     '/da-lat': { swr: 3600 },
     // Trang danh mục: SWR 1 giờ, kể cả bản có ?tags= hay ?cursor= (Nitro cache theo cả query).
-    // Giữ khớp CATEGORY_URL_SLUG trong contracts: nuxt.config không import được contracts vì lúc postinstall chưa build.
-    '/:city/ca-phe': { swr: 3600 },
-    '/:city/an-uong': { swr: 3600 },
-    '/:city/tham-quan': { swr: 3600 },
-    '/:city/hoat-dong': { swr: 3600 },
-    '/:city/khu-vuc/**': { swr: 3600 },
+    // radix3 ưu tiên nhánh tĩnh '/da-lat', che các handler '/:city/...': ghi cùng prefix để cache có hiệu lực.
+    // Thêm thành phố thì thêm rule tương ứng; giữ khớp CATEGORY_URL_SLUG (contracts chưa build lúc postinstall).
+    '/da-lat/ca-phe': { swr: 3600 },
+    '/da-lat/an-uong': { swr: 3600 },
+    '/da-lat/tham-quan': { swr: 3600 },
+    '/da-lat/hoat-dong': { swr: 3600 },
+    '/da-lat/khu-vuc/**': { swr: 3600 },
     '/:city/tim-kiem': { cache: false, headers: { 'x-robots-tag': 'noindex', 'cache-control': 'no-store' } },
     '/:city/dia-diem/**': { swr: 3600 },
     '/:city/lich-trinh/**': { swr: 86400 },

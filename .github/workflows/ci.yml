@@ -37,3 +37,4 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm turbo run lint typecheck test build
+      - run: pnpm --filter @ranhduong/web test:ssr

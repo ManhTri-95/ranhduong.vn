@@ -1,0 +1,9 @@
+{
+  "extends": "./.nuxt/tsconfig.node.json",
+  "compilerOptions": {
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "composite": false
+  },
+  "include": ["tests/**/*.test.ts", "vitest.ssr.config.ts"]
+}
