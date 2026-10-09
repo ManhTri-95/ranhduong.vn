@@ -9,6 +9,7 @@ const env = loadDbEnv();
 
 /** Module riêng cho lệnh seed: kết nối DB và các module có dữ liệu hoặc index cần tạo, không mở HTTP. */
 @Module({
-  imports: [MongooseModule.forRoot(env.MONGODB_URI), CitiesModule, PlacesModule, ItinerariesModule],
+  // Seed/import creates indexes explicitly. In particular, an OSM dry run must not create collections or indexes.
+  imports: [MongooseModule.forRoot(env.MONGODB_URI, { autoIndex: false, autoCreate: false }), CitiesModule, PlacesModule, ItinerariesModule],
 })
 export class SeedModule {}

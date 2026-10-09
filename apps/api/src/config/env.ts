@@ -39,6 +39,11 @@ export type Env = z.infer<typeof EnvSchema>;
 const DbEnvSchema = z.object({ MONGODB_URI: EnvSchema.shape.MONGODB_URI });
 export type DbEnv = z.infer<typeof DbEnvSchema>;
 
+const OsmEnvSchema = DbEnvSchema.extend({
+  OVERPASS_URL: z.httpUrl().default('https://overpass-api.de/api/interpreter'),
+});
+export type OsmEnv = z.infer<typeof OsmEnvSchema>;
+
 function invalidEnv(error: z.ZodError): never {
   const issues = error.issues.map((i) => `- ${i.path.join('.')}: ${i.message}`).join('\n');
   throw new Error(`Biến môi trường không hợp lệ:\n${issues}`);
@@ -54,6 +59,13 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
 /** Chỉ biến cần cho lệnh seed (kết nối MongoDB), để seed chạy được khi chưa cấu hình Google. */
 export function loadDbEnv(source: NodeJS.ProcessEnv = process.env): DbEnv {
   const parsed = DbEnvSchema.safeParse(source);
+  if (!parsed.success) invalidEnv(parsed.error);
+  return parsed.data;
+}
+
+/** The import CLI does not need OAuth, Redis or R2 configuration. */
+export function loadOsmEnv(source: NodeJS.ProcessEnv = process.env): OsmEnv {
+  const parsed = OsmEnvSchema.safeParse(source);
   if (!parsed.success) invalidEnv(parsed.error);
   return parsed.data;
 }

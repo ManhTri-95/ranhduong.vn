@@ -81,6 +81,8 @@ export const PlaceSchema = new Schema(
 // Bảng index ở technical-design mục 3.
 PlaceSchema.index({ location: '2dsphere' });
 PlaceSchema.index({ cityId: 1, slug: 1 }, { unique: true });
+// Optional OSM IDs: form/CSV drafts without an ID remain valid; imported IDs are unique within a city.
+PlaceSchema.index({ cityId: 1, 'ids.osmId': 1 }, { unique: true, partialFilterExpression: { 'ids.osmId': { $type: 'string' } } });
 PlaceSchema.index({ cityId: 1, category: 1, status: 1 });
 
 export type PlaceDoc = InferSchemaType<typeof PlaceSchema>;

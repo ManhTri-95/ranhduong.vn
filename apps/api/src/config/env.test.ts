@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { loadDbEnv, loadEnv } from './env';
+import { loadDbEnv, loadEnv, loadOsmEnv } from './env';
+
+describe('loadOsmEnv', () => {
+  it('loads only DB/Overpass settings, without requiring OAuth or storage credentials', () => {
+    const db = { MONGODB_URI: 'mongodb://localhost:27017/gia-lap' };
+    expect(loadOsmEnv(db)).toMatchObject({ OVERPASS_URL: 'https://overpass-api.de/api/interpreter' });
+    expect(loadOsmEnv({ ...db, OVERPASS_URL: 'https://overpass.example.com/api/interpreter' }).OVERPASS_URL).toBe('https://overpass.example.com/api/interpreter');
+    expect(() => loadOsmEnv({ ...db, OVERPASS_URL: 'file:///tmp/osm.json' })).toThrow(/OVERPASS_URL/);
+    expect(() => loadOsmEnv({})).toThrow(/MONGODB_URI/);
+  });
+});
 
 const REQUIRED = {
   MONGODB_URI: 'mongodb://localhost:27017/gia-lap',

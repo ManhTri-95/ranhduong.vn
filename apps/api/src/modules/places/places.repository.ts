@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import type { OpeningSlot, PlaceCategory, PlaceStatus, VerifySource } from '@ranhduong/contracts';
+import type { OpeningSlot, Place, PlaceCategory, PlaceStatus, VerifySource } from '@ranhduong/contracts';
 import { Types } from 'mongoose';
 import type { DuplicateRow, EditRow, PlaceUpdate, SummaryRow } from './place-edit';
 import type { ListedPlace } from './place-listing';
@@ -77,6 +77,22 @@ export class PlacesRepository {
   /** Tạo index khai báo trong schema; không xoá index lạ (khác syncIndexes). */
   async ensureIndexes(): Promise<void> {
     await this.places.createIndexes();
+  }
+
+  async hasOsmId(cityId: string, osmId: string): Promise<boolean> {
+    return (await this.places.exists({ cityId: new Types.ObjectId(cityId), 'ids.osmId': osmId })) !== null;
+  }
+
+  /** Insert only: a retry must not change curated fields, status or updatedAt. */
+  async upsertOsmDraft(input: Place): Promise<boolean> {
+    const now = new Date();
+    const cityId = new Types.ObjectId(input.cityId);
+    const result = await this.places.updateOne(
+      { cityId, 'ids.osmId': input.ids.osmId },
+      { $setOnInsert: { ...input, cityId, createdAt: now, updatedAt: now } },
+      { upsert: true, runValidators: true, timestamps: false },
+    );
+    return result.upsertedCount === 1;
   }
 
   /**

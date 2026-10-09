@@ -10,6 +10,7 @@
     "test": "turbo run test",
     "lint": "turbo run lint",
     "seed": "turbo run build --filter=@ranhduong/api && pnpm --filter @ranhduong/api seed",
+    "import:osm": "turbo run build --filter=@ranhduong/api && pnpm --filter @ranhduong/api import:osm",
     "infra:up": "docker compose up -d",
     "infra:down": "docker compose down"
   },

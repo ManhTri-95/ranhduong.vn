@@ -10,6 +10,7 @@
     "dev:worker": "nest start --watch --entryFile worker --env-file .env",
     "media:setup:local": "node --env-file-if-exists=.env scripts/setup-media-local.mjs",
     "seed": "node --env-file-if-exists=.env dist/seed/main.js",
+    "import:osm": "node --env-file-if-exists=.env dist/seed/import-osm.js",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint . --max-warnings 0"
