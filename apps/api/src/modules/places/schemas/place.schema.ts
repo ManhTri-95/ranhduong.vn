@@ -30,6 +30,7 @@ const PhotoSchema = new Schema(
     source: { type: String, enum: PhotoSource.options, required: true },
     credit: { type: String, required: true },
     license: { type: String, required: true },
+    sourceUrl: { type: String },
   },
   { _id: false },
 );

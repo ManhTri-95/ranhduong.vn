@@ -214,6 +214,11 @@ export function usePlaceEditor(initialId: string | null, onCreated: (id: string)
     form.value.zone = slug;
   }
 
+  function applyPhotos(updated: AdminPlace): void {
+    if (!place.value || updated.id !== placeId.value) return;
+    place.value = { ...place.value, photos: updated.photos, updatedAt: updated.updatedAt };
+  }
+
   async function save(): Promise<AdminPlace | null> {
     const result = formToInput(form.value);
     if (!result.ok) {
@@ -310,6 +315,7 @@ export function usePlaceEditor(initialId: string | null, onCreated: (id: string)
     restoreLocal,
     discardLocal,
     acceptZone,
+    applyPhotos,
     retry: init,
   };
 }

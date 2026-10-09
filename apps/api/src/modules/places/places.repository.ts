@@ -117,6 +117,14 @@ export class PlacesRepository {
     return this.places.findById(id).lean<EditRow>();
   }
 
+  async attachPhoto(id: string, photo: import('@ranhduong/contracts').PlacePhoto): Promise<EditRow | null> {
+    return this.places.findOneAndUpdate(
+      { _id: new Types.ObjectId(id), status: { $ne: 'merged' }, 'photos.key': { $ne: photo.key } },
+      { $push: { photos: photo } },
+      { returnDocument: 'after', runValidators: true },
+    ).lean<EditRow>();
+  }
+
   /** Địa điểm chưa gộp của thành phố cho danh sách admin (S07); đọc hết, admin lọc trong trình duyệt (vài trăm điểm). */
   async listForAdmin(cityId: string): Promise<SummaryRow[]> {
     return this.places.find({ cityId: new Types.ObjectId(cityId), status: { $ne: 'merged' } }, SUMMARY_FIELDS).lean<SummaryRow[]>();

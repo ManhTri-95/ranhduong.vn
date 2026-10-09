@@ -6,6 +6,7 @@ export * from './errors.js';
 export * from './geojson.js';
 export * from './itinerary.js';
 export * from './labels.js';
+export * from './media.js';
 export * from './opening-hours.js';
 export * from './place-cursor.js';
 export * from './place-admin.js';

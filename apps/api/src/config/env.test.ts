@@ -8,6 +8,12 @@ const REQUIRED = {
 };
 
 describe('loadEnv', () => {
+  it('S06 cấu hình R2 local, bucket ảnh gốc riêng và URL hợp lệ', () => {
+    const env = loadEnv(REQUIRED);
+    expect(env).toMatchObject({ R2_ENDPOINT: 'http://localhost:9000', R2_BUCKET: 'ranhduong-media', R2_UPLOAD_BUCKET: 'ranhduong-uploads' });
+    expect(() => loadEnv({ ...REQUIRED, R2_BUCKET: 'same', R2_UPLOAD_BUCKET: 'same' })).toThrow(/R2_UPLOAD_BUCKET/);
+    expect(() => loadEnv({ ...REQUIRED, R2_ENDPOINT: 'file:///tmp' })).toThrow(/R2_ENDPOINT/);
+  });
   it('đủ biến bắt buộc thì các biến còn lại lấy mặc định cho local', () => {
     const env = loadEnv(REQUIRED);
     expect(env).toMatchObject({

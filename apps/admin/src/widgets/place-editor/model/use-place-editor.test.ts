@@ -145,6 +145,14 @@ describe('usePlaceEditor: giữ bản đang sửa trên máy', () => {
 });
 
 describe('usePlaceEditor: danh mục phụ', () => {
+  it('S06 nhận ảnh mới không ghi đè những ô đang sửa hoặc đổi trạng thái dirty', async () => {
+    const { editor } = await open(memoryStorage());
+    editor.form.value.name = 'Tên Đang Sửa Giả Lập';
+    editor.applyPhotos({ ...PLACE, photos: [{ key: 'gia-lap', source: 'owner', credit: 'Quán Giả Lập', license: 'Cho phép' }] });
+    expect(editor.form.value.name).toBe('Tên Đang Sửa Giả Lập');
+    expect(editor.place.value?.photos).toHaveLength(1);
+    expect(editor.dirty.value).toBe(true);
+  });
   it('đổi danh mục chính sang đúng danh mục đang ở "Cũng phục vụ" thì bỏ nó khỏi danh mục phụ', async () => {
     const { editor } = await open(memoryStorage());
     editor.form.value.alsoCategories = ['food', 'activity'];

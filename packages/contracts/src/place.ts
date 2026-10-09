@@ -14,6 +14,7 @@ export const PlacePhoto = z.object({
   source: PhotoSource,
   credit: z.string().trim().min(1, 'Ảnh phải ghi người giữ bản quyền'),
   license: z.string().trim().min(1, 'Ảnh phải ghi giấy phép'),
+  sourceUrl: z.httpUrl().optional(),
 });
 export type PlacePhoto = z.infer<typeof PlacePhoto>;
 

@@ -4,6 +4,9 @@ Mỗi quyết định một dòng: chọn gì, vì sao. Đổi quyết định t
 
 | Ngày | Quyết định | Lý do |
 | --- | --- | --- |
+| 2026-10-09 | S06 giữ uploadId theo địa điểm trong localStorage, đối soát failed job với MongoDB, hủy upload và dọn WebP bằng job khi xoá nháp | Tiếp tục sau khi đăng nhập lại; không chờ queued mãi khi Mongo lỗi lúc hết retries; scan không công khai lại ảnh của nháp đã xoá |
+| 2026-10-09 | S06 thêm AWS S3 SDK/presigner, sharp và BullMQ vào API; không chạy native build tuỳ chọn `msgpackr-extract` | Presigned PUT R2/MinIO, kiểm byte thật và sinh WebP bỏ metadata trong worker riêng, dùng Redis sẵn có; msgpackr dùng bản JavaScript |
+| 2026-10-09 | S06 ảnh gốc vào bucket `R2_UPLOAD_BUCKET` riêng tư, chỉ WebP đã xử lý vào `R2_BUCKET`; admin route riêng, bắt buộc credit/license và link cho ảnh CC | Không công khai EXIF trong thời gian chờ scan; module media không phụ thuộc places, seed/test places vẫn không cần cấu hình media |
 | 2026-10-07 | Trang giới thiệu trước khi ra mắt build tĩnh riêng trong `apps/web/prelaunch`, tái sử dụng CSS `packages/ui`, deploy bằng Wrangler 4.148.0 lên Workers Static Assets | Có trang công khai trước khi backend sẵn sàng; bản sản phẩm Nuxt SSR vẫn theo ADR 0003 |
 | 2026-10-06 | Monorepo Turborepo + pnpm 12 | Một repo cho web, API, package dùng chung; pnpm 12 duyệt build script qua `allowBuilds` trong `pnpm-workspace.yaml` |
 | 2026-10-06 | Node 24 LTS (tối thiểu 22.19) | Yêu cầu của Nuxt 4; Node 22.12+ cho phép `require()` ESM nên API CommonJS dùng được package ESM |

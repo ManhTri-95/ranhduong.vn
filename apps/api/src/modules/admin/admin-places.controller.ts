@@ -14,6 +14,7 @@ import { ZodValidationPipe } from '../../shared/http/zod-validation.pipe';
 import { AdminGuard } from '../../shared/session/admin.guard';
 import { PlaceEditorService } from '../places/place-editor.service';
 import { PlaceStatusService } from '../places/place-status.service';
+import { AdminMediaService } from './admin-media.service';
 
 const cityParam = new ZodValidationPipe(Slug);
 const idParam = new ZodValidationPipe(ObjectIdString);
@@ -25,6 +26,7 @@ export class AdminPlacesController {
   constructor(
     private readonly editor: PlaceEditorService,
     private readonly status: PlaceStatusService,
+    private readonly media: AdminMediaService,
   ) {}
 
   @Get('cities/:city/places')
@@ -83,6 +85,6 @@ export class AdminPlacesController {
   @Delete('places/:id')
   @HttpCode(204)
   remove(@Param('id', idParam) id: string): Promise<void> {
-    return this.status.deleteDraft(id);
+    return this.media.deleteDraft(id);
   }
 }

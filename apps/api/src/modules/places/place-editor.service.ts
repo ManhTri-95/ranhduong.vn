@@ -7,6 +7,8 @@ import {
   type DuplicateCheckInput,
   type DuplicateCheckResponse,
   type PlaceEditInput,
+  PlacePhoto,
+  type MediaPlaceContext,
 } from '@ranhduong/contracts';
 import { findDuplicates, isSlugOf, nextFreeSlug, normalizeName, slugify } from '@ranhduong/geo';
 import { isDuplicateKeyError } from '../../shared/db/mongo-errors';
@@ -44,6 +46,23 @@ export class PlaceEditorService {
     const row = await this.repo.findForEdit(id);
     if (!row) throw notFound();
     return this.present(row);
+  }
+
+  async mediaContext(id: string): Promise<MediaPlaceContext> {
+    const row = await this.repo.findForEdit(id);
+    if (!row) throw notFound();
+    if (row.status === 'merged') throw invalid('Địa điểm đã gộp, sửa ở bản chính.');
+    return { placeId: id, cityId: row.cityId.toString() };
+  }
+
+  /** S06: chỉ nhận ảnh đã xử lý từ service media; repo thêm nguyên tử theo key. */
+  async attachPhoto(id: string, photo: PlacePhoto): Promise<AdminPlace> {
+    await this.mediaContext(id);
+    const updated = await this.repo.attachPhoto(id, PlacePhoto.parse(photo));
+    if (updated) return this.present(updated);
+    // Key đã có (retry), hoặc trạng thái vừa đổi: kiểm lại rồi trả bản hiện tại.
+    await this.mediaContext(id);
+    return this.get(id);
   }
 
   /**

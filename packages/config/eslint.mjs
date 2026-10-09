@@ -7,7 +7,7 @@ import tseslint from 'typescript-eslint';
 
 /** API, package Node và file cấu hình. Chặn `any` và `@ts-ignore` qua typescript-eslint recommended. */
 export const base = defineConfig([
-  globalIgnores(['**/dist/', '**/.output/', '**/.nuxt/', '**/.turbo/', '**/coverage/']),
+  globalIgnores(['**/dist/', '**/.output/', '**/.nuxt/', '**/.turbo/', '**/.wrangler/', '**/coverage/']),
   js.configs.recommended,
   tseslint.configs.recommended,
   { languageOptions: { globals: { ...globals.node } } },

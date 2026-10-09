@@ -6,6 +6,7 @@ dist
 .wrangler
 .env
 .env.*
+.superpowers/
 !.env.example
 coverage
 *.log

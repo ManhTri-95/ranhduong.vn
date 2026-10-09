@@ -47,6 +47,7 @@ export const AdminPlacePhoto = z.object({
   source: PhotoSource.optional(),
   credit: z.string().optional(),
   license: z.string().optional(),
+  sourceUrl: z.httpUrl().optional(),
 });
 export type AdminPlacePhoto = z.infer<typeof AdminPlacePhoto>;
 

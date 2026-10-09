@@ -22,11 +22,21 @@ const EnvSchema = z.object({
   SESSION_COOKIE_DOMAIN: z.string().default('').transform((s) => s.trim() || undefined),
   /** Tên cookie phiên. Staging phải đặt khác production, vì cookie `.ranhduong.vn` cũng được gửi tới api.staging. */
   SESSION_COOKIE_NAME: z.string().regex(/^[a-z_]+$/).default('sid'),
+  R2_ENDPOINT: httpUrl('http://localhost:9000'),
+  R2_ACCESS_KEY_ID: z.string().min(1).default('minio'),
+  R2_SECRET_ACCESS_KEY: z.string().min(1).default('minio12345'),
+  R2_BUCKET: z.string().min(1).default('ranhduong-media'),
+  /** Ảnh gốc không được công khai: bucket riêng, không gắn custom domain hoặc r2.dev. */
+  R2_UPLOAD_BUCKET: z.string().min(1).default('ranhduong-uploads'),
+}).superRefine((env, ctx) => {
+  if (env.R2_BUCKET === env.R2_UPLOAD_BUCKET) {
+    ctx.addIssue({ code: 'custom', path: ['R2_UPLOAD_BUCKET'], message: 'Bucket ảnh gốc phải khác bucket ảnh công khai' });
+  }
 });
 
 export type Env = z.infer<typeof EnvSchema>;
 
-const DbEnvSchema = EnvSchema.pick({ MONGODB_URI: true });
+const DbEnvSchema = z.object({ MONGODB_URI: EnvSchema.shape.MONGODB_URI });
 export type DbEnv = z.infer<typeof DbEnvSchema>;
 
 function invalidEnv(error: z.ZodError): never {

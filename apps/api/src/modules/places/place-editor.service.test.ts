@@ -35,6 +35,20 @@ describe('PlaceEditorService', () => {
   });
 
   describe('create', () => {
+    it('S06 thêm ảnh có nguồn nguyên tử: lặp lại hoặc đồng thời không trùng, giữ nguyên các trường form', async () => {
+      const place = await editor.create(CITY, fakeEditInput());
+      const photo = { key: 'photos/gia-lap/anh-gia-lap', source: 'cc' as const, credit: 'Tác giả Giả Lập', license: 'CC BY 4.0', sourceUrl: 'https://commons.wikimedia.org/wiki/File:Gia-lap.jpg' };
+      await Promise.all([editor.attachPhoto(place.id, photo), editor.attachPhoto(place.id, photo)]);
+      await editor.attachPhoto(place.id, photo);
+      expect(await editor.get(place.id)).toMatchObject({ name: place.name, photos: [photo] });
+    });
+    it('S06 không thêm ảnh cho địa điểm không có hoặc đã gộp', async () => {
+      const photo = { key: 'photos/gia-lap/anh-gia-lap', source: 'owner' as const, credit: 'Quán Giả Lập', license: 'Được phép' };
+      await expect(editor.attachPhoto(new Types.ObjectId().toString(), photo)).rejects.toMatchObject({ body: { code: 'NOT_FOUND' } });
+      const place = await editor.create(CITY, fakeEditInput());
+      await places().updateOne({ _id: new Types.ObjectId(place.id) }, { $set: { status: 'merged' } });
+      await expect(editor.attachPhoto(place.id, photo)).rejects.toMatchObject({ body: { code: 'VALIDATION_FAILED' } });
+    });
     it('tạo nháp nguồn admin: slug và nameNorm từ tên, cụm theo slug, chưa có toạ độ', async () => {
       const place = await editor.create(CITY, fakeEditInput({ name: 'Cà phê Giả Lập Mây', zone: 'cum-gia-lap-a', aliases: ['Mây Giả Lập'] }));
       expect(place).toMatchObject({ status: 'draft', slug: 'ca-phe-gia-lap-may', name: 'Cà phê Giả Lập Mây', zone: 'cum-gia-lap-a', aliases: ['Mây Giả Lập'] });

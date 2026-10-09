@@ -34,7 +34,7 @@ export interface EditRow {
   practicalNotes?: string | null;
   contact?: { phone?: string | null; fanpage?: string | null; website?: string | null } | null;
   ids?: { googlePlaceId?: string | null; osmId?: string | null } | null;
-  photos?: { key: string; source?: string | null; credit?: string | null; license?: string | null }[];
+  photos?: { key: string; source?: string | null; credit?: string | null; license?: string | null; sourceUrl?: string | null }[];
   verifySource?: VerifySource | null;
   lastVerifiedAt?: Date | null;
   /** Document chèn thẳng (không qua Mongoose) có thể không có. */
@@ -123,7 +123,7 @@ export function toAdminPlace(row: EditRow, zoneSlugById: ReadonlyMap<string, str
     practicalNotes: opt(row.practicalNotes),
     contact: { phone: opt(row.contact?.phone), fanpage: opt(row.contact?.fanpage), website: opt(row.contact?.website) },
     ids: { googlePlaceId: opt(row.ids?.googlePlaceId), osmId: opt(row.ids?.osmId) },
-    photos: (row.photos ?? []).map((p) => ({ key: p.key, source: opt(p.source), credit: opt(p.credit), license: opt(p.license) })),
+    photos: (row.photos ?? []).map((p) => ({ key: p.key, source: opt(p.source), credit: opt(p.credit), license: opt(p.license), sourceUrl: opt(p.sourceUrl) })),
     verifySource: opt(row.verifySource),
     lastVerifiedAt: row.lastVerifiedAt?.toISOString(),
     updatedAt: (row.updatedAt ?? row._id.getTimestamp()).toISOString(),

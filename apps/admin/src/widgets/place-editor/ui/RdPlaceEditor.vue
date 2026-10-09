@@ -12,6 +12,7 @@ import {
   Transport,
   type AdminPlacePhoto,
   type PlaceCategory,
+  photoVariantKey,
 } from '@ranhduong/contracts';
 import { computed, nextTick, ref, watch } from 'vue';
 import { RouterLink } from 'vue-router';
@@ -20,7 +21,8 @@ import { verifySourceOptions } from '@/entities/place/model/verify-options';
 import RdDuplicateWarning from '@/features/duplicate-warning/ui/RdDuplicateWarning.vue';
 import RdLocationPicker from '@/features/location-picker/ui/RdLocationPicker.vue';
 import RdOpeningHoursEditor from '@/features/opening-hours-editor/ui/RdOpeningHoursEditor.vue';
-import { CITY_SLUG } from '@/shared/config';
+import RdPhotoUpload from '@/features/photo-upload/ui/RdPhotoUpload.vue';
+import { CITY_SLUG, MEDIA_BASE } from '@/shared/config';
 import { formatLocalTime } from '@/shared/lib/time';
 import { alsoCategoryChoices } from '../model/also-categories';
 import { usePlaceEditor } from '../model/use-place-editor';
@@ -33,6 +35,7 @@ const { load, city, place, form, errors, notice, busy, restorable, localKept, du
 
 const editorEl = ref<HTMLElement | null>(null);
 const noticeEl = ref<HTMLElement | null>(null);
+const photoBusy = ref(false);
 // Nút Lưu, Kích hoạt nằm ở thanh dưới, còn thông báo ở đầu form dài: lỗi thì đưa ô sai đầu tiên (hoặc thông báo) vào tầm nhìn.
 watch(notice, async (value) => {
   if (value?.kind !== 'bad') return;
@@ -267,14 +270,17 @@ const photoCredit = (photo: AdminPlacePhoto) => [photo.credit, photo.license].fi
     <section class="rd-admin-section" aria-labelledby="sec-photos">
       <h2 id="sec-photos" class="rd-admin-section__title">Ảnh</h2>
       <p v-if="!place || place.photos.length === 0" class="rd-field__hint">
-        Chưa có ảnh; trang địa điểm sẽ hiện "Ảnh đang cập nhật". Phần tải ảnh lên sẽ có ở bản sau.
+        Chưa có ảnh; trang địa điểm sẽ hiện "Ảnh đang cập nhật".
       </p>
       <ul v-else class="photos">
         <li v-for="(photo, i) in place.photos" :key="photo.key">
+          <img :src="`${MEDIA_BASE}/${photoVariantKey(photo.key, 400)}`" :alt="`Ảnh ${i + 1} của ${place.name}`" width="96" height="96" loading="lazy" />
           <span>Ảnh {{ i + 1 }}: {{ photoCredit(photo) }}</span>
+          <a v-if="photo.sourceUrl" :href="photo.sourceUrl" target="_blank" rel="noopener noreferrer">Ảnh gốc</a>
           <span :class="['rd-status', photoComplete(photo) ? 'rd-status--ok' : 'rd-status--bad']">{{ photoComplete(photo) ? 'Có nguồn' : 'Thiếu nguồn' }}</span>
         </li>
       </ul>
+      <RdPhotoUpload :place-id="editor.placeId.value" :disabled="busy !== null" @attached="editor.applyPhotos" @busy="photoBusy = $event" />
     </section>
 
     <section class="rd-admin-section" aria-labelledby="sec-verify">
@@ -303,14 +309,14 @@ const photoCredit = (photo: AdminPlacePhoto) => [photo.credit, photo.license].fi
     <div class="rd-action-bar bar">
       <p class="save-state" role="status">{{ saveState }}</p>
       <template v-if="status === 'draft'">
-        <button type="button" class="rd-btn rd-btn--outline" :disabled="busy !== null" @click="editor.save">
+        <button type="button" class="rd-btn rd-btn--outline" :disabled="busy !== null || photoBusy" @click="editor.save">
           {{ busy === 'save' ? 'Đang lưu…' : 'Lưu nháp' }}
         </button>
-        <button type="button" class="rd-btn rd-btn--accent" :disabled="busy !== null || issues.length > 0" aria-describedby="activation-issues" @click="editor.activate">
+        <button type="button" class="rd-btn rd-btn--accent" :disabled="busy !== null || photoBusy || issues.length > 0" aria-describedby="activation-issues" @click="editor.activate">
           {{ busy === 'activate' ? 'Đang kích hoạt…' : 'Kích hoạt' }}
         </button>
       </template>
-      <button v-else type="button" class="rd-btn rd-btn--primary" :disabled="busy !== null || !dirty || issues.length > 0" @click="editor.save">
+      <button v-else type="button" class="rd-btn rd-btn--primary" :disabled="busy !== null || photoBusy || !dirty || issues.length > 0" @click="editor.save">
         {{ busy === 'save' ? 'Đang lưu…' : 'Lưu thay đổi' }}
       </button>
     </div>
@@ -331,6 +337,7 @@ const photoCredit = (photo: AdminPlacePhoto) => [photo.credit, photo.license].fi
 .option-text { display: flex; flex-direction: column; gap: 2px; }
 .photos { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: var(--space-2); }
 .photos li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2); font-size: 14px; }
+.photos img { object-fit: cover; border-radius: var(--radius-thumb); background: var(--mist); }
 .checklist ul { margin: var(--space-2) 0 0; padding-left: var(--space-5); }
 .bar { position: sticky; bottom: 0; z-index: 2; flex-wrap: wrap; }
 /* Hai nút trên một hàng ở 375px, kể cả khi trình duyệt có thanh cuộn. */
