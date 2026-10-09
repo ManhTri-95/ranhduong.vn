@@ -6,6 +6,7 @@ import type { DuplicateRow, EditRow, PlaceUpdate, SummaryRow } from './place-edi
 import type { ListedPlace } from './place-listing';
 import type { DetailRow } from './place-detail';
 import { PLACE_MODEL, type PlaceModel } from './schemas/place.schema';
+import { atlasSearchStage } from './place-search';
 
 /** Trường của thẻ địa điểm; ảnh chỉ lấy tấm đầu. */
 const CARD_FIELDS = {
@@ -82,6 +83,18 @@ export class PlacesRepository {
   /** Tạo index khai báo trong schema; không xoá index lạ (khác syncIndexes). */
   async ensureIndexes(): Promise<void> {
     await this.places.createIndexes();
+  }
+
+  async searchSlugs(cityId: string, q: string, index: string): Promise<string[]> {
+    const stage = atlasSearchStage(cityId, q, index);
+    if (!stage) return [];
+    const rows = await this.places.aggregate<{ slug: string }>([
+      stage,
+      // Search indexes are eventually consistent; check the current record before returning it.
+      { $match: { cityId: new Types.ObjectId(cityId), status: 'active' } },
+      { $project: { _id: 0, slug: 1 } },
+    ]).exec();
+    return rows.map((row) => row.slug);
   }
 
   /** Current slug takes precedence over historical aliases, including private current records. */

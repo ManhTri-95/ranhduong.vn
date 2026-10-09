@@ -18,6 +18,11 @@ const REQUIRED = {
 };
 
 describe('loadEnv', () => {
+  it('S13 chỉ bật Atlas Search khi đặt tên index; local để trống', () => {
+    expect(loadEnv(REQUIRED).PLACE_SEARCH_INDEX).toBeUndefined();
+    expect(loadEnv({ ...REQUIRED, PLACE_SEARCH_INDEX: '   ' }).PLACE_SEARCH_INDEX).toBeUndefined();
+    expect(loadEnv({ ...REQUIRED, PLACE_SEARCH_INDEX: ' places-public ' }).PLACE_SEARCH_INDEX).toBe('places-public');
+  });
   it('S06 cấu hình R2 local, bucket ảnh gốc riêng và URL hợp lệ', () => {
     const env = loadEnv(REQUIRED);
     expect(env).toMatchObject({ R2_ENDPOINT: 'http://localhost:9000', R2_BUCKET: 'ranhduong-media', R2_UPLOAD_BUCKET: 'ranhduong-uploads' });

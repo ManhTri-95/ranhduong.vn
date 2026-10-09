@@ -490,6 +490,8 @@ Trang địa điểm, danh sách và lịch trình mẫu được render SSR và
 
 **Tìm kiếm S09:** form GET chạy khi chưa có JavaScript; từ khoá cắt còn 100 ký tự, khớp không dấu trong bộ nhớ trên địa điểm `active`, tối đa 20 kết quả. Từ khoá rỗng chỉ hiện hướng dẫn, không gọi API danh sách. Gợi ý khi gõ và Atlas Search để S13.
 
+**Tìm kiếm S13:** ô tìm trên trang chủ/trang kết quả gợi ý tối đa 6 địa điểm khi có ít nhất 2 ký tự chuẩn hoá, debounce 250 ms; huỷ yêu cầu cũ, hỗ trợ bộ gõ tiếng Việt, bàn phím/chạm, lỗi và thử lại. Dùng chung `GET /cities/:city/places?q=&limit=6`, tìm tên/tên khác, danh mục chính/phụ và thẻ. `PLACE_SEARCH_INDEX` bật Atlas Search với index NFC/lowercase/asciiFolding; để trống dùng cách tìm trong bộ nhớ cho local. Atlas chỉ lọc ứng viên, API kiểm lại tập active hiện tại và xếp hạng chung, giữ số đếm thẻ trước lọc từ khoá. Form GET/SSR, URL, noindex và no-store giữ như S09. Cấu hình index và kiểm staging ở [runbook S13](runbooks/place-search.md).
+
 **Trang chủ S09:** mục "Chỗ dân ở đây hay ngồi" lấy tối đa 6 quán cà phê, ăn uống `active` (tính cả danh mục phụ): quán đã xác nhận (`owner`) trước, rồi xác minh gần nhất. Lịch trình chỉ hiện mẫu `published`. Trạng thái mở cửa tính theo giờ Việt Nam trên trình duyệt sau hydrate để HTML cache không giữ giờ cũ. Khi API lỗi lúc SSR, trang giữ khung, có nút Thử lại và trả `503`, `cache-control: no-store`.
 
 **Trang lọc và trang sau:** trang danh mục và khu vực nhận `?tags=a,b` (lọc thẻ, gửi bằng form nên bot không đi theo) và `?cursor=…` (trang sau, có link để bot đi tới từng địa điểm). Hai loại này `noindex, follow`, vẫn cache SWR 1 giờ như trang gốc.

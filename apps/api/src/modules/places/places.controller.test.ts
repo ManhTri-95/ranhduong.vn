@@ -114,6 +114,25 @@ describe('GET /v1/cities/:city/places', () => {
     expect(await search('khong co gi')).toEqual([]);
   });
 
+  it('S13 gõ ca phe may ra tên có dấu, khớp tiền tố và thẻ; gợi ý chỉ lấy 6 active trong thành phố', async () => {
+    const otherCityId = (await t.app.get(CitiesService).applySeed(fakeCitySeed({ slug: 'thanh-pho-gia-lap-hai' }))).cityId;
+    await places().insertMany([
+      fakePlaceDoc(cityId, { slug: 'ca-phe-may-gia-lap', name: 'Cà phê Mây (Giả Lập)', tags: ['an-sang'] }),
+      ...Array.from({ length: 7 }, (_, i) => fakePlaceDoc(cityId, { slug: `may-gia-lap-${i}`, name: `Quán Mây Giả Lập ${i}` })),
+      ...['draft', 'hidden', 'closed', 'suspected', 'merged'].map((status) => fakePlaceDoc(cityId, { slug: `may-${status}`, name: 'Cà phê Mây Giả Lập Riêng Tư', status })),
+      fakePlaceDoc(otherCityId, { slug: 'may-thanh-pho-khac', name: 'Cà phê Mây Giả Lập Khác' }),
+    ]);
+    for (const q of ['ca phe may', 'CÀ PHÊ MÂY', 'ca ph ma', 'may an sang']) {
+      const response = await get(`/cities/${CITY}/places?q=${encodeURIComponent(q)}&limit=6`);
+      expect(response.status).toBe(200);
+      expect(slugs(response.body)[0], q).toBe('ca-phe-may-gia-lap');
+      expect(slugs(response.body)).not.toContain('may-thanh-pho-khac');
+      expect((response.body as PlaceListResponse).nextCursor).toBeUndefined();
+    }
+    expect(slugs((await get(`/cities/${CITY}/places?q=may&limit=6`)).body)).toHaveLength(6);
+    expect(slugs((await get(`/cities/${CITY}/places?q=%28.*%29&limit=6`)).body)).toEqual([]);
+  });
+
   it('lọc theo cụm, kết hợp được với danh mục; cụm không có hoặc của thành phố khác thì 404 NOT_FOUND', async () => {
     const zoneB = await t.conn.collection('zones').findOne({ cityId: new Types.ObjectId(cityId), slug: 'cum-gia-lap-b' });
     if (!zoneB) throw new Error('Thiếu cụm giả lập B');

@@ -7,6 +7,8 @@ const httpUrl = (fallback: string) =>
 const EnvSchema = z.object({
   API_PORT: z.coerce.number().int().default(3101),
   MONGODB_URI: z.string().min(1),
+  /** S13: Atlas Search index đã sẵn sàng; local để trống để tìm trong bộ nhớ. */
+  PLACE_SEARCH_INDEX: z.string().default('').transform((s) => s.trim() || undefined),
   REDIS_URL: z.string().min(1).default('redis://localhost:6379'),
   /** Các nguồn được gọi API kèm cookie: web khách và admin, cách nhau bằng dấu phẩy. */
   WEB_ORIGINS: z.string().default('http://localhost:3100,http://localhost:5174').transform(csv),

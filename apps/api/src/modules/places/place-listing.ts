@@ -2,6 +2,7 @@ import {
   CATEGORY_LABEL,
   encodePlaceCursor,
   needsOwnerConfirmation,
+  tagLabel,
   type FeaturedKey,
   type GeoPoint,
   type OpeningSlot,
@@ -88,7 +89,8 @@ export function searchPlaces(places: ListedPlace[], q: string): ListedPlace[] {
   return places
     .map((place) => {
       const labels = [place.category, ...place.alsoCategories].map((c) => CATEGORY_LABEL[c]);
-      return { place, score: matchScore(q, place.name, [...place.aliases, ...labels]) };
+      const tags = place.tags.flatMap((tag) => [tag, tagLabel(tag)]);
+      return { place, score: matchScore(q, place.name, [...place.aliases, ...labels, ...tags]) };
     })
     .filter((ranked) => ranked.score > 0)
     .sort((a, b) => b.score - a.score || compareFeatured(a.place, b.place))

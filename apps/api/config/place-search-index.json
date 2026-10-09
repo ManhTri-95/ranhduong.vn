@@ -1,0 +1,19 @@
+{
+  "analyzers": [{
+    "name": "vietnameseFolded",
+    "tokenizer": { "type": "regexSplit", "pattern": "[^\\p{L}\\p{M}\\p{N}]+" },
+    "tokenFilters": [{ "type": "icuNormalizer", "normalizationForm": "nfc" }, { "type": "lowercase" }, { "type": "asciiFolding" }]
+  }],
+  "mappings": {
+    "dynamic": false,
+    "fields": {
+      "cityId": { "type": "objectId" },
+      "status": { "type": "token" },
+      "name": { "type": "string", "analyzer": "vietnameseFolded" },
+      "aliases": { "type": "string", "analyzer": "vietnameseFolded" },
+      "tags": [{ "type": "string", "analyzer": "vietnameseFolded" }, { "type": "token" }],
+      "category": { "type": "token" },
+      "alsoCategories": { "type": "token" }
+    }
+  }
+}

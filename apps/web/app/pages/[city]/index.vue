@@ -55,7 +55,7 @@ useSeoMeta({
         <h1 class="page-title">{{ cityName ? `${cityName} hôm nay` : 'Hôm nay' }}<br>ghé đâu?</h1>
         <p class="lead">Ghi chép của người rành đường. Quán nào cũng được hỏi lại trước khi lên đây.</p>
       </section>
-      <RdSearchForm :action="`/${citySlug}/tim-kiem`" />
+      <RdSearchForm :action="`/${citySlug}/tim-kiem`" :city-slug="citySlug" />
       <RdCategoryChips :city-slug="citySlug" />
       <RdItineraryStrip :city-slug="citySlug" :itineraries="templateCards" :failed="templatesFailed" />
       <RdFeaturedPlaces :city-slug="citySlug" :places="featuredPlaces" :failed="featuredFailed" :now="now" />

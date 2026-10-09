@@ -25,6 +25,7 @@ const detailPlace = {
 let apiFailed = false;
 let detailFailed = false;
 let mapFailed = false;
+let suggestionRequests = 0;
 const api = createServer((req, res) => {
   res.setHeader('content-type', 'application/json');
   const url = new URL(req.url ?? '/', 'http://127.0.0.1');
@@ -33,6 +34,7 @@ const api = createServer((req, res) => {
   } else if (url.pathname === '/v1/cities/da-lat') {
     res.end(JSON.stringify(city));
   } else if (url.pathname === '/v1/cities/da-lat/places') {
+    if (url.searchParams.get('limit') === '6' && url.searchParams.has('q')) suggestionRequests++;
     if (url.searchParams.has('bbox') && mapFailed) return res.writeHead(503).end(JSON.stringify({ code: 'INTERNAL_ERROR', message: 'Lỗi bản đồ Giả Lập' }));
     res.end(JSON.stringify({
       items: url.searchParams.has('bbox') ? items.map((place) => ({ ...place, location: { type: 'Point', coordinates: [0.5, 0.5] } })) : url.searchParams.has('cursor') ? items.slice(20) : url.searchParams.has('tags') ? items.slice(0, 5) : items.slice(0, 20),
@@ -54,6 +56,19 @@ const api = createServer((req, res) => {
   } else {
     res.writeHead(404).end(JSON.stringify({ code: 'NOT_FOUND', message: 'Không tìm thấy thành phố Giả Lập' }));
   }
+});
+
+describe('S13 search production SSR', () => {
+  it('renders the accessible GET search form without fetching client-only suggestions', async () => {
+    const before = suggestionRequests;
+    const response = await fetch(`${base}/da-lat/tim-kiem?q=ca%20phe%20may`);
+    expect(response.status).toBe(200);
+    expect(response.headers.get('cache-control')).toBe('no-store');
+    const html = await response.text();
+    for (const text of ['method="get"', 'action="/da-lat/tim-kiem"', 'role="combobox"', 'aria-expanded="false"', 'value="ca phe may"', 'noindex, follow']) expect(html).toContain(text);
+    expect(suggestionRequests).toBe(before);
+    expect(html).not.toContain('role="listbox"');
+  });
 });
 
 describe('S12 map production SSR', () => {

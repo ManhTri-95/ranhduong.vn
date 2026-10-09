@@ -1,16 +1,18 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
 import type { PlaceDetailResponse, PlaceListQuery, PlaceListResponse } from '@ranhduong/contracts';
 import { CitiesService } from '../cities/cities.service';
 import { countTags, hasAllTags, pageByFeatured, searchPlaces, toPlaceCard, type ListedPlace } from './place-listing';
 import { PlacesRepository } from './places.repository';
 import { toPlaceDetail } from './place-detail';
 import { placeNotFound } from './place-errors';
+import { ENV, type Env } from '../../config/env';
 
 @Injectable()
 export class PlacesService {
   constructor(
     private readonly repo: PlacesRepository,
     private readonly cities: CitiesService,
+    @Optional() @Inject(ENV) private readonly env?: Env,
   ) {}
 
   /** Dùng cho lệnh seed và khởi tạo môi trường mới; CRUD địa điểm thêm ở S05. */
@@ -53,9 +55,10 @@ export class PlacesService {
   async list(citySlug: string, query: PlaceListQuery): Promise<PlaceListResponse> {
     const city = await this.cities.resolveCity(citySlug);
     const zone = query.zone ? await this.cities.resolveZone(city.id, query.zone) : undefined;
-    const [places, zoneNames] = await Promise.all([
+    const [places, zoneNames, searchSlugs] = await Promise.all([
       this.repo.listActive(city.id, { categories: query.category, zoneId: zone?.id, bbox: query.bbox, near: query.near, radius: query.radius }),
       this.cities.zoneNames(city.id),
+      query.q && this.env?.PLACE_SEARCH_INDEX ? this.repo.searchSlugs(city.id, query.q, this.env.PLACE_SEARCH_INDEX) : undefined,
     ]);
     const wanted = query.tags ?? [];
     const filtered = places.filter((place) => hasAllTags(place, wanted));
@@ -64,7 +67,11 @@ export class PlacesService {
       ...(place.location ? { location: place.location } : {}),
     });
     const tags = countTags(places);
-    if (query.q) return { items: searchPlaces(filtered, query.q).slice(0, query.limit).map(toCard), tags };
+    if (query.q) {
+      const candidates = searchSlugs ? new Set(searchSlugs) : undefined;
+      const searchable = candidates ? filtered.filter((place) => candidates.has(place.slug)) : filtered;
+      return { items: searchPlaces(searchable, query.q).slice(0, query.limit).map(toCard), tags };
+    }
     const page = pageByFeatured(filtered, query.cursor, query.limit);
     return { items: page.items.map(toCard), nextCursor: page.nextCursor, tags };
   }

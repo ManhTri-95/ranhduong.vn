@@ -54,6 +54,13 @@ describe('searchPlaces', () => {
   it('không khớp gì thì rỗng', () => {
     expect(searchPlaces(list, 'khong co gi')).toEqual([]);
   });
+  it('S13 tìm theo thẻ, tên tiếng Việt của thẻ và kết hợp với tên', () => {
+    const tagged = place({ name: 'Quán Giả Lập Mây', tags: ['view-doi', 'an-sang', 'banh-can'] });
+    for (const q of ['view doi', 'ĂN SÁNG', 'banh ca', 'may an sang']) {
+      expect(searchPlaces([tagged], q), q).toEqual([tagged]);
+    }
+    expect(searchPlaces([tagged], 'may dac san')).toEqual([]);
+  });
 });
 
 describe('cardNote', () => {

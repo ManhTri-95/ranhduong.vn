@@ -50,7 +50,7 @@ useSeoMeta({
     <RdCityHeader :city-slug="citySlug" :city-name="cityName" />
     <main class="search-page__main">
       <h1 class="page-title">Tìm{{ cityName ? ` ở ${cityName}` : '' }}</h1>
-      <RdSearchForm :action="`/${citySlug}/tim-kiem`" :query="q" />
+      <RdSearchForm :action="`/${citySlug}/tim-kiem`" :city-slug="citySlug" :query="q" />
       <RdErrorBanner v-if="failed" message="Chưa tìm được, có thể mạng đang chập chờn." @retry="retry" />
       <template v-if="q">
         <template v-if="items.length">
