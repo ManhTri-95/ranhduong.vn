@@ -4,6 +4,7 @@ import type { OpeningSlot, Place, PlaceCategory, PlaceStatus, VerifySource } fro
 import { Types } from 'mongoose';
 import type { DuplicateRow, EditRow, PlaceUpdate, SummaryRow } from './place-edit';
 import type { ListedPlace } from './place-listing';
+import type { DetailRow } from './place-detail';
 import { PLACE_MODEL, type PlaceModel } from './schemas/place.schema';
 
 /** Trường của thẻ địa điểm; ảnh chỉ lấy tấm đầu. */
@@ -77,6 +78,27 @@ export class PlacesRepository {
   /** Tạo index khai báo trong schema; không xoá index lạ (khác syncIndexes). */
   async ensureIndexes(): Promise<void> {
     await this.places.createIndexes();
+  }
+
+  /** Current slug takes precedence over historical aliases, including private current records. */
+  async findDetail(cityId: string, slug: string): Promise<DetailRow | null> {
+    const city = new Types.ObjectId(cityId);
+    return (await this.places.findOne({ cityId: city, slug }).lean<DetailRow>())
+      ?? this.places.findOne({ cityId: city, slugHistory: slug }).lean<DetailRow>();
+  }
+
+  async findDetailById(cityId: string, id: string): Promise<DetailRow | null> {
+    return this.places.findOne({ cityId: new Types.ObjectId(cityId), _id: new Types.ObjectId(id) }).lean<DetailRow>();
+  }
+
+  /** 2dsphere index sorts by distance; only active places in this city can be suggestions. */
+  async nearby(cityId: string, place: DetailRow): Promise<DetailRow[]> {
+    if (!place.location) return [];
+    const similar = place.status === 'closed' ? { $or: [{ category: place.category }, { alsoCategories: place.category }] } : {};
+    return this.places.find({
+      cityId: new Types.ObjectId(cityId), _id: { $ne: place._id }, status: 'active',
+      location: { $near: { $geometry: place.location } }, ...similar,
+    }).limit(place.status === 'closed' ? 3 : 6).lean<DetailRow[]>();
   }
 
   async hasOsmId(cityId: string, osmId: string): Promise<boolean> {

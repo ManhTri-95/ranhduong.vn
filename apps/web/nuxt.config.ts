@@ -3,6 +3,9 @@ export default defineNuxtConfig({
   compatibilityDate: '2026-10-01',
   // Cổng local 3100 (API 3101) để không trùng các dự án khác đang dùng 3000–3002 trên cùng máy.
   devServer: { port: 3100 },
+  // Inline initial SSR data even on 503; an extracted _payload.json returning 503 cannot hydrate partial content.
+  // Keep extracted payloads for subsequent client navigation (supported by Nuxt 4.5).
+  experimental: { payloadExtraction: 'client' },
   css: ['@ranhduong/ui/tokens.css', '@ranhduong/ui/components.css', '~/assets/base.css'],
   app: {
     head: {
@@ -40,6 +43,7 @@ export default defineNuxtConfig({
     '/da-lat/tham-quan': { swr: 3600 },
     '/da-lat/hoat-dong': { swr: 3600 },
     '/da-lat/khu-vuc/**': { swr: 3600 },
+    '/da-lat/dia-diem/**': { swr: 3600 },
     '/:city/tim-kiem': { cache: false, headers: { 'x-robots-tag': 'noindex', 'cache-control': 'no-store' } },
     '/:city/dia-diem/**': { swr: 3600 },
     '/:city/lich-trinh/**': { swr: 86400 },

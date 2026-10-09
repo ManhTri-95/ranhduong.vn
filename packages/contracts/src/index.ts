@@ -12,3 +12,4 @@ export * from './osm.js';
 export * from './place-cursor.js';
 export * from './place-admin.js';
 export * from './place.js';
+export * from './place-detail.js';

@@ -3,6 +3,7 @@ import type { PlaceCard, PlaceListResponse } from '@ranhduong/contracts';
 import { computed, nextTick, ref, watch } from 'vue';
 import { fetchPlacePage, type PlaceListParams } from '~/entities/place/api/places';
 import { appendUnique, listingHref } from '~/entities/place/lib/listing-query';
+import { restoreListing, saveListing, type ListingHistory } from '~/entities/place/lib/listing-history';
 import RdPlaceList from '~/entities/place/ui/RdPlaceList.vue';
 import { useApiBase } from '~/shared/api/client';
 
@@ -22,8 +23,12 @@ const props = defineProps<{
 }>();
 
 const apiBase = useApiBase();
-const items = ref<PlaceCard[]>(props.page?.items ?? []);
-const nextCursor = ref(props.page?.nextCursor);
+const history = useState<ListingHistory>('place-listing-history', () => ({}));
+const historyPath = useRoute().fullPath;
+// Client-only: snapshots must never alter cached SSR HTML. Restoration is synchronous before router scroll restoration.
+const saved = import.meta.client ? restoreListing(history.value, historyPath, props.page) : undefined;
+const items = ref<PlaceCard[]>(saved?.items ?? props.page?.items ?? []);
+const nextCursor = ref(saved ? saved.nextCursor : props.page?.nextCursor);
 const loading = ref(false);
 const loadFailed = ref(false);
 const listEl = ref<HTMLElement | null>(null);
@@ -32,6 +37,12 @@ const listEl = ref<HTMLElement | null>(null);
 watch(
   () => props.page,
   (page) => {
+    const restored = import.meta.client ? restoreListing(history.value, historyPath, page) : undefined;
+    if (restored) {
+      items.value = restored.items;
+      nextCursor.value = restored.nextCursor;
+      return;
+    }
     items.value = page?.items ?? [];
     nextCursor.value = page?.nextCursor;
     loadFailed.value = false;
@@ -56,6 +67,7 @@ async function loadMore(event: MouseEvent): Promise<void> {
     const more = await fetchPlacePage(apiBase, props.citySlug, { ...props.params, cursor: nextCursor.value });
     items.value = appendUnique(items.value, more.items);
     nextCursor.value = more.nextCursor;
+    saveListing(history.value, historyPath, props.page, { items: items.value, nextCursor: nextCursor.value });
     await nextTick();
     // Đưa focus tới thẻ đầu tiên vừa thêm, để bàn phím và trình đọc màn hình đi tiếp từ đó.
     listEl.value?.querySelectorAll<HTMLAnchorElement>('a.rd-place')[firstNew]?.focus();
