@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Types } from 'mongoose';
 import { AdminCuratedList, type CuratedListEditInput } from '@ranhduong/contracts';
 import { CURATED_LIST_MODEL, type CuratedListDocument, type CuratedListModel } from './schemas/curated-list.schema';
+import { sitemapSources, type SitemapSource } from '@ranhduong/contracts';
 
 type Row = CuratedListDocument & { _id: Types.ObjectId };
 function toAdmin(row: Row): AdminCuratedList {
@@ -14,6 +15,9 @@ function fields(input: CuratedListEditInput) {
 
 @Injectable()
 export class CuratedListsRepository {
+  async sitemapSources(cityId: string): Promise<SitemapSource[]> {
+    return sitemapSources(await this.lists.find({ cityId: new Types.ObjectId(cityId), status: 'published' }, { slug: 1, updatedAt: 1 }).sort({ slug: 1 }).lean());
+  }
   constructor(@InjectModel(CURATED_LIST_MODEL) private readonly lists: CuratedListModel) {}
 
   async ensureIndexes(): Promise<void> { await this.lists.createIndexes(); }

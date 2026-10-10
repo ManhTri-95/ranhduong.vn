@@ -4,7 +4,10 @@ import { computed } from 'vue';
 import { useCity } from '~/entities/city/api/city';
 import { useTemplateDetail } from '~/entities/itinerary/api/itineraries';
 import { markUnavailableOnServer, throwIfNotFound } from '~/shared/api/page-status';
-import { photoUrl } from '~/shared/lib/media';
+import { photoOgUrl } from '~/shared/lib/media';
+import { absoluteUrl } from '~/shared/lib/seo';
+import { usePageSeo } from '~/shared/lib/use-page-seo';
+import { tripJsonLd } from '~/entities/itinerary/lib/itinerary-seo';
 import RdErrorBanner from '~/shared/ui/RdErrorBanner.vue';
 import RdCityHeader from '~/widgets/city-header/ui/RdCityHeader.vue';
 import RdItineraryDetail from '~/widgets/itinerary-detail/ui/RdItineraryDetail.vue';
@@ -16,7 +19,9 @@ definePageMeta({
 const route = useRoute();
 const citySlug = String(route.params.city);
 const slug = String(route.params.template);
-const canonical = `https://ranhduong.vn/${citySlug}/lich-trinh/${slug}`;
+const seoConfig = useRuntimeConfig().public;
+const path = `/${citySlug}/lich-trinh/${slug}`;
+const canonical = absoluteUrl(seoConfig.siteUrl, path);
 const [city, template] = await Promise.all([useCity(citySlug), useTemplateDetail(citySlug, slug)]);
 throwIfNotFound(city.error.value);
 throwIfNotFound(template.error.value);
@@ -31,8 +36,10 @@ const title = computed(() => `${template.data.value?.seoTitle || template.data.v
 const description = computed(() => template.data.value?.seoDescription || template.data.value?.description || `Lịch trình gợi ý ở ${city.data.value?.name || 'Đà Lạt'}.`);
 const mediaBase = useRuntimeConfig().public.mediaBase;
 const cover = computed(() => template.data.value?.days.flatMap((day) => day.stops).find((stop) => stop.place?.coverKey)?.place?.coverKey);
-useSeoMeta({ title: () => title.value, description: () => description.value, ogTitle: () => title.value, ogDescription: () => description.value, ogUrl: canonical, ogType: 'website', ogImage: () => cover.value ? photoUrl(mediaBase, cover.value, 1200) : undefined });
-useHead({ link: [{ rel: 'canonical', href: canonical }] });
+usePageSeo({ path, title, description, image: () => cover.value ? photoOgUrl(mediaBase, cover.value) : undefined,
+  breadcrumbs: () => [{ name: city.data.value?.name || 'Thành phố', path: `/${citySlug}` }, { name: template.data.value?.title || 'Lịch trình mẫu', path }],
+  jsonLd: () => template.data.value && !failed.value ? [tripJsonLd(template.data.value, seoConfig.siteUrl, citySlug)] : [], noindex: failed,
+});
 </script>
 
 <template>

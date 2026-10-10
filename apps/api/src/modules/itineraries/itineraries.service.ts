@@ -22,6 +22,17 @@ const StoredSchedule = z.object({
 
 @Injectable()
 export class ItinerariesService {
+  async sitemapSources(cityId: string, citySlug: string) {
+    const sources = await this.repo.sitemapSources(cityId);
+    const results = [];
+    for (const source of sources) {
+      try { await this.templateDetail(citySlug, source.slug); results.push(source); }
+      catch (error) {
+        if (!(error instanceof ApiException) || error.getStatus() !== 404) throw error;
+      }
+    }
+    return results;
+  }
   private readonly logger = new Logger(ItinerariesService.name);
 
   constructor(

@@ -7,6 +7,7 @@ import type { ListedPlace } from './place-listing';
 import type { DetailRow } from './place-detail';
 import { PLACE_MODEL, type PlaceModel } from './schemas/place.schema';
 import { atlasSearchStage } from './place-search';
+import { sitemapSources, type SitemapSource } from '@ranhduong/contracts';
 
 /** Trường của thẻ địa điểm; ảnh chỉ lấy tấm đầu. */
 const CARD_FIELDS = {
@@ -79,6 +80,9 @@ export interface ListFilter {
 /** Lớp dữ liệu của module places: chỉ file này import model Place. */
 @Injectable()
 export class PlacesRepository {
+  async sitemapSources(cityId: string): Promise<SitemapSource[]> {
+    return sitemapSources(await this.places.find({ cityId: new Types.ObjectId(cityId), status: { $in: ['active', 'closed'] } }, { slug: 1, updatedAt: 1 }).sort({ slug: 1 }).lean());
+  }
   constructor(@InjectModel(PLACE_MODEL) private readonly places: PlaceModel) {}
 
   /** Tạo index khai báo trong schema; không xoá index lạ (khác syncIndexes). */

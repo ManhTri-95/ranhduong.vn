@@ -3,6 +3,9 @@ import { Slug } from '@ranhduong/contracts';
 import { computed } from 'vue';
 import { useCity } from '~/entities/city/api/city';
 import { useCuratedList } from '~/entities/curated-list/api/curated-lists';
+import { itemListJsonLd } from '~/shared/lib/seo';
+import { photoOgUrl } from '~/shared/lib/media';
+import { usePageSeo } from '~/shared/lib/use-page-seo';
 import RdPlaceCard from '~/entities/place/ui/RdPlaceCard.vue';
 import { markUnavailableOnServer, throwIfNotFound } from '~/shared/api/page-status';
 import { useClientNow } from '~/shared/lib/use-client-now';
@@ -27,11 +30,17 @@ async function retry(): Promise<void> {
   throwIfNotFound(city.error.value);
   throwIfNotFound(list.error.value);
 }
-useSeoMeta({
+const seoConfig = useRuntimeConfig().public;
+const path = `/${citySlug}/top/${slug}`;
+const cover = computed(() => list.data.value?.places.find((place) => place.coverKey)?.coverKey);
+usePageSeo({
+  path,
   title: () => `${list.data.value?.title ?? 'Danh sách gợi ý'} · Rành Đường`,
   description: () => list.data.value?.description || `${list.data.value?.title ?? 'Danh sách gợi ý'}: các địa điểm được chọn ở ${city.data.value?.name ?? 'Đà Lạt'}.`,
+  image: () => cover.value ? photoOgUrl(seoConfig.mediaBase, cover.value) : undefined,
+  breadcrumbs: () => [{ name: city.data.value?.name || 'Thành phố', path: `/${citySlug}` }, { name: list.data.value?.title || 'Danh sách gợi ý', path }],
+  jsonLd: () => list.data.value && !failed.value ? [itemListJsonLd(seoConfig.siteUrl, citySlug, list.data.value.places, list.data.value.title)] : [], noindex: failed,
 });
-useHead({ link: [{ rel: 'canonical', href: `https://ranhduong.vn/${citySlug}/top/${slug}` }] });
 </script>
 <template>
   <div>

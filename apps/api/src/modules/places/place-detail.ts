@@ -3,6 +3,8 @@ import type { Types } from 'mongoose';
 import type { EditRow } from './place-edit';
 
 export interface DetailRow extends EditRow {
+  ratingAvg?: number | null;
+  ratingCount?: number | null;
   slugHistory?: string[];
   mergedInto?: Types.ObjectId | null;
 }
@@ -29,6 +31,8 @@ export function toPlaceDetail(row: DetailRow, zone?: { slug: string; name: strin
     practicalNotes: row.practicalNotes ?? undefined, contact, photos,
     googlePlaceId: row.ids?.googlePlaceId ?? undefined,
     lastVerifiedAt: row.lastVerifiedAt?.toISOString(),
+    ratingAvg: row.ratingAvg != null && row.ratingAvg >= 1 && row.ratingAvg <= 5 ? row.ratingAvg : undefined,
+    ratingCount: row.ratingCount != null && Number.isInteger(row.ratingCount) && row.ratingCount >= 0 ? row.ratingCount : 0,
     unconfirmed: needsOwnerConfirmation({ category: row.category, verifySource: row.verifySource ?? undefined }),
     zoneSlug: zone?.slug, zoneName: zone?.name,
   });

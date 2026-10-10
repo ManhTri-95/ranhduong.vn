@@ -113,7 +113,7 @@ export const PHOTO_WIDTHS = [400, 800, 1200] as const;
 export type PhotoWidth = (typeof PHOTO_WIDTHS)[number];
 
 /** Khoá object của một bản WebP; S06 phải sinh đúng các khoá này cạnh ảnh gốc. */
-export function photoVariantKey(key: string, width: PhotoWidth): string {
+export function photoVariantKey(key: string, width: PhotoWidth | 'og'): string {
   return `${key}/${width}.webp`;
 }
 

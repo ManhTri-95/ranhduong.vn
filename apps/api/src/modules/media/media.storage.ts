@@ -50,7 +50,7 @@ export class MediaStorage implements OnApplicationShutdown {
     await this.client.send(new DeleteObjectCommand({ Bucket: this.env.R2_UPLOAD_BUCKET, Key: key }));
   }
   async deleteVariants(key: string): Promise<void> {
-    for (const width of PHOTO_WIDTHS) {
+    for (const width of [...PHOTO_WIDTHS, 'og'] as const) {
       await this.client.send(new DeleteObjectCommand({ Bucket: this.env.R2_BUCKET, Key: photoVariantKey(key, width) }));
     }
   }

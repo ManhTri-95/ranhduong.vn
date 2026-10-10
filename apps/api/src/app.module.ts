@@ -11,6 +11,7 @@ import { PlacesModule } from './modules/places/places.module';
 import { CuratedListsModule } from './modules/curated-lists/curated-lists.module';
 import { RedisModule } from './shared/redis/redis.module';
 import { SessionModule } from './shared/session/session.module';
+import { SeoModule } from './modules/seo/seo.module';
 
 const env = loadEnv();
 
@@ -26,6 +27,7 @@ const env = loadEnv();
     CuratedListsModule,
     AuthModule,
     AdminModule,
+    SeoModule,
   ],
   controllers: [HealthController],
 })

@@ -3,6 +3,10 @@ import { Slug } from '@ranhduong/contracts';
 import { computed, watch } from 'vue';
 import { useCity } from '~/entities/city/api/city';
 import { usePlaceDetail } from '~/entities/place/api/places';
+import { placeJsonLd } from '~/entities/place/lib/place-seo';
+import { absoluteUrl } from '~/shared/lib/seo';
+import { photoOgUrl, photoUrl } from '~/shared/lib/media';
+import { usePageSeo } from '~/shared/lib/use-page-seo';
 import { markUnavailableOnServer, throwIfNotFound } from '~/shared/api/page-status';
 import { useClientNow } from '~/shared/lib/use-client-now';
 import RdErrorBanner from '~/shared/ui/RdErrorBanner.vue';
@@ -31,11 +35,16 @@ async function retry(): Promise<void> {
   await Promise.all([city.refresh(), detail.refresh()]);
   throwIfNotFound(detail.error.value);
 }
-useSeoMeta({
+const seoConfig = useRuntimeConfig().public;
+usePageSeo({
+  path: canonicalPath,
   title: () => `${detail.data.value?.place.name ?? 'Địa điểm'} · Rành Đường`,
   description: () => detail.data.value?.place.practicalNotes ?? `${detail.data.value?.place.name ?? 'Địa điểm'}: giờ mở cửa, thông tin thực tế và chỉ đường.`,
+  image: () => detail.data.value?.place.photos[0] ? photoOgUrl(seoConfig.mediaBase, detail.data.value.place.photos[0].key) : undefined,
+  breadcrumbs: () => [{ name: city.data.value?.name || 'Thành phố', path: `/${citySlug}` }, { name: detail.data.value?.place.name || 'Địa điểm', path: canonicalPath.value }],
+  jsonLd: () => detail.data.value && !failed.value ? [placeJsonLd(detail.data.value.place, absoluteUrl(seoConfig.siteUrl, canonicalPath.value), detail.data.value.place.photos.map((photo) => photoUrl(seoConfig.mediaBase, photo.key, 1200)))] : [],
+  noindex: failed,
 });
-useHead({ link: [{ rel: 'canonical', href: `https://ranhduong.vn${canonicalPath.value}` }] });
 </script>
 
 <template>

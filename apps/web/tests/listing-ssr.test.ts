@@ -38,6 +38,10 @@ const api = createServer((req, res) => {
   const url = new URL(req.url ?? '/', 'http://127.0.0.1');
   if (apiFailed) {
     res.writeHead(503).end(JSON.stringify({ code: 'INTERNAL_ERROR', message: 'Lỗi API Giả Lập' }));
+  } else if (url.pathname.startsWith('/v1/seo/sitemap/')) {
+    const kind = url.pathname.split('/').at(-1);
+    const paths: Record<string, string[]> = { pages: ['/da-lat', '/da-lat/ca-phe', '/da-lat/khu-vuc/trung-tam'], places: ['/da-lat/dia-diem/quan-gia-lap-1', '/da-lat/dia-diem/closed'], lists: ['/da-lat/top/danh-sach-gia-lap'], itineraries: ['/da-lat/lich-trinh/lich-trinh-gia-lap'] };
+    res.end(JSON.stringify({ items: (paths[kind ?? ''] ?? []).map((path) => ({ path, lastmod: '2026-10-09T08:30:00.000Z' })) }));
   } else if (url.pathname === '/v1/cities/da-lat') {
     res.end(JSON.stringify(city));
   } else if (url.pathname === '/v1/cities/da-lat/places') {
@@ -298,6 +302,7 @@ beforeAll(async () => {
       ...process.env, PORT: String(port), HOST: '127.0.0.1', NITRO_PORT: String(port), NITRO_HOST: '127.0.0.1',
       NITRO_UNIX_SOCKET: '', NITRO_SSL_CERT: '', NITRO_SSL_KEY: '',
       NUXT_API_INTERNAL_BASE: apiBase, NUXT_PUBLIC_API_BASE: apiBase,
+      NUXT_PUBLIC_SITE_URL: 'https://ranhduong.vn', NUXT_PUBLIC_INDEXABLE: 'true', NUXT_PUBLIC_GOOGLE_SITE_VERIFICATION: 'verification-gia-lap',
     },
     windowsHide: true,
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -312,6 +317,107 @@ beforeAll(async () => {
     child.stderr?.on('data', (chunk: Buffer) => { output += chunk.toString(); });
     child.once('error', reject);
     child.once('exit', (code) => reject(new Error(`Nuxt test dừng (${code}). Chạy build trước test:ssr. ${output}`)));
+  });
+});
+
+function jsonLd(html: string): Record<string, unknown>[] {
+  return [...html.matchAll(/<script[^>]*type="application\/ld\+json"[^>]*>(.*?)<\/script>/gs)].flatMap((match) => JSON.parse(match[1]!) as Record<string, unknown>[]);
+}
+
+describe('S17 production technical SEO', () => {
+  it.each(['/da-lat', '/da-lat/ca-phe?tags=chill', '/da-lat/khu-vuc/trung-tam', '/da-lat/ban-do', '/da-lat/dia-diem/quan-gia-lap-1', '/da-lat/top/danh-sach-gia-lap', '/da-lat/lich-trinh/lich-trinh-gia-lap', '/da-lat/tim-kiem?q=gia-lap'])('%s has canonical, full social metadata and breadcrumbs in SSR', async (path) => {
+    const response = await fetch(`${base}${path}`);
+    expect(response.status).toBe(200);
+    const html = await response.text();
+    const canonical = `https://ranhduong.vn${path.split('?')[0]}`;
+    expect(html).toContain(`rel="canonical" href="${canonical}"`);
+    expect(html).toContain(`property="og:url" content="${canonical}"`);
+    for (const name of ['og:title', 'og:description', 'og:image', 'og:image:width', 'og:image:height', 'og:locale']) expect(html).toContain(`property="${name}"`);
+    expect(html).toContain('name="twitter:card" content="summary_large_image"');
+    expect(html).toContain('name="google-site-verification" content="verification-gia-lap"');
+    const crumbs = jsonLd(html).find((node) => node['@type'] === 'BreadcrumbList');
+    expect(crumbs).toBeDefined();
+    const elements = crumbs?.itemListElement as { item: string }[];
+    expect(elements.at(-1)?.item).toBe(canonical);
+  });
+  it('renders correct place facts and cover OG derivative, with no fabricated rating', async () => {
+    const html = await (await fetch(`${base}/da-lat/dia-diem/with-photo`)).text();
+    expect(html).toContain('fake/photo/og.webp');
+    const place = jsonLd(html).find((node) => node['@type'] === 'CafeOrCoffeeShop');
+    expect(place).toMatchObject({ name: 'Quán Giả Lập 1', geo: { longitude: 0.2, latitude: 0.3 }, openingHoursSpecification: [{ dayOfWeek: 'https://schema.org/Monday', opens: '07:00', closes: '22:00' }] });
+    expect(place).not.toHaveProperty('aggregateRating');
+    const closed = jsonLd(await (await fetch(`${base}/da-lat/dia-diem/closed`)).text()).find((node) => node['@type'] === 'CafeOrCoffeeShop');
+    expect(closed).not.toHaveProperty('openingHoursSpecification');
+  });
+  it('renders curate and trip item order, preserving repeat visits without unavailable places', async () => {
+    const list = jsonLd(await (await fetch(`${base}/da-lat/top/danh-sach-gia-lap`)).text()).find((node) => node['@type'] === 'ItemList');
+    const items = list?.itemListElement as { position: number; item: { name: string } }[];
+    expect(items.map((item) => item.item.name)).toEqual(['Quán Giả Lập 3', 'Quán Giả Lập 1', 'Quán Giả Lập 2']);
+    const trip = jsonLd(await (await fetch(`${base}/da-lat/lich-trinh/lich-trinh-gia-lap`)).text()).find((node) => node['@type'] === 'TouristTrip');
+    expect(trip).toMatchObject({ itinerary: { itemListElement: [{ position: 1, item: { name: 'Quán Giả Lập 1' } }, { position: 2, item: { name: 'Quán Giả Lập 2' } }, { position: 3, item: { name: 'Quán Giả Lập 1' } }] } });
+  });
+  it('serves sitemap index and all child types with actual lastmod and one-hour SWR', async () => {
+    const index = await fetch(`${base}/sitemap.xml`);
+    expect(index.headers.get('content-type')).toContain('application/xml');
+    expect(index.headers.get('cache-control')).toContain('s-maxage=3600');
+    const xml = await index.text();
+    for (const kind of ['pages', 'places', 'lists', 'itineraries']) {
+      expect(xml).toContain(`<loc>https://ranhduong.vn/sitemap-${kind}.xml</loc>`);
+      const child = await fetch(`${base}/sitemap-${kind}.xml`);
+      expect(child.status).toBe(200);
+      expect(child.headers.get('cache-control')).toContain('s-maxage=3600');
+      const content = await child.text();
+      expect(content).toContain('<lastmod>2026-10-09T08:30:00.000Z</lastmod>');
+      expect(content).not.toMatch(/draft|hidden|merged|tim-kiem|\/l\//);
+    }
+  });
+  it('caches successful XML and recovers same URL after an uncached API failure', async () => {
+    const cachedPath = '/sitemap-places.xml?audit=s17-cache';
+    const first = await (await fetch(`${base}${cachedPath}`)).text();
+    const freshPath = '/sitemap-places.xml?audit=s17-failure';
+    apiFailed = true;
+    try {
+      expect(await (await fetch(`${base}${cachedPath}`)).text()).toBe(first);
+      const failed = await fetch(`${base}${freshPath}`);
+      expect(failed.status).toBe(503);
+      expect(failed.headers.get('cache-control')).toBe('no-store');
+    } finally { apiFailed = false; }
+    const recovered = await fetch(`${base}${freshPath}`);
+    expect(recovered.status).toBe(200);
+    expect(recovered.headers.get('cache-control')).toContain('s-maxage=3600');
+  });
+  it('serves crawl rules and an actual 1200×630 default PNG', async () => {
+    const robots = await (await fetch(`${base}/robots.txt`)).text();
+    for (const rule of ['/admin', '/owner', '/l/', '/*/tim-kiem?', 'Sitemap: https://ranhduong.vn/sitemap.xml']) expect(robots).toContain(rule);
+    const image = await fetch(`${base}/og-default.png`);
+    expect(image.status).toBe(200);
+    const png = Buffer.from(await image.arrayBuffer());
+    expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([1200, 630]);
+  });
+  it('disables crawling and indexing in staging at runtime and uses the configured origin', async () => {
+    const address = api.address();
+    if (!address || typeof address === 'string') throw new Error('Missing fixture port');
+    const port = await unusedPort();
+    const staging = spawn(process.execPath, [fileURLToPath(new URL('../.output/server/index.mjs', import.meta.url))], { windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'], env: {
+      ...process.env, PORT: String(port), HOST: '127.0.0.1', NITRO_PORT: String(port), NITRO_HOST: '127.0.0.1', NITRO_UNIX_SOCKET: '', NITRO_SSL_CERT: '', NITRO_SSL_KEY: '',
+      NUXT_API_INTERNAL_BASE: `http://127.0.0.1:${address.port}/v1`, NUXT_PUBLIC_SITE_URL: 'https://staging.ranhduong.vn', NUXT_PUBLIC_INDEXABLE: 'false',
+    } });
+    try {
+      await new Promise<void>((resolve, reject) => {
+        staging.stdout?.on('data', (chunk: Buffer) => { if (chunk.toString().includes('Listening on ')) resolve(); });
+        staging.once('error', reject); staging.once('exit', () => reject(new Error('Staging server exited')));
+      });
+      const root = `http://127.0.0.1:${port}`;
+      expect(await (await fetch(`${root}/robots.txt`)).text()).toBe('User-agent: *\nDisallow: /\n');
+      const page = await fetch(`${root}/da-lat`);
+      expect(page.headers.get('x-robots-tag')).toBe('noindex, nofollow');
+      const html = await page.text();
+      expect(html).toContain('name="robots" content="noindex, follow"');
+      expect(html).toContain('href="https://staging.ranhduong.vn/da-lat"');
+      expect(await (await fetch(`${root}/sitemap-places.xml`)).text()).not.toContain('<url>');
+    } finally {
+      if (staging.exitCode === null && staging.signalCode === null) { const exited = once(staging, 'exit'); staging.kill(); await exited; }
+    }
   });
 });
 

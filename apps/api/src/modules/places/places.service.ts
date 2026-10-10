@@ -10,6 +10,7 @@ import { GeoPoint, ItineraryStopPlace, OpeningSlot, PlacePhoto, TemplatePlace } 
 
 @Injectable()
 export class PlacesService {
+  sitemapSources(cityId: string) { return this.repo.sitemapSources(cityId); }
   constructor(
     private readonly repo: PlacesRepository,
     private readonly cities: CitiesService,

@@ -72,7 +72,7 @@ describe('S06 MediaService (Mongo thật, R2/queue giả)', () => {
     const photo = await service.readyPhoto(upload.uploadId, PLACE, EMAIL);
     expect(photo).toMatchObject({ source: 'owner', credit: 'Quán Giả Lập', license: input.license });
     expect(photo.key).toMatch(new RegExp(`^photos/${CITY}/`));
-    expect(storage.writeVariant.mock.calls.map(([key]) => key)).toEqual(PHOTO_WIDTHS.map((width) => photoVariantKey(photo.key, width)));
+    expect(storage.writeVariant.mock.calls.map(([key]) => key)).toEqual([...PHOTO_WIDTHS, 'og' as const].map((width) => photoVariantKey(photo.key, width)));
     expect(storage.deleteOriginal).toHaveBeenCalled();
   });
   it('hoàn tất lặp lại dùng cùng jobId; ready scan không ghi đè các bản ảnh', async () => {
@@ -81,7 +81,7 @@ describe('S06 MediaService (Mongo thật, R2/queue giả)', () => {
     expect(queue.enqueue.mock.calls.every(([id]) => id === upload.uploadId)).toBe(true);
     await service.scan(upload.uploadId);
     await service.scan(upload.uploadId);
-    expect(storage.writeVariant).toHaveBeenCalledTimes(3);
+    expect(storage.writeVariant).toHaveBeenCalledTimes(4);
     expect(await service.status(upload.uploadId, EMAIL)).toMatchObject({ status: 'ready' });
   });
   it('hết hạn chưa upload thì không enqueue', async () => {

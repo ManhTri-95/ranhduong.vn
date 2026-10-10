@@ -4,6 +4,7 @@ import { Types } from 'mongoose';
 import { Slug, TemplateEditInput, TripDays, type AdminTemplate, type TemplateAnalysis, type TemplatePlace } from '@ranhduong/contracts';
 import type { TemplateSummary } from './itinerary-card';
 import { ITINERARY_MODEL, type ItineraryDoc, type ItineraryModel } from './schemas/itinerary.schema';
+import { sitemapSources, type SitemapSource } from '@ranhduong/contracts';
 
 type EditorRow = ItineraryDoc & { _id: Types.ObjectId };
 export type TemplateRecord = Omit<AdminTemplate, 'analysis'>;
@@ -50,6 +51,9 @@ interface TemplateRow {
 /** Lớp dữ liệu của module itineraries: chỉ file này import model Itinerary. */
 @Injectable()
 export class ItinerariesRepository {
+  async sitemapSources(cityId: string): Promise<SitemapSource[]> {
+    return sitemapSources(await this.itineraries.find({ cityId: new Types.ObjectId(cityId), kind: 'template', status: 'published', visibility: 'public' }, { slug: 1, updatedAt: 1 }).sort({ slug: 1 }).lean());
+  }
   constructor(@InjectModel(ITINERARY_MODEL) private readonly itineraries: ItineraryModel) {}
 
   /** Tạo index khai báo trong schema; không xoá index lạ. */

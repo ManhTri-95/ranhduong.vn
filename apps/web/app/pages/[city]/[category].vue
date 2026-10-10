@@ -13,6 +13,9 @@ import {
 import RdTagFilter from '~/features/place-tag-filter/ui/RdTagFilter.vue';
 import { markUnavailableOnServer, throwIfNotFound } from '~/shared/api/page-status';
 import { useClientNow } from '~/shared/lib/use-client-now';
+import { usePageSeo } from '~/shared/lib/use-page-seo';
+import { itemListJsonLd } from '~/shared/lib/seo';
+import { photoOgUrl } from '~/shared/lib/media';
 import RdErrorBanner from '~/shared/ui/RdErrorBanner.vue';
 import RdCategoryChips from '~/widgets/category-chips/ui/RdCategoryChips.vue';
 import RdCityHeader from '~/widgets/city-header/ui/RdCityHeader.vue';
@@ -57,12 +60,18 @@ async function retry(): Promise<void> {
   await Promise.all([city.refresh(), list.refresh()]);
 }
 
-useSeoMeta({
+const seoConfig = useRuntimeConfig().public;
+const cover = computed(() => page.value?.items.find((place) => place.coverKey)?.coverKey);
+usePageSeo({
+  path: basePath,
   title: () => `${title.value} · Rành Đường`,
   description: () =>
     `${title.value}: những chỗ người rành đường đã ghé, kèm giờ mở cửa, ghi chú thực tế và chỉ đường. Chỗ nào cũng được hỏi lại trước khi lên đây.`,
   // Trang lọc thẻ và trang sau không index (technical-design mục 11); bot vẫn đi theo link tới từng địa điểm.
-  robots: isIndexableListing(filter) ? undefined : 'noindex, follow',
+  noindex: () => !isIndexableListing(filter) || loadFailed.value,
+  image: () => cover.value ? photoOgUrl(seoConfig.mediaBase, cover.value) : undefined,
+  breadcrumbs: () => [{ name: cityName.value || 'Thành phố', path: `/${citySlug}` }, { name: label, path: basePath }],
+  jsonLd: () => page.value && !loadFailed.value ? [itemListJsonLd(seoConfig.siteUrl, citySlug, page.value.items, title.value)] : [],
 });
 </script>
 

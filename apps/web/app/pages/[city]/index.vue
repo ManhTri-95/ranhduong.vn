@@ -8,6 +8,7 @@ import { usePlaceList } from '~/entities/place/api/places';
 import RdSearchForm from '~/features/place-search/ui/RdSearchForm.vue';
 import { markUnavailableOnServer, throwIfNotFound } from '~/shared/api/page-status';
 import { useClientNow } from '~/shared/lib/use-client-now';
+import { usePageSeo } from '~/shared/lib/use-page-seo';
 import RdErrorBanner from '~/shared/ui/RdErrorBanner.vue';
 import RdCategoryChips from '~/widgets/category-chips/ui/RdCategoryChips.vue';
 import RdCityHeader from '~/widgets/city-header/ui/RdCityHeader.vue';
@@ -43,10 +44,12 @@ async function retry(): Promise<void> {
   await Promise.all([city.refresh(), featured.refresh(), templates.refresh(), curated.refresh()]);
 }
 
-useSeoMeta({
+usePageSeo({
+  path: `/${citySlug}`,
   title: () => (cityName.value ? `${cityName.value} hôm nay ghé đâu? · Rành Đường` : 'Rành Đường'),
   description: () =>
     `Ghi chép của người rành đường ở ${cityName.value || 'Đà Lạt'}: quán cà phê, chỗ ăn, chỗ chơi và lịch trình có sẵn. Quán nào cũng được hỏi lại trước khi lên đây.`,
+  breadcrumbs: () => [{ name: cityName.value || 'Thành phố', path: `/${citySlug}` }], noindex: loadFailed,
 });
 </script>
 

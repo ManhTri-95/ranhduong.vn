@@ -8,6 +8,7 @@ import { parseSearchQuery } from '~/features/place-search/lib/search-query';
 import RdSearchForm from '~/features/place-search/ui/RdSearchForm.vue';
 import { markUnavailableOnServer, throwIfNotFound } from '~/shared/api/page-status';
 import { useClientNow } from '~/shared/lib/use-client-now';
+import { usePageSeo } from '~/shared/lib/use-page-seo';
 import RdErrorBanner from '~/shared/ui/RdErrorBanner.vue';
 import RdCityHeader from '~/widgets/city-header/ui/RdCityHeader.vue';
 
@@ -39,9 +40,12 @@ async function retry(): Promise<void> {
   await Promise.all([city.refresh(), ...(q ? [results.refresh()] : [])]);
 }
 
-useSeoMeta({
+usePageSeo({
+  path: `/${citySlug}/tim-kiem`,
   title: () => (q ? `“${q}” · Rành Đường` : 'Tìm kiếm · Rành Đường'),
-  robots: 'noindex, follow',
+  description: () => `Tìm địa điểm và ghi chép thực tế ở ${cityName.value || 'thành phố'}.`,
+  noindex: true,
+  breadcrumbs: () => [{ name: cityName.value || 'Thành phố', path: `/${citySlug}` }, { name: 'Tìm kiếm', path: `/${citySlug}/tim-kiem` }],
 });
 </script>
 

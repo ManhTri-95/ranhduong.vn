@@ -4,6 +4,7 @@ import { computed } from 'vue';
 import { useCity } from '~/entities/city/api/city';
 import { usePlaceList } from '~/entities/place/api/places';
 import { markUnavailableOnServer, throwIfNotFound } from '~/shared/api/page-status';
+import { usePageSeo } from '~/shared/lib/use-page-seo';
 import RdErrorBanner from '~/shared/ui/RdErrorBanner.vue';
 import RdMapExplorer from '~/widgets/place-map/ui/RdMapExplorer.vue';
 
@@ -29,8 +30,9 @@ async function retryCity(): Promise<void> {
   await city.refresh();
   throwIfNotFound(city.error.value);
 }
-useSeoMeta({ title: () => `Bản đồ ${city.data.value?.name ?? 'địa điểm'} · Rành Đường`, description: 'Tìm quán cà phê, chỗ ăn và chỗ chơi trong vùng bạn đang xem. Ghi chép của người rành đường.' });
-useHead({ link: [{ rel: 'canonical', href: `https://ranhduong.vn/${citySlug}/ban-do` }] });
+usePageSeo({ path: `/${citySlug}/ban-do`, title: () => `Bản đồ ${city.data.value?.name ?? 'địa điểm'} · Rành Đường`, description: 'Tìm quán cà phê, chỗ ăn và chỗ chơi trong vùng bạn đang xem. Ghi chép của người rành đường.',
+  breadcrumbs: () => [{ name: city.data.value?.name || 'Thành phố', path: `/${citySlug}` }, { name: 'Bản đồ', path: `/${citySlug}/ban-do` }], noindex: () => Boolean(city.error.value || places.error.value),
+});
 </script>
 
 <template>

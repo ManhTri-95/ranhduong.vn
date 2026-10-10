@@ -10,6 +10,7 @@ const notFound = () => new ApiException('NOT_FOUND', HttpStatus.NOT_FOUND, 'Khô
 
 @Injectable()
 export class CuratedListsService {
+  sitemapSources(cityId: string) { return this.repo.sitemapSources(cityId); }
   constructor(private readonly repo: CuratedListsRepository, private readonly cities: CitiesService, private readonly places: PlacesService) {}
 
   async adminList(citySlug: string): Promise<AdminCuratedListResponse> {

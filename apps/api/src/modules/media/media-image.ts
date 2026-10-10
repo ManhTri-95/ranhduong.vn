@@ -2,7 +2,7 @@ import { MAX_PHOTO_BYTES, PHOTO_WIDTHS, type PhotoWidth } from '@ranhduong/contr
 import sharp from 'sharp';
 
 export class InvalidPhoto extends Error {}
-export interface PhotoVariant { width: PhotoWidth; body: Buffer }
+export interface PhotoVariant { width: PhotoWidth | 'og'; body: Buffer }
 const MIME_FORMAT: Record<string, string> = { 'image/jpeg': 'jpeg', 'image/png': 'png', 'image/webp': 'webp' };
 // Giới hạn cả ảnh nén nhỏ nhưng giải nén quá lớn; điện thoại thường có ảnh tối đa 48 MP.
 const MAX_PIXELS = 48_000_000;
@@ -23,6 +23,7 @@ export async function createPhotoVariants(bytes: Buffer, contentType: string, de
       const body = await sharp(bytes, options).autoOrient().resize({ width }).webp({ quality: 82 }).toBuffer();
       variants.push({ width, body });
     }
+    variants.push({ width: 'og', body: await sharp(bytes, options).autoOrient().resize(1200, 630, { fit: 'cover' }).webp({ quality: 82 }).toBuffer() });
     return variants;
   } catch (err) {
     if (err instanceof InvalidPhoto) throw err;

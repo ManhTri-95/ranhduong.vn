@@ -29,12 +29,16 @@ export default defineNuxtConfig({
       /** Ảnh trên R2 (media.ranhduong.vn); local là bucket MinIO. */
       mediaBase: 'http://localhost:9000/ranhduong-media',
       mapStyleUrl: 'https://tiles.openfreemap.org/styles/positron',
+      siteUrl: 'https://ranhduong.vn',
+      indexable: true,
+      googleSiteVerification: '',
     },
   },
   routeRules: {
     // Chỉ cache trang chủ Đà Lạt: '/:city' cũng khớp đường dẫn '/_' mà Nitro dùng cho renderer '/**',
     // làm renderer mặc định cache cả trang tìm kiếm dù route đó có cache:false.
     '/da-lat': { swr: 3600 },
+    '/da-lat/ban-do': { swr: 3600 },
     // Trang danh mục: SWR 1 giờ, kể cả bản có ?tags= hay ?cursor= (Nitro cache theo cả query).
     // radix3 ưu tiên nhánh tĩnh '/da-lat', che các handler '/:city/...': ghi cùng prefix để cache có hiệu lực.
     // Thêm thành phố thì thêm rule tương ứng; giữ khớp CATEGORY_URL_SLUG (contracts chưa build lúc postinstall).
@@ -50,7 +54,15 @@ export default defineNuxtConfig({
     '/:city/dia-diem/**': { swr: 3600 },
     '/:city/top/**': { swr: 3600 },
     '/:city/lich-trinh/**': { swr: 86400 },
-    '/l/**': { headers: { 'x-robots-tag': 'noindex' } },
+    '/l/**': { cache: false, headers: { 'x-robots-tag': 'noindex', 'cache-control': 'no-store' } },
+    '/owner/**': { cache: false, headers: { 'x-robots-tag': 'noindex', 'cache-control': 'no-store' } },
+    '/admin/**': { cache: false, headers: { 'x-robots-tag': 'noindex', 'cache-control': 'no-store' } },
+    '/sitemap.xml': { swr: 3600 },
+    '/sitemap-pages.xml': { swr: 3600 },
+    '/sitemap-places.xml': { swr: 3600 },
+    '/sitemap-lists.xml': { swr: 3600 },
+    '/sitemap-itineraries.xml': { swr: 3600 },
+    '/robots.txt': { cache: false },
   },
   typescript: { strict: true },
 });

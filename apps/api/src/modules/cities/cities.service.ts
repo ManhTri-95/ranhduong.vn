@@ -16,6 +16,7 @@ const cityNotFound = () => new ApiException('NOT_FOUND', HttpStatus.NOT_FOUND, '
 
 @Injectable()
 export class CitiesService {
+  sitemapCities() { return this.repo.sitemapCities(); }
   constructor(private readonly repo: CitiesRepository) {}
 
   /**

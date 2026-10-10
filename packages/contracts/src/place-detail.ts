@@ -8,6 +8,7 @@ export const PlaceDetail = z.object(Place.shape).pick({
   location: true, address: true, openingHours: true, visitDurationMin: true,
   bestTime: true, cover: true, priceLevel: true, transport: true,
   practicalNotes: true, contact: true, photos: true, lastVerifiedAt: true,
+  ratingAvg: true, ratingCount: true,
 }).extend({
   id: ObjectIdString,
   status: z.enum(['active', 'closed']),

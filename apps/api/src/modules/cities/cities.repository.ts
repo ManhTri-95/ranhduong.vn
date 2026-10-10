@@ -4,6 +4,7 @@ import { GeoPolygon, type CityInput, type LngLat, type ZoneInput } from '@ranhdu
 import { Types } from 'mongoose';
 import { CITY_MODEL, type CityModel } from './schemas/city.schema';
 import { ZONE_MODEL, type ZoneModel } from './schemas/zone.schema';
+import { sitemapSources, type SitemapCity } from '@ranhduong/contracts';
 
 interface UpsertResult {
   id: string;
@@ -13,6 +14,16 @@ interface UpsertResult {
 /** Lớp dữ liệu của module cities: chỉ file này import model City và Zone. */
 @Injectable()
 export class CitiesRepository {
+  async sitemapCities(): Promise<SitemapCity[]> {
+    const rows = await this.cities.find({ active: true }, { slug: 1, updatedAt: 1 }).sort({ slug: 1 }).lean();
+    const result: SitemapCity[] = [];
+    for (const row of rows) {
+      const source = sitemapSources([row])[0];
+      if (!source) continue;
+      result.push({ ...source, id: row._id.toString(), zones: sitemapSources(await this.zones.find({ cityId: row._id }, { slug: 1, updatedAt: 1 }).sort({ slug: 1 }).lean()) });
+    }
+    return result;
+  }
   constructor(
     @InjectModel(CITY_MODEL) private readonly cities: CityModel,
     @InjectModel(ZONE_MODEL) private readonly zones: ZoneModel,

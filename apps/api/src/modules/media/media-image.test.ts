@@ -6,14 +6,21 @@ import { createPhotoVariants } from './media-image';
 const image = () => sharp({ create: { width: 1600, height: 800, channels: 3, background: '#123456' } });
 
 describe('S06 xử lý ảnh thật (fixture giả lập)', () => {
+  it('S17 generates an exact 1200×630 OG crop without metadata', async () => {
+    const bytes = await image().jpeg().withMetadata().toBuffer();
+    const og = (await createPhotoVariants(bytes, 'image/jpeg', bytes.length)).find((variant) => String(variant.width) === 'og');
+    expect(og).toBeDefined();
+    expect(await sharp(og?.body).metadata()).toMatchObject({ format: 'webp', width: 1200, height: 630 });
+    expect((await sharp(og?.body).metadata()).exif).toBeUndefined();
+  });
   it.each(['jpeg', 'png', 'webp'] as const)('%s → WebP đúng chiều rộng 400/800/1200, bỏ metadata', async (format) => {
     const bytes = await image().toFormat(format).withExif({ IFD0: { Copyright: 'Tác giả Giả Lập' }, IFD3: { GPSLatitude: '21/1 1/1 1/1', GPSLongitude: '105/1 1/1 1/1' } }).toBuffer();
     expect((await sharp(bytes).metadata()).exif).toBeDefined();
     const variants = await createPhotoVariants(bytes, `image/${format}`, bytes.length);
-    expect(variants.map((variant) => variant.width)).toEqual(PHOTO_WIDTHS);
+    expect(variants.map((variant) => variant.width)).toEqual([...PHOTO_WIDTHS, 'og']);
     for (const variant of variants) {
       const metadata = await sharp(variant.body).metadata();
-      expect(metadata).toMatchObject({ format: 'webp', width: variant.width });
+      expect(metadata).toMatchObject({ format: 'webp', width: variant.width === 'og' ? 1200 : variant.width });
       expect(metadata.exif).toBeUndefined();
       expect(metadata.xmp).toBeUndefined();
       expect(metadata.icc).toBeUndefined();
