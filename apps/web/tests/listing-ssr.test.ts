@@ -27,6 +27,12 @@ let detailFailed = false;
 let mapFailed = false;
 let suggestionRequests = 0;
 let curatedFailed = false;
+let templateFailed = false;
+const templateStop = (number: number, day: number, available = true) => ({
+  key: `${day}-${number}`, number, start: number === 1 ? '08:00' : '10:15', end: number === 1 ? '09:00' : '11:45', travelMinFromPrev: number === 1 ? 0 : 15,
+  kind: 'visit', note: 'Ghi chú lịch trình Giả Lập',
+  place: available ? { slug: `quan-gia-lap-${number}`, name: `Quán Giả Lập ${number}`, category: 'cafe', alsoCategories: [], unconfirmed: true, location: { type: 'Point', coordinates: [0.2, 0.3] }, googlePlaceId: 'fake-id' } : null,
+});
 const api = createServer((req, res) => {
   res.setHeader('content-type', 'application/json');
   const url = new URL(req.url ?? '/', 'http://127.0.0.1');
@@ -43,7 +49,16 @@ const api = createServer((req, res) => {
       tags: [{ slug: 'chill', count: 25 }],
     }));
   } else if (url.pathname === '/v1/cities/da-lat/itineraries/templates') {
-    res.end(JSON.stringify({ items: [] }));
+    res.end(JSON.stringify({ items: [{ slug: 'lich-trinh-gia-lap', title: 'Lịch trình Giả Lập', days: 2, transport: 'motorbike', pace: 'relaxed' }] }));
+  } else if (url.pathname.startsWith('/v1/cities/da-lat/itineraries/templates/')) {
+    if (templateFailed) return res.writeHead(503).end(JSON.stringify({ code: 'INTERNAL_ERROR', message: 'Lỗi lịch trình Giả Lập' }));
+    const slug = url.pathname.split('/').at(-1);
+    if (!['lich-trinh-gia-lap', 'rong-gia-lap'].includes(slug ?? '')) return res.writeHead(404).end(JSON.stringify({ code: 'NOT_FOUND', message: 'Không tìm thấy lịch trình' }));
+    res.end(JSON.stringify({
+      slug, title: 'Lịch trình Giả Lập', description: 'Mô tả lịch trình Giả Lập', seoTitle: 'Lịch trình Google Giả Lập', seoDescription: 'Mô tả Google Giả Lập',
+      season: 'Mùa Giả Lập', style: 'Đi chậm', transport: 'motorbike', pace: 'relaxed',
+      days: [{ day: 1, stops: slug === 'rong-gia-lap' ? [] : [templateStop(1, 1), templateStop(2, 1), templateStop(3, 1, false)] }, { day: 2, stops: slug === 'rong-gia-lap' ? [] : [templateStop(1, 2)] }],
+    }));
   } else if (url.pathname.startsWith('/v1/cities/da-lat/curated-lists')) {
     if (curatedFailed) return res.writeHead(503).end(JSON.stringify({ code: 'INTERNAL_ERROR', message: 'Lỗi danh sách Giả Lập' }));
     const list = { slug: 'danh-sach-gia-lap', title: 'Danh sách Giả Lập', description: 'Mô tả Giả Lập theo thứ tự đã chọn.' };
@@ -64,6 +79,58 @@ const api = createServer((req, res) => {
   } else {
     res.writeHead(404).end(JSON.stringify({ code: 'NOT_FOUND', message: 'Không tìm thấy thành phố Giả Lập' }));
   }
+});
+
+describe('S16 public itinerary production SSR', () => {
+  it('renders both days, saved times, notes, directions, sharing and canonical/OG with one-day SWR', async () => {
+    const response = await fetch(`${base}/da-lat/lich-trinh/lich-trinh-gia-lap`);
+    expect(response.status).toBe(200);
+    expect(response.headers.get('cache-control')).toContain('s-maxage=86400');
+    const html = await response.text();
+    for (const text of ['Lịch trình Giả Lập', 'Mô tả lịch trình Giả Lập', 'id="day-1"', 'id="day-2"', '10:15', '11:45', 'khoảng 15 phút', 'Ghi chú lịch trình Giả Lập', 'Điểm ghé đang cập nhật', 'Zalo', 'Messenger', 'Copy link', 'OpenStreetMap', 'destination=0.3%2C0.2', 'destination_place_id=fake-id']) expect(html).toContain(text);
+    expect(html).toContain('rel="canonical" href="https://ranhduong.vn/da-lat/lich-trinh/lich-trinh-gia-lap"');
+    expect(html).toContain('property="og:title" content="Lịch trình Google Giả Lập · Rành Đường"');
+    expect(html.indexOf('id="stop-1-1"')).toBeLessThan(html.indexOf('id="stop-1-2"'));
+    expect(html).not.toContain('<canvas');
+    expect(html).not.toMatch(/<link[^>]*maplibre-gl-worker[^>]*>/);
+    expect(html).not.toContain('name="robots" content="noindex');
+  });
+  it('links the template from the home page', async () => {
+    expect(await (await fetch(`${base}/da-lat?audit=s16-home`)).text()).toContain('href="/da-lat/lich-trinh/lich-trinh-gia-lap"');
+  });
+  it('retains the published URL and empty day guidance', async () => {
+    const response = await fetch(`${base}/da-lat/lich-trinh/rong-gia-lap`);
+    expect(response.status).toBe(200);
+    expect(await response.text()).toContain('Ngày này đang được cập nhật');
+  });
+  it.each(['/da-lat/lich-trinh/khong-co', '/khong-co/lich-trinh/lich-trinh-gia-lap', '/da-lat/lich-trinh/bad_slug'])('returns 404 no-store for %s', async (path) => {
+    const response = await fetch(`${base}${path}`);
+    expect(response.status).toBe(404);
+    expect(response.headers.get('cache-control')).toBe('no-store');
+  });
+  it('returns partial 503 no-store and recovers on the same URL', async () => {
+    const path = '/da-lat/lich-trinh/lich-trinh-gia-lap?audit=s16-down';
+    templateFailed = true;
+    try {
+      const response = await fetch(`${base}${path}`);
+      expect(response.status).toBe(503);
+      expect(response.headers.get('cache-control')).toBe('no-store');
+      const html = await response.text();
+      expect(html).toContain('Thử lại');
+      expect(html).toContain('Thành phố Giả Lập');
+    } finally { templateFailed = false; }
+    expect((await fetch(`${base}${path}`)).status).toBe(200);
+  });
+  it('serves cached successful HTML when the API is temporarily unavailable', async () => {
+    const path = '/da-lat/lich-trinh/lich-trinh-gia-lap?audit=s16-cache';
+    const html = await (await fetch(`${base}${path}`)).text();
+    templateFailed = true;
+    try {
+      const response = await fetch(`${base}${path}`);
+      expect(response.status).toBe(200);
+      expect(await response.text()).toBe(html);
+    } finally { templateFailed = false; }
+  });
 });
 
 describe('S14 curated lists production SSR', () => {

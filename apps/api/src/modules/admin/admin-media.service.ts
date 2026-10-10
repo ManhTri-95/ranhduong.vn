@@ -3,11 +3,13 @@ import type { AdminPlace, MediaUploadInput, MediaUploadResponse } from '@ranhduo
 import { MediaService } from '../media/media.service';
 import { PlaceEditorService } from '../places/place-editor.service';
 import { PlaceStatusService } from '../places/place-status.service';
+import { TemplateEditorService } from '../itineraries/template-editor.service';
+import { AdminTemplateLock } from './admin-template-lock';
 
 /** Điều phối hai module tại tầng admin; media không phụ thuộc places. */
 @Injectable()
 export class AdminMediaService {
-  constructor(private readonly media: MediaService, private readonly editor: PlaceEditorService, private readonly status: PlaceStatusService) {}
+  constructor(private readonly media: MediaService, private readonly editor: PlaceEditorService, private readonly status: PlaceStatusService, private readonly templates: TemplateEditorService, private readonly writes: AdminTemplateLock) {}
   async create(placeId: string, input: MediaUploadInput, email: string): Promise<MediaUploadResponse> {
     const upload = await this.media.create({ ...await this.editor.mediaContext(placeId), email }, input);
     try { await this.editor.mediaContext(placeId); }
@@ -19,7 +21,11 @@ export class AdminMediaService {
     return this.editor.attachPhoto(placeId, photo);
   }
   async deleteDraft(placeId: string): Promise<void> {
-    await this.status.deleteDraft(placeId);
+    await this.writes.run(async (assertOwned) => {
+      await this.templates.assertPlaceNotReferenced(placeId);
+      await assertOwned();
+      await this.status.deleteDraft(placeId);
+    });
     await this.media.deleteForPlace(placeId);
   }
 }

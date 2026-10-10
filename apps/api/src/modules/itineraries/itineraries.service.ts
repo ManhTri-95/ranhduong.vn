@@ -1,9 +1,24 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { HttpStatus, Injectable, Logger } from '@nestjs/common';
+import { ItineraryPublicStop, ItineraryTemplateDetail, ObjectIdString, TripDays } from '@ranhduong/contracts';
+import { Types } from 'mongoose';
+import { z } from 'zod';
+import { ApiException } from '../../shared/http/api-exception';
 import type { ItineraryCard, ItineraryCardList, ItineraryTemplateQuery } from '@ranhduong/contracts';
 import { CitiesService } from '../cities/cities.service';
 import { PlacesService } from '../places/places.service';
 import { ItinerariesRepository } from './itineraries.repository';
 import { toItineraryCard } from './itinerary-card';
+
+// Stored MongoDB rows may predate the editor or have been imported without validation.
+const StoredStop = ItineraryPublicStop.omit({ key: true, number: true, place: true }).extend({
+  placeId: z.preprocess((value) => value instanceof Types.ObjectId ? value.toString() : value, ObjectIdString),
+  note: ItineraryPublicStop.shape.note.default(''), kind: ItineraryPublicStop.shape.kind.default('visit'),
+  travelMinFromPrev: ItineraryPublicStop.shape.travelMinFromPrev.default(0),
+});
+const StoredSchedule = z.object({
+  params: z.object({ days: TripDays }),
+  days: z.array(z.object({ stops: z.array(StoredStop).max(20).default([]) })).max(5).default([]),
+});
 
 @Injectable()
 export class ItinerariesService {
@@ -32,5 +47,34 @@ export class ItinerariesService {
       else this.logger.warn(`Bỏ qua lịch trình mẫu ${template.id}: dữ liệu không hợp lệ`);
     }
     return { items };
+  }
+
+  async templateDetail(citySlug: string, slug: string): Promise<ItineraryTemplateDetail> {
+    const city = await this.cities.resolveCity(citySlug);
+    const template = await this.repo.publishedTemplate(city.id, slug);
+    const notFound = () => new ApiException('NOT_FOUND', HttpStatus.NOT_FOUND, 'Không tìm thấy lịch trình');
+    const schedule = StoredSchedule.safeParse(template);
+    if (!template || !schedule.success) throw notFound();
+    // The schedule is editorial: preserve saved times rather than recalculating against today's hours.
+    const days = Array.from({ length: schedule.data.params.days }, (_, index) => ({
+      day: index + 1, stops: schedule.data.days[index]?.stops ?? [],
+    }));
+    const ids = [...new Set(days.flatMap((day) => day.stops.map((stop) => stop.placeId)))];
+    const places = await this.places.itineraryPlaces(city.id, ids);
+    const result = ItineraryTemplateDetail.safeParse({
+      slug: template.slug, title: template.title, description: template.description || template.narrative || '',
+      season: template.season ?? '', style: template.style ?? '', seoTitle: template.seoTitle ?? '', seoDescription: template.seoDescription ?? '',
+      transport: template.params.transport, pace: template.params.pace,
+      days: days.map((day) => ({ day: day.day, stops: day.stops.map((stop, index) => ({
+        key: `${day.day}-${index + 1}`, number: index + 1, start: stop.start, end: stop.end,
+        travelMinFromPrev: stop.travelMinFromPrev, note: places.has(stop.placeId) ? stop.note : '', kind: stop.kind,
+        place: places.get(stop.placeId) ?? null,
+      })) })),
+    });
+    if (!result.success) {
+      this.logger.warn(`Lịch trình mẫu ${slug}: lịch giờ không hợp lệ`);
+      throw notFound();
+    }
+    return result.data;
   }
 }

@@ -184,6 +184,18 @@ export class PlacesRepository {
     return new Map(rows.map((row) => [row._id.toString(), row.status]));
   }
 
+  async templatePlaces(cityId: string): Promise<EditRow[]> {
+    return this.places.find({ cityId: new Types.ObjectId(cityId) }).lean<EditRow[]>();
+  }
+
+  async itineraryPlaces(cityId: string, ids: string[]): Promise<DetailRow[]> {
+    if (!ids.length) return [];
+    return this.places.find({
+      cityId: new Types.ObjectId(cityId), status: 'active',
+      _id: { $in: ids.map((id) => new Types.ObjectId(id)) },
+    }).lean<DetailRow[]>();
+  }
+
   /** Địa điểm theo id để sửa trong admin; không có thì null. */
   async findForEdit(id: string): Promise<EditRow | null> {
     return this.places.findById(id).lean<EditRow>();

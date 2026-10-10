@@ -45,6 +45,7 @@ export default defineNuxtConfig({
     '/da-lat/khu-vuc/**': { swr: 3600 },
     '/da-lat/dia-diem/**': { swr: 3600 },
     '/da-lat/top/**': { swr: 3600 },
+    '/da-lat/lich-trinh/**': { swr: 86400 },
     '/:city/tim-kiem': { cache: false, headers: { 'x-robots-tag': 'noindex', 'cache-control': 'no-store' } },
     '/:city/dia-diem/**': { swr: 3600 },
     '/:city/top/**': { swr: 3600 },

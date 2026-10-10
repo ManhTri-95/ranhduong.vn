@@ -6,6 +6,7 @@ import { PlacesRepository } from './places.repository';
 import { toPlaceDetail } from './place-detail';
 import { placeNotFound } from './place-errors';
 import { ENV, type Env } from '../../config/env';
+import { GeoPoint, ItineraryStopPlace, OpeningSlot, PlacePhoto, TemplatePlace } from '@ranhduong/contracts';
 
 @Injectable()
 export class PlacesService {
@@ -76,7 +77,21 @@ export class PlacesService {
     return { items: page.items.map(toCard), nextCursor: page.nextCursor, tags };
   }
 
-  /** Tham chiếu của danh sách phải thuộc cùng thành phố; public cards chỉ lấy active. */
+  /** City-scoped scheduling facts for the admin template editor, including unavailable-place diagnostics. */
+  async templatePlaces(cityId: string): Promise<TemplatePlace[]> {
+    const [rows, zones] = await Promise.all([this.repo.templatePlaces(cityId), this.cities.zoneNames(cityId)]);
+    return rows.map((row) => {
+      const location = GeoPoint.safeParse(row.location);
+      const photo = row.photos?.find((value) => PlacePhoto.safeParse(value).success);
+      return TemplatePlace.parse({
+        id: row._id.toString(), slug: row.slug, name: row.name, category: row.category, alsoCategories: row.alsoCategories ?? [], status: row.status,
+        zoneId: row.zoneId?.toString(), zoneName: row.zoneId ? zones.get(row.zoneId.toString()) : undefined,
+        location: location.success ? location.data : undefined, openingHours: (row.openingHours ?? []).filter((slot) => OpeningSlot.safeParse(slot).success),
+        visitDurationMin: row.visitDurationMin ?? undefined, lastVerifiedAt: row.lastVerifiedAt?.toISOString(), validPhoto: Boolean(photo), coverKey: photo?.key,
+      });
+    });
+  }
+
   curatedReferenceStatuses(cityId: string, ids: string[]): Promise<Map<string, PlaceStatus>> {
     return this.repo.referenceStatuses(cityId, ids);
   }
@@ -85,6 +100,17 @@ export class PlacesService {
     if (!ids.length) return new Map();
     const [places, zones] = await Promise.all([this.repo.listActive(cityId, { ids }), this.cities.zoneNames(cityId)]);
     return new Map(places.flatMap((place) => place.id ? [[place.id, toPlaceCard(place, zones)] as const] : []));
+  }
+
+  async itineraryPlaces(cityId: string, ids: string[]): Promise<Map<string, ItineraryStopPlace>> {
+    const [rows, zones] = await Promise.all([this.repo.itineraryPlaces(cityId, ids), this.cities.zoneNames(cityId)]);
+    return new Map(rows.map((row) => {
+      const detail = toPlaceDetail(row);
+      return [row._id.toString(), ItineraryStopPlace.parse({
+        ...detail, zoneName: row.zoneId ? zones.get(row.zoneId.toString()) : undefined,
+        coverKey: detail.photos[0]?.key,
+      })];
+    }));
   }
 
   /** Ảnh bìa (ảnh đầu tiên) của các địa điểm active; dùng cho thẻ lịch trình. */
