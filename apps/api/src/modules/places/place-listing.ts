@@ -15,6 +15,7 @@ import { matchScore } from '@ranhduong/geo';
 
 /** Các trường của Place cần cho thẻ và xếp hạng; repository chỉ đọc đúng các trường này. */
 export interface ListedPlace {
+  id?: string;
   slug: string;
   name: string;
   aliases: string[];

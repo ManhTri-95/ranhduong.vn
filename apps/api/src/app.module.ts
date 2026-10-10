@@ -8,6 +8,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { CitiesModule } from './modules/cities/cities.module';
 import { ItinerariesModule } from './modules/itineraries/itineraries.module';
 import { PlacesModule } from './modules/places/places.module';
+import { CuratedListsModule } from './modules/curated-lists/curated-lists.module';
 import { RedisModule } from './shared/redis/redis.module';
 import { SessionModule } from './shared/session/session.module';
 
@@ -22,6 +23,7 @@ const env = loadEnv();
     CitiesModule,
     PlacesModule,
     ItinerariesModule,
+    CuratedListsModule,
     AuthModule,
     AdminModule,
   ],

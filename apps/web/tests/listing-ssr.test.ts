@@ -26,6 +26,7 @@ let apiFailed = false;
 let detailFailed = false;
 let mapFailed = false;
 let suggestionRequests = 0;
+let curatedFailed = false;
 const api = createServer((req, res) => {
   res.setHeader('content-type', 'application/json');
   const url = new URL(req.url ?? '/', 'http://127.0.0.1');
@@ -43,6 +44,13 @@ const api = createServer((req, res) => {
     }));
   } else if (url.pathname === '/v1/cities/da-lat/itineraries/templates') {
     res.end(JSON.stringify({ items: [] }));
+  } else if (url.pathname.startsWith('/v1/cities/da-lat/curated-lists')) {
+    if (curatedFailed) return res.writeHead(503).end(JSON.stringify({ code: 'INTERNAL_ERROR', message: 'Lỗi danh sách Giả Lập' }));
+    const list = { slug: 'danh-sach-gia-lap', title: 'Danh sách Giả Lập', description: 'Mô tả Giả Lập theo thứ tự đã chọn.' };
+    if (url.pathname === '/v1/cities/da-lat/curated-lists') res.end(JSON.stringify({ items: [{ ...list, placeCount: 3 }] }));
+    else if (url.pathname.endsWith('/danh-sach-gia-lap')) res.end(JSON.stringify({ ...list, places: [items[2], items[0], items[1]] }));
+    else if (url.pathname.endsWith('/rong-gia-lap')) res.end(JSON.stringify({ ...list, slug: 'rong-gia-lap', places: [] }));
+    else res.writeHead(404).end(JSON.stringify({ code: 'NOT_FOUND', message: 'Không tìm thấy danh sách' }));
   } else if (url.pathname === '/v1/cities/da-lat/places/old-slug') {
     res.writeHead(301, { location: '/v1/cities/da-lat/places/quan-gia-lap-1' }).end();
   } else if (['quan-gia-lap-1', 'closed', 'with-photo'].some((slug) => url.pathname === `/v1/cities/da-lat/places/${slug}`)) {
@@ -56,6 +64,47 @@ const api = createServer((req, res) => {
   } else {
     res.writeHead(404).end(JSON.stringify({ code: 'NOT_FOUND', message: 'Không tìm thấy thành phố Giả Lập' }));
   }
+});
+
+describe('S14 curated lists production SSR', () => {
+  it('renders title, description and numbered cards in saved order, canonical and SWR 1h', async () => {
+    const response = await fetch(`${base}/da-lat/top/danh-sach-gia-lap`);
+    expect(response.status).toBe(200);
+    expect(response.headers.get('cache-control')).toContain('s-maxage=3600');
+    const html = await response.text();
+    for (const text of ['Danh sách Giả Lập', 'Mô tả Giả Lập theo thứ tự đã chọn.', '<ol', '/da-lat/dia-diem/quan-gia-lap-3', 'rel="canonical" href="https://ranhduong.vn/da-lat/top/danh-sach-gia-lap"']) expect(html).toContain(text);
+    expect(html.indexOf('Quán Giả Lập 3')).toBeLessThan(html.indexOf('Quán Giả Lập 1'));
+    expect(html.indexOf('Quán Giả Lập 1')).toBeLessThan(html.indexOf('Quán Giả Lập 2'));
+    expect(html).not.toContain('name="robots" content="noindex');
+  });
+  it('links published lists from the city home in SSR', async () => {
+    const response = await fetch(`${base}/da-lat?audit=s14-home`);
+    expect(response.status).toBe(200);
+    expect(await response.text()).toContain('href="/da-lat/top/danh-sach-gia-lap"');
+  });
+  it('keeps a published URL readable when all its places are hidden', async () => {
+    const response = await fetch(`${base}/da-lat/top/rong-gia-lap`);
+    expect(response.status).toBe(200);
+    expect(await response.text()).toContain('Danh sách đang được cập nhật');
+  });
+  it.each(['/da-lat/top/khong-co', '/khong-co/top/danh-sach-gia-lap', '/da-lat/top/bad_slug'])('returns 404 no-store for %s', async (path) => {
+    const response = await fetch(`${base}${path}`);
+    expect(response.status).toBe(404);
+    expect(response.headers.get('cache-control')).toBe('no-store');
+  });
+  it('returns partial 503 no-store with retry and recovers on the same URL', async () => {
+    const path = '/da-lat/top/danh-sach-gia-lap?audit=s14-down';
+    curatedFailed = true;
+    try {
+      const response = await fetch(`${base}${path}`);
+      expect(response.status).toBe(503);
+      expect(response.headers.get('cache-control')).toBe('no-store');
+      const html = await response.text();
+      expect(html).toContain('Thử lại');
+      expect(html).toContain('Thành phố Giả Lập');
+    } finally { curatedFailed = false; }
+    expect((await fetch(`${base}${path}`)).status).toBe(200);
+  });
 });
 
 describe('S13 search production SSR', () => {

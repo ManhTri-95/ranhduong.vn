@@ -2,6 +2,7 @@
 import { Slug } from '@ranhduong/contracts';
 import { computed } from 'vue';
 import { useCity } from '~/entities/city/api/city';
+import { useCuratedLists } from '~/entities/curated-list/api/curated-lists';
 import { useTemplateList } from '~/entities/itinerary/api/itineraries';
 import { usePlaceList } from '~/entities/place/api/places';
 import RdSearchForm from '~/features/place-search/ui/RdSearchForm.vue';
@@ -10,6 +11,7 @@ import { useClientNow } from '~/shared/lib/use-client-now';
 import RdErrorBanner from '~/shared/ui/RdErrorBanner.vue';
 import RdCategoryChips from '~/widgets/category-chips/ui/RdCategoryChips.vue';
 import RdCityHeader from '~/widgets/city-header/ui/RdCityHeader.vue';
+import RdCuratedListStrip from '~/widgets/curated-list-strip/ui/RdCuratedListStrip.vue';
 import { FEATURED_QUERY } from '~/widgets/featured-places/model/query';
 import RdFeaturedPlaces from '~/widgets/featured-places/ui/RdFeaturedPlaces.vue';
 import RdItineraryStrip from '~/widgets/itinerary-strip/ui/RdItineraryStrip.vue';
@@ -18,16 +20,18 @@ import RdItineraryStrip from '~/widgets/itinerary-strip/ui/RdItineraryStrip.vue'
 definePageMeta({ validate: (route) => Slug.safeParse(route.params.city).success });
 
 const citySlug = String(useRoute().params.city);
-const [city, featured, templates] = await Promise.all([
+const [city, featured, templates, curated] = await Promise.all([
   useCity(citySlug),
   usePlaceList(citySlug, FEATURED_QUERY, `home-featured:${citySlug}`),
   useTemplateList(citySlug, 10),
+  useCuratedLists(citySlug),
 ]);
 throwIfNotFound(city.error.value);
 
 const featuredFailed = computed(() => Boolean(featured.error.value));
 const templatesFailed = computed(() => Boolean(templates.error.value));
-const loadFailed = computed(() => Boolean(city.error.value) || featuredFailed.value || templatesFailed.value);
+const curatedFailed = computed(() => Boolean(curated.error.value));
+const loadFailed = computed(() => Boolean(city.error.value) || featuredFailed.value || templatesFailed.value || curatedFailed.value);
 markUnavailableOnServer(loadFailed.value);
 
 const cityName = computed(() => city.data.value?.name ?? '');
@@ -36,7 +40,7 @@ const templateCards = computed(() => templates.data.value?.items ?? []);
 const now = useClientNow();
 
 async function retry(): Promise<void> {
-  await Promise.all([city.refresh(), featured.refresh(), templates.refresh()]);
+  await Promise.all([city.refresh(), featured.refresh(), templates.refresh(), curated.refresh()]);
 }
 
 useSeoMeta({
@@ -59,6 +63,7 @@ useSeoMeta({
       <RdCategoryChips :city-slug="citySlug" />
       <RdItineraryStrip :city-slug="citySlug" :itineraries="templateCards" :failed="templatesFailed" />
       <RdFeaturedPlaces :city-slug="citySlug" :places="featuredPlaces" :failed="featuredFailed" :now="now" />
+      <RdCuratedListStrip :city-slug="citySlug" :lists="curated.data.value?.items ?? []" :failed="curatedFailed" />
     </main>
     <NuxtLink class="rd-btn rd-btn--float home__map" :to="`/${citySlug}/ban-do`">
       <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

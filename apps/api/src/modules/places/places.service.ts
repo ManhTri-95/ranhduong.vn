@@ -1,5 +1,5 @@
 import { Inject, Injectable, Optional } from '@nestjs/common';
-import type { PlaceDetailResponse, PlaceListQuery, PlaceListResponse } from '@ranhduong/contracts';
+import type { PlaceCard, PlaceStatus, PlaceDetailResponse, PlaceListQuery, PlaceListResponse } from '@ranhduong/contracts';
 import { CitiesService } from '../cities/cities.service';
 import { countTags, hasAllTags, pageByFeatured, searchPlaces, toPlaceCard, type ListedPlace } from './place-listing';
 import { PlacesRepository } from './places.repository';
@@ -74,6 +74,17 @@ export class PlacesService {
     }
     const page = pageByFeatured(filtered, query.cursor, query.limit);
     return { items: page.items.map(toCard), nextCursor: page.nextCursor, tags };
+  }
+
+  /** Tham chiếu của danh sách phải thuộc cùng thành phố; public cards chỉ lấy active. */
+  curatedReferenceStatuses(cityId: string, ids: string[]): Promise<Map<string, PlaceStatus>> {
+    return this.repo.referenceStatuses(cityId, ids);
+  }
+
+  async curatedCards(cityId: string, ids: string[]): Promise<Map<string, PlaceCard>> {
+    if (!ids.length) return new Map();
+    const [places, zones] = await Promise.all([this.repo.listActive(cityId, { ids }), this.cities.zoneNames(cityId)]);
+    return new Map(places.flatMap((place) => place.id ? [[place.id, toPlaceCard(place, zones)] as const] : []));
   }
 
   /** Ảnh bìa (ảnh đầu tiên) của các địa điểm active; dùng cho thẻ lịch trình. */

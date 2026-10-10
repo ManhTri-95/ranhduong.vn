@@ -15,6 +15,8 @@ export const router = createRouter({
     { path: '/dang-nhap', component: () => import('@/pages/LoginPage.vue'), meta: { public: true } },
     { path: '/dia-diem', component: () => import('@/pages/PlacesPage.vue') },
     { path: '/dia-diem/:id', component: () => import('@/pages/PlaceEditPage.vue') },
+    { path: '/danh-sach', component: () => import('@/pages/CuratedListsPage.vue') },
+    { path: '/danh-sach/:id', component: () => import('@/pages/CuratedListEditPage.vue') },
     { path: '/:pathMatch(.*)*', redirect: '/dia-diem' },
   ],
 });

@@ -68,6 +68,7 @@ const SUMMARY_FIELDS = {
 
 /** Lọc trong DB; thẻ, từ khoá, phân trang lọc trong bộ nhớ ở PlacesService. */
 export interface ListFilter {
+  ids?: string[];
   categories?: PlaceCategory[];
   zoneId?: string;
   bbox?: BBox;
@@ -149,6 +150,7 @@ export class PlacesRepository {
         {
           cityId: new Types.ObjectId(cityId),
           status: 'active',
+          ...(filter.ids ? { _id: { $in: filter.ids.map((id) => new Types.ObjectId(id)) } } : {}),
           // Danh mục chính hoặc một danh mục phụ (S27); $or trả mỗi địa điểm một lần.
           ...(filter.categories ? { $or: [{ category: { $in: filter.categories } }, { alsoCategories: { $in: filter.categories } }] } : {}),
           ...(filter.zoneId ? { zoneId: new Types.ObjectId(filter.zoneId) } : {}),
@@ -158,6 +160,7 @@ export class PlacesRepository {
       )
       .lean<CardRow[]>();
     return docs.map((d) => ({
+      id: d._id.toString(),
       slug: d.slug,
       name: d.name,
       aliases: d.aliases ?? [],
@@ -172,6 +175,13 @@ export class PlacesRepository {
       coverKey: d.photos?.[0]?.key,
       location: d.location,
     }));
+  }
+
+  /** Trạng thái tham chiếu trong cùng thành phố để kiểm danh sách curate. */
+  async referenceStatuses(cityId: string, ids: string[]): Promise<Map<string, PlaceStatus>> {
+    if (!ids.length) return new Map();
+    const rows = await this.places.find({ cityId: new Types.ObjectId(cityId), _id: { $in: ids.map((id) => new Types.ObjectId(id)) } }, { status: 1 }).lean();
+    return new Map(rows.map((row) => [row._id.toString(), row.status]));
   }
 
   /** Địa điểm theo id để sửa trong admin; không có thì null. */
