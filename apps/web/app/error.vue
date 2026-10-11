@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { NuxtError } from '#app';
 import { computed } from 'vue';
+import RdSiteFooter from '~/widgets/site-footer/ui/RdSiteFooter.vue';
 
 const props = defineProps<{ error: NuxtError }>();
 const notFound = computed(() => props.error.statusCode === 404);
@@ -13,6 +14,7 @@ useSeoMeta({ title: () => (notFound.value ? 'Không tìm thấy · Rành Đườ
     <p class="lead">{{ notFound ? 'Trang bạn tìm không có, hoặc đã đổi chỗ.' : 'Máy chủ đang gặp lỗi. Thử lại sau ít phút nhé.' }}</p>
     <a class="rd-btn rd-btn--primary" href="/">Về trang chủ</a>
   </main>
+  <RdSiteFooter />
 </template>
 
 <style scoped>

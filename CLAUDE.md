@@ -99,6 +99,8 @@ pnpm --filter @ranhduong/geo test        # test một package
 
 ## Trạng thái
 
+- S20 code xong: ba trang SSR tĩnh `/dieu-khoan`, `/quyen-rieng-tu`, `/ghi-nguon` và footer chung; SEO/sitemap, nội dung quyền riêng tư theo S18, email liên hệ runtime, nguồn ảnh mở sẵn và OSM cạnh hai bản đồ. Consent trên trang pháp lý nằm trong luồng trang, kể cả URL có `/` cuối. 20 task workspace, kiểm lại web, 64 test SSR, Chrome 390px/desktop/tắt JavaScript và review độc lập xanh. Runbook `docs/runbooks/legal-pages.md`; chờ email liên hệ thật, CI remote, deploy/staging (S02), điện thoại thật và Sentry 24 giờ.
+
 - S18 code xong trên `feat/S18-tracking-reports`: `POST /events` lô tối đa 20, giới hạn 120/phút trượt qua nửa đêm, Redis chống trùng lượt xem với salt ngày; cron API 00:15/catch-up ghi `place_metrics` idempotent. Admin `/bao-cao` xem tuần thứ Hai–Chủ nhật với số liệu live. Umami mặc định opt-in, bỏ query/referrer/PII, thu hồi giữa tab/DNT/staging; nút tuỳ chọn cuối trang không che liên hệ mobile. 20 task workspace, 59 test SSR, Chrome 390px/desktop và review/hồi quy xanh. Runbook `docs/runbooks/tracking-reports.md`; chờ CI remote, instance Umami thật, deploy/staging/proxy allowlist, điện thoại thật và Sentry 24 giờ.
 
 - S17 code xong trên `feat/S17-technical-seo`: metadata/OG/canonical SSR, JSON-LD địa điểm/curate/TouristTrip/breadcrumbs, sitemap index và lastmod thực qua service DTO, robots và runtime staging noindex/Search Console token. Worker tạo OG 1200×630, PNG mặc định và CLI backfill ảnh cũ. 20 task workspace và 59 test SSR xanh, review độc lập/test hồi quy đã sửa; runbook `docs/runbooks/technical-seo.md`. Chờ CI remote, backfill nếu có, deploy/staging, Search Console thật, điện thoại thật và Sentry 24 giờ.

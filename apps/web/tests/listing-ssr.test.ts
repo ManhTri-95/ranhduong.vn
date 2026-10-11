@@ -85,6 +85,47 @@ const api = createServer((req, res) => {
   }
 });
 
+describe('S20 static legal pages production SSR', () => {
+  it.each([
+    { path: '/dieu-khoan', title: 'Điều khoản sử dụng' },
+    { path: '/quyen-rieng-tu', title: 'Quyền riêng tư' },
+    { path: '/ghi-nguon', title: 'Ghi nguồn' },
+  ])('$path remains readable with a failing API and has public metadata/contact', async ({ path, title }) => {
+    apiFailed = true;
+    try {
+      const response = await fetch(`${base}${path}`);
+      expect(response.status).toBe(200);
+      const html = await response.text();
+      expect(html.match(/<h1\b[^>]*>(.*?)<\/h1>/)?.[1]).toBe(title);
+      expect(html).toContain(`rel="canonical" href="https://ranhduong.vn${path}"`);
+      expect(html).toContain('name="robots" content="index, follow"');
+      expect(html).toContain('mailto:legal-gia-lap@example.com');
+      for (const link of ['/dieu-khoan', '/quyen-rieng-tu', '/ghi-nguon']) expect(html).toContain(`href="${link}"`);
+      expect(html).not.toContain('<canvas');
+    } finally { apiFailed = false; }
+  });
+
+  it('provides legal navigation from the home, map, detail and error pages', async () => {
+    for (const path of ['/da-lat?audit=s20-footer', '/da-lat/ban-do', '/da-lat/dia-diem/with-photo', '/s20-khong-co/trang-khong-co']) {
+      const html = await (await fetch(`${base}${path}`, { headers: { accept: 'text/html' } })).text();
+      const footer = html.match(/<footer\b[^>]*>[\s\S]*?<\/footer>/)?.[0];
+      expect(footer, path).toBeDefined();
+      for (const link of ['/dieu-khoan', '/quyen-rieng-tu', '/ghi-nguon']) expect(footer, path).toContain(`href="${link}"`);
+    }
+  });
+
+  it('adds web-owned legal URLs to the pages sitemap only, with the content modification date', async () => {
+    for (const kind of ['pages', 'places', 'lists', 'itineraries']) {
+      const xml = await (await fetch(`${base}/sitemap-${kind}.xml`)).text();
+      for (const path of ['/dieu-khoan', '/quyen-rieng-tu', '/ghi-nguon']) {
+        const entry = `<url><loc>https://ranhduong.vn${path}</loc><lastmod>2026-10-12T00:00:00.000Z</lastmod></url>`;
+        if (kind === 'pages') expect(xml).toContain(entry);
+        else expect(xml).not.toContain(`<loc>https://ranhduong.vn${path}</loc>`);
+      }
+    }
+  });
+});
+
 describe('S16 public itinerary production SSR', () => {
   it('renders both days, saved times, notes, directions, sharing and canonical/OG with one-day SWR', async () => {
     const response = await fetch(`${base}/da-lat/lich-trinh/lich-trinh-gia-lap`);
@@ -307,6 +348,7 @@ beforeAll(async () => {
       NITRO_UNIX_SOCKET: '', NITRO_SSL_CERT: '', NITRO_SSL_KEY: '',
       NUXT_API_INTERNAL_BASE: apiBase, NUXT_PUBLIC_API_BASE: apiBase,
       NUXT_PUBLIC_SITE_URL: 'https://ranhduong.vn', NUXT_PUBLIC_INDEXABLE: 'true', NUXT_PUBLIC_GOOGLE_SITE_VERIFICATION: 'verification-gia-lap',
+      NUXT_PUBLIC_LEGAL_CONTACT_EMAIL: 'legal-gia-lap@example.com',
     },
     windowsHide: true,
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -419,6 +461,15 @@ describe('S17 production technical SEO', () => {
       expect(html).toContain('name="robots" content="noindex, follow"');
       expect(html).toContain('href="https://staging.ranhduong.vn/da-lat"');
       expect(await (await fetch(`${root}/sitemap-places.xml`)).text()).not.toContain('<url>');
+      expect(await (await fetch(`${root}/sitemap-pages.xml`)).text()).not.toContain('<url>');
+      for (const path of ['/dieu-khoan', '/quyen-rieng-tu', '/ghi-nguon']) {
+        const legal = await fetch(`${root}${path}`);
+        expect(legal.status).toBe(200);
+        expect(legal.headers.get('x-robots-tag')).toBe('noindex, nofollow');
+        const content = await legal.text();
+        expect(content).toContain('name="robots" content="noindex, follow"');
+        expect(content).toContain(`href="https://staging.ranhduong.vn${path}"`);
+      }
     } finally {
       if (staging.exitCode === null && staging.signalCode === null) { const exited = once(staging, 'exit'); staging.kill(); await exited; }
     }

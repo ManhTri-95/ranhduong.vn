@@ -6,6 +6,10 @@ import { photoSrcset, photoUrl } from '~/shared/lib/media';
 defineProps<{ photos: PlacePhoto[]; name: string }>();
 const mediaBase = useRuntimeConfig().public.mediaBase;
 const failed = ref<number[]>([]);
+const sourceLabels: Record<PlacePhoto['source'], string> = {
+  self: 'Rành Đường tự chụp', owner: 'Chủ địa điểm cung cấp', ctv: 'Cộng tác viên cung cấp',
+  user: 'Người đóng góp cung cấp', cc: 'Creative Commons',
+};
 </script>
 
 <template>
@@ -21,14 +25,15 @@ const failed = ref<number[]>([]);
         <div v-else class="rd-gallery__placeholder">Ảnh đang cập nhật</div>
       </figure>
     </div>
-    <details v-if="photos.length" class="rd-gallery__credits">
+    <details v-if="photos.length" open class="rd-gallery__credits">
       <summary>Nguồn ảnh ({{ photos.length }})</summary>
       <ol>
         <li v-for="(photo, index) in photos" :key="photo.key">
-          Ảnh {{ index + 1 }} · {{ photo.credit }} · {{ photo.license }}
+          Ảnh {{ index + 1 }} · {{ sourceLabels[photo.source] }} · {{ photo.credit }} · {{ photo.license }}
           <a v-if="photo.sourceUrl" :href="photo.sourceUrl" target="_blank" rel="noopener noreferrer">Xem nguồn ảnh {{ index + 1 }}</a>
         </li>
       </ol>
+      <p>Ảnh được chuyển sang WebP và thay đổi kích thước; khung hiển thị có thể cắt ảnh. <NuxtLink to="/ghi-nguon#anh-dia-diem">Về quyền sử dụng ảnh</NuxtLink></p>
     </details>
   </section>
 </template>
@@ -43,5 +48,7 @@ const failed = ref<number[]>([]);
 .rd-gallery__credits { font-size: 13px; line-height: 1.6; color: var(--ink-soft); }
 .rd-gallery__credits summary { display: flex; align-items: center; min-height: var(--tap-min); cursor: pointer; text-decoration: underline; }
 .rd-gallery__credits ol { padding-left: var(--space-5); margin: 0; }
+.rd-gallery__credits li { overflow-wrap: anywhere; }
+.rd-gallery__credits p { margin: var(--space-2) 0 0; }
 .rd-gallery__credits a { display: inline-flex; align-items: center; min-height: var(--tap-min); margin-left: var(--space-2); }
 </style>

@@ -35,6 +35,7 @@ export default defineNuxtConfig({
       trackingEnabled: true,
       umamiScriptUrl: '',
       umamiWebsiteId: '',
+      legalContactEmail: '',
     },
   },
   routeRules: {
