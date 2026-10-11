@@ -28,6 +28,7 @@ async function onLogout(): Promise<void> {
       <RouterLink class="nav" to="/dia-diem">Địa điểm</RouterLink>
       <RouterLink class="nav" to="/danh-sach">Danh sách gợi ý</RouterLink>
       <RouterLink class="nav" to="/lich-trinh">Lịch trình mẫu</RouterLink>
+      <RouterLink class="nav" to="/bao-cao">Báo cáo</RouterLink>
       <div class="account">
         <span v-if="sessionState.status === 'signed-in'" class="email">{{ sessionState.session.email }}</span>
         <button type="button" class="logout" @click="onLogout">Đăng xuất</button>

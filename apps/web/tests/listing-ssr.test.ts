@@ -31,7 +31,7 @@ let templateFailed = false;
 const templateStop = (number: number, day: number, available = true) => ({
   key: `${day}-${number}`, number, start: number === 1 ? '08:00' : '10:15', end: number === 1 ? '09:00' : '11:45', travelMinFromPrev: number === 1 ? 0 : 15,
   kind: 'visit', note: 'Ghi chú lịch trình Giả Lập',
-  place: available ? { slug: `quan-gia-lap-${number}`, name: `Quán Giả Lập ${number}`, category: 'cafe', alsoCategories: [], unconfirmed: true, location: { type: 'Point', coordinates: [0.2, 0.3] }, googlePlaceId: 'fake-id' } : null,
+  place: available ? { id: '0123456789abcdef01234567', slug: `quan-gia-lap-${number}`, name: `Quán Giả Lập ${number}`, category: 'cafe', alsoCategories: [], unconfirmed: true, location: { type: 'Point', coordinates: [0.2, 0.3] }, googlePlaceId: 'fake-id' } : null,
 });
 const api = createServer((req, res) => {
   res.setHeader('content-type', 'application/json');
@@ -98,6 +98,8 @@ describe('S16 public itinerary production SSR', () => {
     expect(html).not.toContain('<canvas');
     expect(html).not.toMatch(/<link[^>]*maplibre-gl-worker[^>]*>/);
     expect(html).not.toContain('name="robots" content="noindex');
+    expect(html.match(/data-rd-event="direction_click"/g)).toHaveLength(3);
+    expect(html.match(/data-rd-place-id="0123456789abcdef01234567"/g)).toHaveLength(3);
   });
   it('links the template from the home page', async () => {
     expect(await (await fetch(`${base}/da-lat?audit=s16-home`)).text()).toContain('href="/da-lat/lich-trinh/lich-trinh-gia-lap"');
@@ -235,6 +237,8 @@ describe('S11 detail production SSR', () => {
     expect(html).toContain('rel="canonical" href="https://ranhduong.vn/da-lat/dia-diem/quan-gia-lap-1"');
     expect(html).not.toContain('>Đang mở<');
     expect(html).not.toContain('>Đang đóng');
+    for (const event of ['direction_click', 'call_click', 'fanpage_click']) expect(html).toContain(`data-rd-event="${event}" data-rd-place-id="${detailPlace.id}"`);
+    expect(html).not.toMatch(/<script[^>]*data-website-id/);
   });
 
   it('renders responsive cover and attribution', async () => {

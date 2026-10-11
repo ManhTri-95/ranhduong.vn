@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { isIP } from 'node:net';
 
 const csv = (s: string) => s.split(',').map((v) => v.trim()).filter(Boolean);
 const httpUrl = (fallback: string) =>
@@ -10,6 +11,11 @@ const EnvSchema = z.object({
   /** S13: Atlas Search index đã sẵn sàng; local để trống để tìm trong bộ nhớ. */
   PLACE_SEARCH_INDEX: z.string().default('').transform((s) => s.trim() || undefined),
   REDIS_URL: z.string().min(1).default('redis://localhost:6379'),
+  TRUSTED_PROXY_CIDRS: z.string().default('').transform(csv).pipe(z.array(z.string().refine((value) => {
+    const [ip, bits, extra] = value.split('/');
+    const version = isIP(ip ?? '');
+    return version > 0 && extra === undefined && (bits === undefined || /^\d+$/.test(bits) && Number(bits) <= (version === 4 ? 32 : 128));
+  }, 'Proxy phải là IP hoặc CIDR hợp lệ'))),
   /** Các nguồn được gọi API kèm cookie: web khách và admin, cách nhau bằng dấu phẩy. */
   WEB_ORIGINS: z.string().default('http://localhost:3100,http://localhost:5174').transform(csv),
   /** Email được vào admin (S04), cách nhau bằng dấu phẩy, không phân biệt hoa thường. Để trống thì không ai vào được. */

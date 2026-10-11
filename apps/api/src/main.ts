@@ -7,7 +7,7 @@ import { loadEnv } from './config/env';
 async function bootstrap() {
   const env = loadEnv();
   const app = await NestFactory.create(AppModule);
-  configureApp(app, env.WEB_ORIGINS);
+  configureApp(app, env.WEB_ORIGINS, env.TRUSTED_PROXY_CIDRS);
   app.enableShutdownHooks();
   await app.listen(env.API_PORT);
   console.log(`API chạy tại http://localhost:${env.API_PORT}/v1/health`);

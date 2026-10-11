@@ -18,6 +18,11 @@ const REQUIRED = {
 };
 
 describe('loadEnv', () => {
+  it('S18 trusts only an explicit valid proxy IP/CIDR allowlist', () => {
+    expect(loadEnv(REQUIRED)).toMatchObject({ TRUSTED_PROXY_CIDRS: [] });
+    expect(loadEnv({ ...REQUIRED, TRUSTED_PROXY_CIDRS: '127.0.0.1, 10.0.0.0/8, ::1/128' })).toMatchObject({ TRUSTED_PROXY_CIDRS: ['127.0.0.1', '10.0.0.0/8', '::1/128'] });
+    for (const value of ['true', '0.0.0.0/99', '10.0.0.0/8/3']) expect(() => loadEnv({ ...REQUIRED, TRUSTED_PROXY_CIDRS: value })).toThrow(/TRUSTED_PROXY_CIDRS/);
+  });
   it('S13 chỉ bật Atlas Search khi đặt tên index; local để trống', () => {
     expect(loadEnv(REQUIRED).PLACE_SEARCH_INDEX).toBeUndefined();
     expect(loadEnv({ ...REQUIRED, PLACE_SEARCH_INDEX: '   ' }).PLACE_SEARCH_INDEX).toBeUndefined();

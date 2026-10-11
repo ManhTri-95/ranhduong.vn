@@ -157,6 +157,7 @@ export function hasOpenAir(place: { cover?: PlaceCover }): boolean {
 
 /** Thẻ địa điểm ngang trên trang chủ, trang danh mục, trang tìm kiếm (ui-spec mục 4). */
 export const PlaceCard = z.object({
+  id: ObjectIdString.optional(),
   slug: Slug,
   name: z.string(),
   category: PlaceCategory,

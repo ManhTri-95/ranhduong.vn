@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Slug } from './common.js';
+import { ObjectIdString, Slug } from './common.js';
 import { TemplateEndTime, TemplateTime } from './itinerary-admin.js';
 import { ItineraryPace, ItineraryTransport, StopKind } from './itinerary.js';
 import { PlaceDetail } from './place-detail.js';
@@ -8,7 +8,7 @@ import { PlaceDetail } from './place-detail.js';
 export const ItineraryStopPlace = PlaceDetail.pick({
   slug: true, name: true, category: true, alsoCategories: true, location: true,
   address: true, practicalNotes: true, googlePlaceId: true, zoneName: true, unconfirmed: true,
-}).extend({ coverKey: z.string().min(1).optional() });
+}).extend({ id: ObjectIdString.optional(), coverKey: z.string().min(1).optional() });
 export type ItineraryStopPlace = z.infer<typeof ItineraryStopPlace>;
 
 /** Null place preserves the slot when its referenced place is no longer public. */

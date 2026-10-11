@@ -12,6 +12,8 @@ import { CuratedListsModule } from './modules/curated-lists/curated-lists.module
 import { RedisModule } from './shared/redis/redis.module';
 import { SessionModule } from './shared/session/session.module';
 import { SeoModule } from './modules/seo/seo.module';
+import { MetricsModule } from './modules/metrics/metrics.module';
+import { MetricsCron } from './modules/metrics/metrics-cron';
 
 const env = loadEnv();
 
@@ -28,7 +30,9 @@ const env = loadEnv();
     AuthModule,
     AdminModule,
     SeoModule,
+    MetricsModule,
   ],
   controllers: [HealthController],
+  providers: [MetricsCron],
 })
 export class AppModule {}

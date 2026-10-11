@@ -6,6 +6,7 @@ import RdPlaceCard from '~/entities/place/ui/RdPlaceCard.vue';
 import RdPlaceMap from '~/features/place-map/ui/RdPlaceMap.client.vue';
 import { useApiBase } from '~/shared/api/client';
 import { useClientNow } from '~/shared/lib/use-client-now';
+import { usePlaceTracking } from '~/shared/lib/use-place-tracking';
 
 const props = defineProps<{ city: CityPublic; initialPage: PlaceListResponse | null; category?: PlaceCategory; failed: boolean }>();
 const emit = defineEmits<{ category: [value: PlaceCategory | undefined] }>();
@@ -14,6 +15,7 @@ const now = useClientNow();
 const places = ref<PlaceCard[]>(props.initialPage?.items ?? []);
 const selectedSlug = ref<string | null>(null);
 const selected = computed(() => places.value.find((place) => place.slug === selectedSlug.value));
+usePlaceTracking(() => selected.value?.id, 'map');
 const loading = ref(false);
 const loadFailed = ref(props.failed);
 const sheetMode = ref<'compact' | 'card' | 'list'>('list');

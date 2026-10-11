@@ -32,6 +32,9 @@ export default defineNuxtConfig({
       siteUrl: 'https://ranhduong.vn',
       indexable: true,
       googleSiteVerification: '',
+      trackingEnabled: true,
+      umamiScriptUrl: '',
+      umamiWebsiteId: '',
     },
   },
   routeRules: {

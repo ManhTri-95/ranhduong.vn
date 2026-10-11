@@ -50,7 +50,7 @@ describe('GET /v1/cities/:city/places', () => {
   });
 
   it('đổi bản ghi thành thẻ: tên cụm, câu ghi chú đầu, nhãn chưa xác nhận, ảnh đầu tiên, giờ mở cửa', async () => {
-    await places().insertOne(
+    const inserted = await places().insertOne(
       fakePlaceDoc(cityId, {
         zoneId: zoneAId,
         practicalNotes: 'Câu ghi chú giả lập thứ nhất. Câu thứ hai.',
@@ -62,6 +62,7 @@ describe('GET /v1/cities/:city/places', () => {
     const { body } = await get(`/cities/${CITY}/places`);
     expect((body as PlaceListResponse).items).toEqual([
       {
+        id: inserted.insertedId.toString(),
         slug: 'quan-gia-lap',
         name: 'Quán Giả Lập',
         category: 'cafe',

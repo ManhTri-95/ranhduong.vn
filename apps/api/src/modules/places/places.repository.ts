@@ -8,6 +8,7 @@ import type { DetailRow } from './place-detail';
 import { PLACE_MODEL, type PlaceModel } from './schemas/place.schema';
 import { atlasSearchStage } from './place-search';
 import { sitemapSources, type SitemapSource } from '@ranhduong/contracts';
+import { MetricPlaceRef } from '@ranhduong/contracts';
 
 /** Trường của thẻ địa điểm; ảnh chỉ lấy tấm đầu. */
 const CARD_FIELDS = {
@@ -80,6 +81,13 @@ export interface ListFilter {
 /** Lớp dữ liệu của module places: chỉ file này import model Place. */
 @Injectable()
 export class PlacesRepository {
+  async metricRefs(ids?: string[], cityId?: string): Promise<MetricPlaceRef[]> {
+    const rows = await this.places.find({
+      ...(ids ? { _id: { $in: ids.map((id) => new Types.ObjectId(id)) }, status: { $in: ['active', 'closed'] } } : { status: { $ne: 'draft' } }),
+      ...(cityId ? { cityId: new Types.ObjectId(cityId) } : {}),
+    }, { cityId: 1, slug: 1, name: 1, status: 1 }).lean();
+    return rows.flatMap((row) => { const parsed = MetricPlaceRef.safeParse({ ...row, id: row._id.toString(), cityId: row.cityId.toString() }); return parsed.success ? [parsed.data] : []; });
+  }
   async sitemapSources(cityId: string): Promise<SitemapSource[]> {
     return sitemapSources(await this.places.find({ cityId: new Types.ObjectId(cityId), status: { $in: ['active', 'closed'] } }, { slug: 1, updatedAt: 1 }).sort({ slug: 1 }).lean());
   }

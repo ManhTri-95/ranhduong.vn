@@ -5,9 +5,11 @@ import { directionHref, verificationDate } from '~/entities/place/lib/place-deta
 import RdOpeningHours from '~/entities/place/ui/RdOpeningHours.vue';
 import RdPlaceGallery from '~/entities/place/ui/RdPlaceGallery.vue';
 import RdPlaceList from '~/entities/place/ui/RdPlaceList.vue';
+import { usePlaceTracking } from '~/shared/lib/use-place-tracking';
 
 const props = defineProps<{ detail: PlaceDetailResponse; citySlug: string; now: Date | null }>();
 const place = computed(() => props.detail.place);
+usePlaceTracking(() => place.value.id);
 const directions = computed(() => directionHref(place.value));
 const stale = computed(() => props.now ? verificationStale(place.value.lastVerifiedAt, props.now) : false);
 const verifiedOn = computed(() => verificationDate(place.value.lastVerifiedAt));
@@ -49,9 +51,9 @@ const categories = computed(() => [place.value.category, ...place.value.alsoCate
     </div>
     <aside class="rd-detail__actions" aria-label="Chỉ đường và liên hệ">
       <div class="rd-action-bar rd-detail__action-bar">
-        <a v-if="directions" class="rd-btn rd-btn--accent" :href="directions" target="_blank" rel="noopener noreferrer">Chỉ đường</a>
-        <a v-if="place.contact.phone" class="rd-btn rd-btn--outline" :href="`tel:${place.contact.phone}`">Gọi quán</a>
-        <a v-if="place.contact.fanpage" class="rd-btn rd-btn--outline" :href="place.contact.fanpage" target="_blank" rel="noopener noreferrer">Fanpage</a>
+        <a v-if="directions" class="rd-btn rd-btn--accent" :href="directions" target="_blank" rel="noopener noreferrer" data-rd-event="direction_click" :data-rd-place-id="place.id">Chỉ đường</a>
+        <a v-if="place.contact.phone" class="rd-btn rd-btn--outline" :href="`tel:${place.contact.phone}`" data-rd-event="call_click" :data-rd-place-id="place.id">Gọi quán</a>
+        <a v-if="place.contact.fanpage" class="rd-btn rd-btn--outline" :href="place.contact.fanpage" target="_blank" rel="noopener noreferrer" data-rd-event="fanpage_click" :data-rd-place-id="place.id">Fanpage</a>
         <a v-if="place.contact.website" class="rd-btn rd-btn--outline" :href="place.contact.website" target="_blank" rel="noopener noreferrer">Website</a>
         <p v-if="!directions && !Object.keys(place.contact).length" class="empty-note">{{ place.status === 'closed' ? 'Địa điểm đã đóng cửa' : 'Thông tin liên hệ đang cập nhật' }}</p>
       </div>

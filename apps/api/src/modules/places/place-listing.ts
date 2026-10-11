@@ -114,6 +114,7 @@ export function cardNote(text?: string): string | undefined {
 /** Đổi bản ghi thành thẻ công khai; tên cụm tra trong zoneNames (zoneId → tên). */
 export function toPlaceCard(place: ListedPlace, zoneNames: ReadonlyMap<string, string>): PlaceCard {
   return {
+    ...(place.id ? { id: place.id } : {}),
     slug: place.slug,
     name: place.name,
     category: place.category,

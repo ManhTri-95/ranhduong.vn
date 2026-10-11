@@ -78,7 +78,7 @@ async function selectStop(key: string): Promise<void> {
                   </template>
                   <p v-else class="rd-itinerary-stop__hint">Chỗ này hiện chưa có thông tin công khai. Bạn chọn điểm khác trên bản đồ nhé.</p>
                   <p v-if="stop.note" class="rd-itinerary-stop__note">{{ stop.note }}</p>
-                  <a v-if="direction(stop)" :href="direction(stop)" class="rd-btn rd-btn--accent" target="_blank" rel="noopener noreferrer" :aria-label="`Chỉ đường đến ${stop.place?.name}`">Chỉ đường</a>
+                  <a v-if="direction(stop)" :href="direction(stop)" class="rd-btn rd-btn--accent" target="_blank" rel="noopener noreferrer" :aria-label="`Chỉ đường đến ${stop.place?.name}`" data-rd-event="direction_click" :data-rd-place-id="stop.place?.id">Chỉ đường</a>
                   <p v-else-if="stop.place" class="rd-itinerary-stop__hint">Vị trí đang cập nhật</p>
                 </div>
               </div>

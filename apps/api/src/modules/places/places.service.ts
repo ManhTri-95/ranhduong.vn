@@ -10,6 +10,8 @@ import { GeoPoint, ItineraryStopPlace, OpeningSlot, PlacePhoto, TemplatePlace } 
 
 @Injectable()
 export class PlacesService {
+  publicMetricRefs(ids: string[]) { return this.repo.metricRefs(ids); }
+  reportMetricRefs(cityId: string) { return this.repo.metricRefs(undefined, cityId); }
   sitemapSources(cityId: string) { return this.repo.sitemapSources(cityId); }
   constructor(
     private readonly repo: PlacesRepository,
