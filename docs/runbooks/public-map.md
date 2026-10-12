@@ -1,10 +1,10 @@
 # S12: bản đồ địa điểm công khai
 
-Code đã triển khai trên `feat/S12-public-map`, tách từ `main` trước khi sửa code. Route `/{city}/ban-do` có khung và danh sách SSR; MapLibre chỉ khởi chạy trên client khi mở bản đồ. S22 tiếp tục làm style sổ tay và sprite ghim riêng.
+Code đã triển khai trên `feat/S12-public-map`, tách từ `main` trước khi sửa code. Route `/{city}/ban-do` có khung và danh sách SSR; MapLibre chỉ khởi chạy trên client khi mở bản đồ. Style sổ tay và sprite ghim riêng đã triển khai ở S22; xem [runbook S22](notebook-map.md).
 
 ## Cấu hình và API
 
-- `NUXT_PUBLIC_MAP_STYLE_URL=https://tiles.openfreemap.org/styles/positron`: runtime config Nuxt, đổi được khi triển khai mà không sửa component. Không cần API key.
+- `NUXT_PUBLIC_MAP_STYLE_URL=/maps/notebook/style.json`: mặc định từ S22, runtime config Nuxt vẫn nhận URL style khác khi triển khai mà không sửa component. Tile/glyph OpenFreeMap không cần API key. S12 ban đầu kiểm với Positron remote.
 - `City.center`, `City.mapBounds` từ API quyết định tâm và maxBounds; minZoom là 11. Khung Đà Lạt dùng dữ liệu seed S03, không tạo khung riêng trong frontend.
 - API hiện có `GET /v1/cities/:city/places` nhận `bbox=west,south,east,north` hoặc `near=lat,lng&radius=metres` (radius 1–50000). Không kết hợp hai chế độ; query sai trả 400 `VALIDATION_FAILED`.
 - Chỉ query địa lý trả `PlaceCard.location`. Chỉ địa điểm active của đúng thành phố, có vị trí trong vùng, được đưa lên bản đồ. Lọc danh mục tính cả danh mục phụ.

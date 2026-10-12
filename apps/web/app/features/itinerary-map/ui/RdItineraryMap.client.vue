@@ -2,6 +2,7 @@
 import type { CityPublic, ItineraryPublicStop } from '@ranhduong/contracts';
 import type { GeoJSONSource, Map as MapLibreMap, Marker } from 'maplibre-gl';
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { resolveMapStyleSprites } from '~/shared/lib/map-style';
 import { itineraryMapData } from '../lib/map-data';
 
 const props = defineProps<{ city: CityPublic; stops: ItineraryPublicStop[]; selectedKey: string | null }>();
@@ -74,7 +75,7 @@ async function start(): Promise<void> {
     maplibre = library;
     library.setWorkerUrl(worker.default);
     const instance = new library.Map({
-      container: container.value, style: styleUrl, center: props.city.center.coordinates, zoom: 12,
+      container: container.value, center: props.city.center.coordinates, zoom: 12,
       minZoom: 11, maxBounds: props.city.mapBounds, attributionControl: false, dragRotate: false, pitchWithRotate: false,
       locale: { 'NavigationControl.ZoomIn': 'Phóng to', 'NavigationControl.ZoomOut': 'Thu nhỏ' },
     });
@@ -90,8 +91,9 @@ async function start(): Promise<void> {
       const ink = getComputedStyle(container.value!).getPropertyValue('--ink').trim();
       instance.addSource('rd-itinerary-route', { type: 'geojson', data: itineraryMapData([]).route });
       instance.addLayer({ id: 'rd-itinerary-line', type: 'line', source: 'rd-itinerary-route', paint: { 'line-color': ink, 'line-width': 2, 'line-dasharray': [2, 2] } });
-      draw(); loading.value = false; failed.value = false;
+      draw(); loading.value = false;
     });
+    instance.setStyle(styleUrl, { transformStyle: (_previous, next) => resolveMapStyleSprites(next, styleUrl, window.location.href) });
   } catch {
     if (disposed || current !== generation) return;
     assetsFailed = !loaded; failed.value = true; loading.value = false;

@@ -16,6 +16,7 @@ import RdLegalContact from '~/shared/ui/RdLegalContact.vue';
         <li><a class="rd-legal__link" href="https://openmaptiles.org" target="_blank" rel="noopener noreferrer">© OpenMapTiles · Cấu trúc dữ liệu nền bản đồ</a></li>
         <li><a class="rd-legal__link" href="https://maplibre.org" target="_blank" rel="noopener noreferrer">MapLibre · Công cụ hiển thị bản đồ</a></li>
       </ul>
+      <p>Phong cách sổ tay được Rành Đường sửa màu, đường nét và lớp hiển thị từ <a href="https://github.com/hyperknot/openfreemap-styles" target="_blank" rel="noopener noreferrer">Positron của OpenFreeMap</a> và <a href="https://github.com/openmaptiles/positron-gl-style" target="_blank" rel="noopener noreferrer">OpenMapTiles</a>. Thiết kế gốc từ CartoDB Basemaps do Stamen và Paul Norman thực hiện cho CartoDB Inc. (CC BY 3.0); thiết kế Positron theo <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>. Biểu tượng ghim danh mục do Rành Đường vẽ riêng.</p>
       <p>Một phần thông tin ban đầu về địa điểm có thể đến từ OpenStreetMap, sau đó được Rành Đường rà soát và bổ sung. Ghi nguồn không có nghĩa cộng đồng OpenStreetMap hoặc các nhà cung cấp bản đồ xác nhận hay bảo trợ cho từng địa điểm.</p>
     </section>
     <section id="anh-dia-diem">

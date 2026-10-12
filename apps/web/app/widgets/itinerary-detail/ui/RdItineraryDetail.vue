@@ -105,7 +105,8 @@ async function selectStop(key: string): Promise<void> {
         <nav class="rd-itinerary-detail__attribution" aria-label="Nguồn bản đồ">
           <a href="https://openfreemap.org" target="_blank" rel="noopener noreferrer">OpenFreeMap</a> ·
           <a href="https://openmaptiles.org" target="_blank" rel="noopener noreferrer">© OpenMapTiles</a> ·
-          <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors</a>
+          <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors</a> ·
+          <NuxtLink to="/ghi-nguon#ban-do">Style và giấy phép</NuxtLink>
         </nav>
         <noscript>Bật JavaScript để mở bản đồ. Lịch giờ và nút Chỉ đường vẫn dùng được.</noscript>
         <NuxtLink class="rd-itinerary-detail__map-link" :to="`/${citySlug}/ban-do`">Chọn thêm chỗ trên bản đồ thành phố →</NuxtLink>

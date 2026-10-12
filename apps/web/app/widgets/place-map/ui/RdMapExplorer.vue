@@ -93,7 +93,8 @@ onBeforeUnmount(() => { disposed = true; controller?.abort(); clearTimeout(timer
       <nav class="rd-map-explorer__attribution" aria-label="Nguồn bản đồ">
         <a href="https://openfreemap.org" target="_blank" rel="noopener noreferrer">OpenFreeMap</a> ·
         <a href="https://openmaptiles.org" target="_blank" rel="noopener noreferrer">© OpenMapTiles</a> ·
-        <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors</a>
+        <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors</a> ·
+        <NuxtLink to="/ghi-nguon#ban-do">Style và giấy phép</NuxtLink>
       </nav>
     </section>
 

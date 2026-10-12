@@ -28,7 +28,7 @@ export default defineNuxtConfig({
       apiBase: 'http://localhost:3101/v1',
       /** Ảnh trên R2 (media.ranhduong.vn); local là bucket MinIO. */
       mediaBase: 'http://localhost:9000/ranhduong-media',
-      mapStyleUrl: 'https://tiles.openfreemap.org/styles/positron',
+      mapStyleUrl: '/maps/notebook/style.json',
       siteUrl: 'https://ranhduong.vn',
       indexable: true,
       googleSiteVerification: '',

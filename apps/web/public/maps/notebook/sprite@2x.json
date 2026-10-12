@@ -1,0 +1,44 @@
+{
+  "pin-attraction": {
+    "x": 4,
+    "y": 4,
+    "width": 72,
+    "height": 88,
+    "pixelRatio": 2
+  },
+  "pin-cafe": {
+    "x": 84,
+    "y": 4,
+    "width": 72,
+    "height": 88,
+    "pixelRatio": 2
+  },
+  "pin-food": {
+    "x": 164,
+    "y": 4,
+    "width": 72,
+    "height": 88,
+    "pixelRatio": 2
+  },
+  "pin-activity": {
+    "x": 244,
+    "y": 4,
+    "width": 72,
+    "height": 88,
+    "pixelRatio": 2
+  },
+  "pin-stay": {
+    "x": 324,
+    "y": 4,
+    "width": 72,
+    "height": 88,
+    "pixelRatio": 2
+  },
+  "pin-shop": {
+    "x": 404,
+    "y": 4,
+    "width": 72,
+    "height": 88,
+    "pixelRatio": 2
+  }
+}
