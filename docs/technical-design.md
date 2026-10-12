@@ -83,7 +83,7 @@ Mọi collection có `_id` (ObjectId), `createdAt`, `updatedAt`; collection nghi
 type GeoPoint = { type: 'Point'; coordinates: [lng: number, lat: number] };
 
 interface City { slug: string; name: string; center: GeoPoint; timezone: 'Asia/Ho_Chi_Minh'; active: boolean; accent: string; mapBounds: [number, number, number, number];
-  seasons: { key: string; from: string; to: string; accent: string; title: string; sub: string; illustration: string; featuredItineraryId?: ObjectId }[] }   // from/to dạng 'MM-DD'
+  seasons: { key: string; kind?: 'flower' | 'rain' | 'other'; from: string; to: string; accent: string; title: string; sub: string; illustration: string; featuredItineraryId?: ObjectId }[] }   // from/to dạng 'MM-DD'; mùa hoa ưu tiên, cùng nhóm theo thứ tự mảng
 interface Zone { cityId; slug: string; name: string; area: GeoJSON.Polygon }
 
 type PlaceCategory = 'attraction' | 'cafe' | 'food' | 'activity' | 'stay' | 'shop';

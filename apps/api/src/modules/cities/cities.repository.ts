@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { GeoPolygon, type CityInput, type LngLat, type ZoneInput } from '@ranhduong/contracts';
+import { CitySeasonContext, GeoPolygon, type CityInput, type CitySeasonEditInput, type LngLat, type ZoneInput } from '@ranhduong/contracts';
 import { Types } from 'mongoose';
-import { CITY_MODEL, type CityModel } from './schemas/city.schema';
+import { CITY_MODEL, type CityDoc, type CityModel } from './schemas/city.schema';
 import { ZONE_MODEL, type ZoneModel } from './schemas/zone.schema';
 import { sitemapSources, type SitemapCity } from '@ranhduong/contracts';
 
@@ -11,9 +11,32 @@ interface UpsertResult {
   created: boolean;
 }
 
+function seasonContext(row: CityDoc & { _id: Types.ObjectId }): CitySeasonContext {
+  return CitySeasonContext.parse({
+    ...row, id: row._id.toString(), updatedAt: row.updatedAt.toISOString(),
+    seasons: row.seasons.map((season) => ({ ...season, kind: season.kind ?? undefined, featuredItineraryId: season.featuredItineraryId?.toString() })),
+  });
+}
+
 /** Lớp dữ liệu của module cities: chỉ file này import model City và Zone. */
 @Injectable()
 export class CitiesRepository {
+  async findSeasonContext(slug: string): Promise<CitySeasonContext | null> {
+    const row = await this.cities.findOne({ slug, active: true }).lean();
+    return row ? seasonContext(row) : null;
+  }
+
+  async replaceSeasons(slug: string, input: CitySeasonEditInput): Promise<CitySeasonContext | null> {
+    // Advance even within the same millisecond: the version is also the cache identity.
+    const updatedAt = new Date(Math.max(Date.now(), new Date(input.updatedAt).getTime() + 1));
+    const row = await this.cities.findOneAndUpdate(
+      { slug, active: true, updatedAt: new Date(input.updatedAt) },
+      { $set: { seasons: input.seasons, updatedAt } },
+      { returnDocument: 'after', runValidators: true, timestamps: false },
+    ).lean();
+    return row ? seasonContext(row) : null;
+  }
+
   async sitemapCities(): Promise<SitemapCity[]> {
     const rows = await this.cities.find({ active: true }, { slug: 1, updatedAt: 1 }).sort({ slug: 1 }).lean();
     const result: SitemapCity[] = [];

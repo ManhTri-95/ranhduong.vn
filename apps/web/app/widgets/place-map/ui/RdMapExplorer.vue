@@ -73,7 +73,7 @@ onBeforeUnmount(() => { disposed = true; controller?.abort(); clearTimeout(timer
 </script>
 
 <template>
-  <main class="rd-map-explorer" :style="{ '--accent': city.accent }">
+  <main class="rd-map-explorer">
     <header class="rd-map-explorer__header">
       <div class="rd-map-explorer__title">
         <NuxtLink :to="`/${city.slug}`" class="rd-map-explorer__back" aria-label="Về trang thành phố">←</NuxtLink>

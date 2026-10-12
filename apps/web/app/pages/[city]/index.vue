@@ -4,6 +4,7 @@ import { computed } from 'vue';
 import { useCity } from '~/entities/city/api/city';
 import { useCuratedLists } from '~/entities/curated-list/api/curated-lists';
 import { useTemplateList } from '~/entities/itinerary/api/itineraries';
+import { promoteItinerary } from '~/entities/itinerary/lib/promote-itinerary';
 import { usePlaceList } from '~/entities/place/api/places';
 import RdSearchForm from '~/features/place-search/ui/RdSearchForm.vue';
 import { markUnavailableOnServer, throwIfNotFound } from '~/shared/api/page-status';
@@ -16,6 +17,7 @@ import RdCuratedListStrip from '~/widgets/curated-list-strip/ui/RdCuratedListStr
 import { FEATURED_QUERY } from '~/widgets/featured-places/model/query';
 import RdFeaturedPlaces from '~/widgets/featured-places/ui/RdFeaturedPlaces.vue';
 import RdItineraryStrip from '~/widgets/itinerary-strip/ui/RdItineraryStrip.vue';
+import RdSeasonBanner from '~/widgets/season-banner/ui/RdSeasonBanner.vue';
 
 // Đường dẫn lạ (ví dụ /wp-login.php) bị chặn ngay, không gọi API; thành phố có hay không do API quyết định.
 definePageMeta({ validate: (route) => Slug.safeParse(route.params.city).success });
@@ -32,16 +34,16 @@ throwIfNotFound(city.error.value);
 const featuredFailed = computed(() => Boolean(featured.error.value));
 const templatesFailed = computed(() => Boolean(templates.error.value));
 const curatedFailed = computed(() => Boolean(curated.error.value));
-const loadFailed = computed(() => Boolean(city.error.value) || featuredFailed.value || templatesFailed.value || curatedFailed.value);
+const loadFailed = computed(() => Boolean(city.error.value) || Boolean(city.now.error.value) || featuredFailed.value || templatesFailed.value || curatedFailed.value);
 markUnavailableOnServer(loadFailed.value);
 
 const cityName = computed(() => city.data.value?.name ?? '');
 const featuredPlaces = computed(() => featured.data.value?.items ?? []);
-const templateCards = computed(() => templates.data.value?.items ?? []);
+const templateCards = computed(() => promoteItinerary(templates.data.value?.items ?? [], city.currentNow.value?.featuredItinerary ?? null));
 const now = useClientNow();
 
 async function retry(): Promise<void> {
-  await Promise.all([city.refresh(), featured.refresh(), templates.refresh(), curated.refresh()]);
+  await Promise.all([city.refresh(), city.now.refresh(), featured.refresh(), templates.refresh(), curated.refresh()]);
 }
 
 usePageSeo({
@@ -62,6 +64,7 @@ usePageSeo({
         <h1 class="page-title">{{ cityName ? `${cityName} hôm nay` : 'Hôm nay' }}<br>ghé đâu?</h1>
         <p class="lead">Ghi chép của người rành đường. Quán nào cũng được hỏi lại trước khi lên đây.</p>
       </section>
+      <RdSeasonBanner v-if="city.currentNow.value?.season" :city-slug="citySlug" :current="city.currentNow.value" />
       <RdSearchForm :action="`/${citySlug}/tim-kiem`" :city-slug="citySlug" />
       <RdCategoryChips :city-slug="citySlug" />
       <RdItineraryStrip :city-slug="citySlug" :itineraries="templateCards" :failed="templatesFailed" />

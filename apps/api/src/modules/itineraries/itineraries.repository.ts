@@ -51,6 +51,15 @@ interface TemplateRow {
 /** Lớp dữ liệu của module itineraries: chỉ file này import model Itinerary. */
 @Injectable()
 export class ItinerariesRepository {
+  async featuredTemplate(cityId: string, id: string): Promise<(ItineraryDoc & { _id: Types.ObjectId }) | null> {
+    return this.itineraries.findOne({ _id: new Types.ObjectId(id), cityId: new Types.ObjectId(cityId), kind: 'template', status: 'published', visibility: 'public' }).lean();
+  }
+
+  async seasonTemplateIds(cityId: string): Promise<string[]> {
+    const rows = await this.itineraries.find({ cityId: new Types.ObjectId(cityId), kind: 'template', status: 'published', visibility: 'public' }, { _id: 1 }).sort({ title: 1, _id: 1 }).lean();
+    return rows.map((row) => row._id.toString());
+  }
+
   async sitemapSources(cityId: string): Promise<SitemapSource[]> {
     return sitemapSources(await this.itineraries.find({ cityId: new Types.ObjectId(cityId), kind: 'template', status: 'published', visibility: 'public' }, { slug: 1, updatedAt: 1 }).sort({ slug: 1 }).lean());
   }
@@ -91,7 +100,7 @@ export class ItinerariesRepository {
   async listPublishedTemplates(cityId: string, limit: number): Promise<TemplateSummary[]> {
     const docs = await this.itineraries
       .find(
-        { cityId: new Types.ObjectId(cityId), kind: 'template', status: 'published', slug: { $type: 'string' } },
+        { cityId: new Types.ObjectId(cityId), kind: 'template', status: 'published', visibility: { $ne: 'unlisted' }, slug: { $type: 'string' } },
         { slug: 1, title: 1, 'params.days': 1, 'params.transport': 1, 'params.pace': 1, 'days.stops.placeId': 1 },
       )
       .sort({ createdAt: -1, _id: -1 })

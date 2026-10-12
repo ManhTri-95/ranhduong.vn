@@ -4,13 +4,14 @@ import { BBox, GeoPoint, GeoPolygon, type LngLat } from './geojson.js';
 
 /** Một mùa trong City.seasons (ui-spec mục 7); admin chỉnh ở S23. */
 export const CitySeason = z.object({
-  key: Slug,
+  key: Slug.max(80),
+  kind: z.enum(['flower', 'rain', 'other']).optional(),
   from: MonthDay,
   to: MonthDay,
   accent: HexColor,
-  title: z.string().min(1),
-  sub: z.string().min(1),
-  illustration: z.string().min(1),
+  title: z.string().trim().min(1).max(120),
+  sub: z.string().trim().min(1).max(500),
+  illustration: z.string().trim().min(1).max(80),
   featuredItineraryId: ObjectIdString.optional(),
 });
 export type CitySeason = z.infer<typeof CitySeason>;

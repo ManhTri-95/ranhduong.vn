@@ -41,23 +41,23 @@ export default defineNuxtConfig({
   routeRules: {
     // Chỉ cache trang chủ Đà Lạt: '/:city' cũng khớp đường dẫn '/_' mà Nitro dùng cho renderer '/**',
     // làm renderer mặc định cache cả trang tìm kiếm dù route đó có cache:false.
-    '/da-lat': { swr: 3600 },
-    '/da-lat/ban-do': { swr: 3600 },
-    // Trang danh mục: SWR 1 giờ, kể cả bản có ?tags= hay ?cursor= (Nitro cache theo cả query).
+    '/da-lat': { swr: 900 },
+    '/da-lat/ban-do': { swr: 900 },
+    // Trang thành phố: SWR 15 phút để cập nhật màu mùa, kể cả bản có ?tags= hay ?cursor= (Nitro cache theo cả query).
     // radix3 ưu tiên nhánh tĩnh '/da-lat', che các handler '/:city/...': ghi cùng prefix để cache có hiệu lực.
     // Thêm thành phố thì thêm rule tương ứng; giữ khớp CATEGORY_URL_SLUG (contracts chưa build lúc postinstall).
-    '/da-lat/ca-phe': { swr: 3600 },
-    '/da-lat/an-uong': { swr: 3600 },
-    '/da-lat/tham-quan': { swr: 3600 },
-    '/da-lat/hoat-dong': { swr: 3600 },
-    '/da-lat/khu-vuc/**': { swr: 3600 },
-    '/da-lat/dia-diem/**': { swr: 3600 },
-    '/da-lat/top/**': { swr: 3600 },
-    '/da-lat/lich-trinh/**': { swr: 86400 },
+    '/da-lat/ca-phe': { swr: 900 },
+    '/da-lat/an-uong': { swr: 900 },
+    '/da-lat/tham-quan': { swr: 900 },
+    '/da-lat/hoat-dong': { swr: 900 },
+    '/da-lat/khu-vuc/**': { swr: 900 },
+    '/da-lat/dia-diem/**': { swr: 900 },
+    '/da-lat/top/**': { swr: 900 },
+    '/da-lat/lich-trinh/**': { swr: 900 },
     '/:city/tim-kiem': { cache: false, headers: { 'x-robots-tag': 'noindex', 'cache-control': 'no-store' } },
-    '/:city/dia-diem/**': { swr: 3600 },
-    '/:city/top/**': { swr: 3600 },
-    '/:city/lich-trinh/**': { swr: 86400 },
+    '/:city/dia-diem/**': { swr: 900 },
+    '/:city/top/**': { swr: 900 },
+    '/:city/lich-trinh/**': { swr: 900 },
     '/l/**': { cache: false, headers: { 'x-robots-tag': 'noindex', 'cache-control': 'no-store' } },
     '/owner/**': { cache: false, headers: { 'x-robots-tag': 'noindex', 'cache-control': 'no-store' } },
     '/admin/**': { cache: false, headers: { 'x-robots-tag': 'noindex', 'cache-control': 'no-store' } },

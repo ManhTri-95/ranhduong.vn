@@ -2,6 +2,9 @@ import { HttpStatus, Injectable } from '@nestjs/common';
 import {
   CityPublic,
   CitySeed,
+  CitySeasonEditInput,
+  CitySeasonSettings,
+  type CitySeasonContext,
   type CityRef,
   type CitySeedResult,
   type LngLat,
@@ -16,6 +19,25 @@ const cityNotFound = () => new ApiException('NOT_FOUND', HttpStatus.NOT_FOUND, '
 
 @Injectable()
 export class CitiesService {
+  async seasonContext(slug: string): Promise<CitySeasonContext> {
+    const context = await this.repo.findSeasonContext(slug);
+    if (!context) throw cityNotFound();
+    return context;
+  }
+
+  async seasonSettings(slug: string): Promise<CitySeasonSettings> {
+    return CitySeasonSettings.parse(await this.seasonContext(slug));
+  }
+
+  async replaceSeasons(slug: string, raw: CitySeasonEditInput): Promise<CitySeasonSettings> {
+    const updated = await this.repo.replaceSeasons(slug, CitySeasonEditInput.parse(raw));
+    if (!updated) {
+      await this.resolveCity(slug);
+      throw new ApiException('CONFLICT', HttpStatus.CONFLICT, 'Cấu hình đã đổi ở nơi khác. Tải bản mới trước khi lưu lại.');
+    }
+    return CitySeasonSettings.parse(updated);
+  }
+
   sitemapCities() { return this.repo.sitemapCities(); }
   constructor(private readonly repo: CitiesRepository) {}
 

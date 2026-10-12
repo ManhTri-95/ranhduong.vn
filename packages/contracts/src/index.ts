@@ -1,5 +1,7 @@
 export * from './auth.js';
 export * from './city.js';
+export * from './city-season.js';
+export * from './city-season-admin.js';
 export * from './common.js';
 export * from './curated-list.js';
 export * from './enums.js';

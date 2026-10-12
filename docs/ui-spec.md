@@ -209,6 +209,8 @@ Mùa quyết định màu nhấn, banner và lịch trình được đẩy lên 
 
 Khi hai mùa trùng nhau (mùa mưa và đầu mùa dã quỳ), mùa hoa được ưu tiên. Mỗi mùa có: `key`, `from`, `to` (MM-DD), `accent`, tiêu đề, mô tả, khoá hình minh hoạ, lịch trình nổi bật.
 
+S23: admin `/mua` có loại mùa `kind` (`flower`, `rain`, `other`) để biểu diễn ưu tiên; bản cũ thiếu loại suy ra từ key `da-quy`, `mai-anh-dao`, `mua-mua`. Mùa hoa ưu tiên trước, các mùa còn lại theo thứ tự admin sắp. Ngày lặp lại hằng năm theo Asia/Ho_Chi_Minh, tính cả hai đầu và cho phép qua năm mới. Ngày cụ thể cần admin xác nhận. Repo chưa có thống kê lượt xem lịch trình; trong khi chờ thống kê, khi không có mùa giữ thứ tự mẫu hiện có, như kế hoạch S23 đã duyệt.
+
 **Thời tiết:**
 
 | Trạng thái | Điều kiện (mã thời tiết WMO) | Câu hiển thị (ví dụ) |

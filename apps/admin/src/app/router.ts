@@ -20,6 +20,7 @@ export const router = createRouter({
     { path: '/lich-trinh', component: () => import('@/pages/TemplatesPage.vue') },
     { path: '/lich-trinh/:id', component: () => import('@/pages/TemplateEditPage.vue') },
     { path: '/bao-cao', component: () => import('@/pages/MetricsPage.vue') },
+    { path: '/mua', component: () => import('@/pages/SeasonsPage.vue') },
     { path: '/:pathMatch(.*)*', redirect: '/dia-diem' },
   ],
 });

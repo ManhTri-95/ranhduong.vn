@@ -4,6 +4,7 @@ import { Types } from 'mongoose';
 import { z } from 'zod';
 import { ApiException } from '../../shared/http/api-exception';
 import type { ItineraryCard, ItineraryCardList, ItineraryTemplateQuery } from '@ranhduong/contracts';
+import { SeasonItineraryOptions } from '@ranhduong/contracts';
 import { CitiesService } from '../cities/cities.service';
 import { PlacesService } from '../places/places.service';
 import { ItinerariesRepository } from './itineraries.repository';
@@ -22,6 +23,24 @@ const StoredSchedule = z.object({
 
 @Injectable()
 export class ItinerariesService {
+  async featuredTemplate(cityId: string, id: string): Promise<ItineraryCard | null> {
+    const row = await this.repo.featuredTemplate(cityId, id);
+    const schedule = StoredSchedule.safeParse(row);
+    if (!row || !schedule.success) return null;
+    const stopPlaceIds = schedule.data.days.flatMap((day) => day.stops.map((stop) => stop.placeId));
+    const covers = await this.places.coverKeys([...new Set(stopPlaceIds)]);
+    return toItineraryCard({ id, slug: row.slug ?? undefined, title: row.title, days: row.params.days, transport: row.params.transport, pace: row.params.pace, stopPlaceIds }, covers);
+  }
+
+  async seasonOptions(cityId: string): Promise<SeasonItineraryOptions> {
+    const ids = await this.repo.seasonTemplateIds(cityId);
+    const cards = await Promise.all(ids.map(async (id) => {
+      const card = await this.featuredTemplate(cityId, id);
+      return card ? { ...card, id } : null;
+    }));
+    return { items: cards.filter((card) => card !== null) };
+  }
+
   async sitemapSources(cityId: string, citySlug: string) {
     const sources = await this.repo.sitemapSources(cityId);
     const results = [];

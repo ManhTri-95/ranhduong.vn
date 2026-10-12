@@ -99,6 +99,8 @@ pnpm --filter @ranhduong/geo test        # test một package
 
 ## Trạng thái
 
+- S23 code xong trên `feat/S23-seasonal-ui`: admin `/mua` chỉnh mùa/lịch trình nổi bật, CAS theo updatedAt và khôi phục input; `/now` cache Redis/HTTP 15 phút tới nửa đêm, ưu tiên hoa và khoảng MM-DD qua năm mới; web SSR áp dụng --accent theo route, banner SVG/giảm chuyển động và promotion không trùng. 20 task workspace, 69 test SSR, Chrome 390px/desktop/chuyển trang/expiry/retry/401 recovery xanh; review độc lập đã kiểm và sửa lỗi bỏ lời nhắc khôi phục xoá bản nhập mới. Runbook `docs/runbooks/seasonal-ui.md`; chờ CI remote, staging, ngày mùa/lịch trình thật, điện thoại thật và Sentry 24 giờ.
+
 - S22 code xong trên `feat/S22-notebook-map`: style Positron xuất qua Maputnik theo Spec UI §6, JSON/sprite sáu danh mục 1x/2x trong repo, HTML ghim chọn +25% và rơi 700ms/giảm chuyển động; nền lịch trình dùng chung. Normalize sprite URL theo domain, giữ lỗi tải/retry, cluster/lazy/maxBounds/nguồn và ghi nguồn thiết kế. 20 task workspace, 82 test web/64 SSR, Chrome 390px/desktop/retina/URL override/lỗi sprite và review xanh sau bản sửa. Runbook `docs/runbooks/notebook-map.md`; chờ commit/PR, CI remote, staging (S02), điện thoại thật và Sentry 24 giờ.
 
 - S20 code xong: ba trang SSR tĩnh `/dieu-khoan`, `/quyen-rieng-tu`, `/ghi-nguon` và footer chung; SEO/sitemap, nội dung quyền riêng tư theo S18, email liên hệ runtime, nguồn ảnh mở sẵn và OSM cạnh hai bản đồ. Consent trên trang pháp lý nằm trong luồng trang, kể cả URL có `/` cuối. 20 task workspace, kiểm lại web, 64 test SSR, Chrome 390px/desktop/tắt JavaScript và review độc lập xanh. Runbook `docs/runbooks/legal-pages.md`; chờ email liên hệ thật, CI remote, deploy/staging (S02), điện thoại thật và Sentry 24 giờ.

@@ -6,6 +6,7 @@ export const CITY_MODEL = 'City';
 const SeasonSchema = new Schema(
   {
     key: { type: String, required: true },
+    kind: { type: String, enum: ['flower', 'rain', 'other'] },
     from: { type: String, required: true },
     to: { type: String, required: true },
     accent: { type: String, required: true },

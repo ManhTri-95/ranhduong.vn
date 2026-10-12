@@ -28,6 +28,8 @@ let mapFailed = false;
 let suggestionRequests = 0;
 let curatedFailed = false;
 let templateFailed = false;
+let seasonMode: 'flower' | 'rain' | 'sunflower' | 'none' = 'none';
+let seasonFailed = false;
 const templateStop = (number: number, day: number, available = true) => ({
   key: `${day}-${number}`, number, start: number === 1 ? '08:00' : '10:15', end: number === 1 ? '09:00' : '11:45', travelMinFromPrev: number === 1 ? 0 : 15,
   kind: 'visit', note: 'Ghi chú lịch trình Giả Lập',
@@ -44,6 +46,10 @@ const api = createServer((req, res) => {
     res.end(JSON.stringify({ items: (paths[kind ?? ''] ?? []).map((path) => ({ path, lastmod: '2026-10-09T08:30:00.000Z' })) }));
   } else if (url.pathname === '/v1/cities/da-lat') {
     res.end(JSON.stringify(city));
+  } else if (url.pathname === '/v1/cities/da-lat/now') {
+    if (seasonFailed) return res.writeHead(503).end(JSON.stringify({ code: 'INTERNAL_ERROR', message: 'Lỗi mùa Giả Lập' }));
+    const accents = { flower: '#E58FA8', rain: '#8DB3CF', sunflower: '#E9B824', none: city.accent };
+    res.end(JSON.stringify({ accent: accents[seasonMode], season: seasonMode === 'none' ? null : { key: `mua-${seasonMode}`, kind: seasonMode === 'rain' ? 'rain' : 'flower', from: '01-01', to: '12-31', accent: accents[seasonMode], title: 'Banner mùa Giả Lập', sub: 'Mô tả mùa Giả Lập', illustration: seasonMode === 'flower' ? 'cherry-blossom' : seasonMode === 'sunflower' ? 'wild-sunflower' : 'rain' }, featuredItinerary: seasonMode === 'none' ? null : { slug: 'noi-bat-gia-lap', title: 'Lịch trình mùa Giả Lập', days: 1, transport: 'motorbike', pace: 'relaxed' }, expiresAt: new Date(Date.now() + 900_000).toISOString() }));
   } else if (url.pathname === '/v1/cities/da-lat/places') {
     if (url.searchParams.get('limit') === '6' && url.searchParams.has('q')) suggestionRequests++;
     if (url.searchParams.has('bbox') && mapFailed) return res.writeHead(503).end(JSON.stringify({ code: 'INTERNAL_ERROR', message: 'Lỗi bản đồ Giả Lập' }));
@@ -127,10 +133,10 @@ describe('S20 static legal pages production SSR', () => {
 });
 
 describe('S16 public itinerary production SSR', () => {
-  it('renders both days, saved times, notes, directions, sharing and canonical/OG with one-day SWR', async () => {
+  it('renders both days, saved times, notes, directions, sharing and canonical/OG with seasonal 15-minute SWR', async () => {
     const response = await fetch(`${base}/da-lat/lich-trinh/lich-trinh-gia-lap`);
     expect(response.status).toBe(200);
-    expect(response.headers.get('cache-control')).toContain('s-maxage=86400');
+    expect(response.headers.get('cache-control')).toContain('s-maxage=900');
     const html = await response.text();
     for (const text of ['Lịch trình Giả Lập', 'Mô tả lịch trình Giả Lập', 'id="day-1"', 'id="day-2"', '10:15', '11:45', 'khoảng 15 phút', 'Ghi chú lịch trình Giả Lập', 'Điểm ghé đang cập nhật', 'Zalo', 'Messenger', 'Copy link', 'OpenStreetMap', 'destination=0.3%2C0.2', 'destination_place_id=fake-id']) expect(html).toContain(text);
     expect(html).toContain('rel="canonical" href="https://ranhduong.vn/da-lat/lich-trinh/lich-trinh-gia-lap"');
@@ -180,11 +186,48 @@ describe('S16 public itinerary production SSR', () => {
   });
 });
 
+describe('S23 seasonal production SSR', () => {
+  it.each([['flower', '#E58FA8'], ['rain', '#8DB3CF'], ['sunflower', '#E9B824']] as const)('renders %s theme, banner and a featured card outside the list limit', async (mode, accent) => {
+    seasonMode = mode;
+    try {
+      const response = await fetch(`${base}/da-lat?audit=s23-${mode}`);
+      expect(response.status).toBe(200);
+      expect(response.headers.get('cache-control')).toContain('s-maxage=900');
+      const html = await response.text();
+      expect(html).toContain(`--accent:${accent}`);
+      expect(html).toContain('id="season-banner-title"');
+      expect(html).toContain('Banner mùa Giả Lập');
+      expect(html).toContain('Mô tả mùa Giả Lập');
+      expect(html).toContain('href="/da-lat/lich-trinh/noi-bat-gia-lap"');
+      expect(html.indexOf('Lịch trình mùa Giả Lập', html.indexOf('id="itinerary-strip-title"'))).toBeLessThan(html.indexOf('Lịch trình Giả Lập', html.indexOf('id="itinerary-strip-title"')));
+    } finally { seasonMode = 'none'; }
+  });
+  it('uses city color and no banner without a matching season', async () => {
+    const html = await (await fetch(`${base}/da-lat?audit=s23-default`)).text();
+    expect(html).toContain('--accent:#f4bd33');
+    expect(html).not.toContain('id="season-banner-title"');
+  });
+  it('uses the city default and retry when /now fails, then recovers on the same URL', async () => {
+    const path = '/da-lat?audit=s23-retry';
+    seasonFailed = true;
+    try {
+      const response = await fetch(`${base}${path}`);
+      expect(response.status).toBe(503);
+      expect(response.headers.get('cache-control')).toBe('no-store');
+      const html = await response.text();
+      expect(html).toContain('--accent:#f4bd33');
+      expect(html).toContain('Thử lại');
+      expect(html).not.toContain('id="season-banner-title"');
+    } finally { seasonFailed = false; }
+    expect((await fetch(`${base}${path}`)).status).toBe(200);
+  });
+});
+
 describe('S14 curated lists production SSR', () => {
-  it('renders title, description and numbered cards in saved order, canonical and SWR 1h', async () => {
+  it('renders title, description and numbered cards in saved order, canonical and SWR 15min', async () => {
     const response = await fetch(`${base}/da-lat/top/danh-sach-gia-lap`);
     expect(response.status).toBe(200);
-    expect(response.headers.get('cache-control')).toContain('s-maxage=3600');
+    expect(response.headers.get('cache-control')).toContain('s-maxage=900');
     const html = await response.text();
     for (const text of ['Danh sách Giả Lập', 'Mô tả Giả Lập theo thứ tự đã chọn.', '<ol', '/da-lat/dia-diem/quan-gia-lap-3', 'rel="canonical" href="https://ranhduong.vn/da-lat/top/danh-sach-gia-lap"']) expect(html).toContain(text);
     expect(html.indexOf('Quán Giả Lập 3')).toBeLessThan(html.indexOf('Quán Giả Lập 1'));
@@ -271,7 +314,7 @@ describe('S11 detail production SSR', () => {
   it('renders editorial content, contacts and six nearby cards with SWR and no cached current status', async () => {
     const res = await fetch(`${base}/da-lat/dia-diem/quan-gia-lap-1`);
     expect(res.status).toBe(200);
-    expect(res.headers.get('cache-control')).toContain('s-maxage=3600');
+    expect(res.headers.get('cache-control')).toContain('s-maxage=900');
     const html = await res.text();
     for (const text of ['Quán Giả Lập 1', 'Ghi chú Giả Lập', 'Địa chỉ Giả Lập', 'Ảnh đang cập nhật', 'Thông tin chưa được quán xác nhận', '07:00–22:00', 'Tiện đường ghé thêm', 'Quán Giả Lập 7', 'tel:+84912345678', 'https://facebook.com/fake']) expect(html).toContain(text);
     expect(html).toContain('https://www.google.com/maps/dir/?api=1');
@@ -491,10 +534,10 @@ describe('SSR trang danh mục và khu vực trên bản production', () => {
     '/da-lat/khu-vuc/trung-tam', '/da-lat/ca-phe?tags=chill',
     `/da-lat/ca-phe?cursor=${cursor}`, '/da-lat/khu-vuc/trung-tam?tags=chill',
     `/da-lat/khu-vuc/trung-tam?cursor=${cursor}`,
-  ])('%s render nội dung SSR và cache SWR 1 giờ', async (path) => {
+  ])('%s render nội dung SSR và cache SWR 15 phút', async (path) => {
     const res = await fetch(`${base}${path}`);
     expect(res.status).toBe(200);
-    expect(res.headers.get('cache-control')).toContain('s-maxage=3600');
+    expect(res.headers.get('cache-control')).toContain('s-maxage=900');
     expect(res.headers.get('cache-control')).toContain('stale-while-revalidate');
     const html = await res.text();
     expect(html).toContain('Quán Giả Lập');
@@ -530,7 +573,7 @@ describe('SSR trang danh mục và khu vực trên bản production', () => {
       } finally { apiFailed = false; }
       const recovered = await fetch(`${base}${path}`);
       expect(recovered.status).toBe(200);
-      expect(recovered.headers.get('cache-control')).toContain('s-maxage=3600');
+      expect(recovered.headers.get('cache-control')).toContain('s-maxage=900');
     }
   });
 
