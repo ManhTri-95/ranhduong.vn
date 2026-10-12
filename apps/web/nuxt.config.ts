@@ -41,7 +41,8 @@ export default defineNuxtConfig({
   routeRules: {
     // Chỉ cache trang chủ Đà Lạt: '/:city' cũng khớp đường dẫn '/_' mà Nitro dùng cho renderer '/**',
     // làm renderer mặc định cache cả trang tìm kiếm dù route đó có cache:false.
-    '/da-lat': { swr: 900 },
+    // S24: HTML cache must not extend weather freshness or replay it after a provider failure.
+    '/da-lat': { cache: false, headers: { 'cache-control': 'no-store' } },
     '/da-lat/ban-do': { swr: 900 },
     // Trang thành phố: SWR 15 phút để cập nhật màu mùa, kể cả bản có ?tags= hay ?cursor= (Nitro cache theo cả query).
     // radix3 ưu tiên nhánh tĩnh '/da-lat', che các handler '/:city/...': ghi cùng prefix để cache có hiệu lực.

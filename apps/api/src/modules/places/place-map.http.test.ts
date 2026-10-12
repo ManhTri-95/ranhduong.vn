@@ -22,6 +22,25 @@ describe('S12 geographic public places', () => {
   afterAll(async () => { if (t) await t.close(); });
   beforeEach(async () => { await t.conn.collection('places').deleteMany({}); });
 
+  it('filters full/partial cover before pagination, respecting city, status and secondary categories', async () => {
+    await t.conn.collection('places').insertMany([
+      fakePlaceDoc(cityId, { slug: 'che-het', cover: 'full', alsoCategories: ['food'] }),
+      fakePlaceDoc(cityId, { slug: 'che-mot-phan', cover: 'partial', category: 'food' }),
+      fakePlaceDoc(cityId, { slug: 'khong-che', cover: 'none', category: 'food' }),
+      fakePlaceDoc(cityId, { slug: 'chua-ro', cover: undefined, category: 'food' }),
+      fakePlaceDoc(cityId, { slug: 'da-an', cover: 'full', category: 'food', status: 'hidden' }),
+      fakePlaceDoc(otherCityId, { slug: 'khac-thanh-pho', cover: 'full', category: 'food' }),
+    ]);
+    const first = PlaceListResponse.parse((await get('bbox=0.1,0.1,0.4,0.4&category=food&rainSafe=true&limit=1')).body);
+    expect(first.items.map((place) => place.slug)).toEqual(['che-het']);
+    expect(first.nextCursor).toBeDefined();
+    const second = PlaceListResponse.parse((await get(`bbox=0.1,0.1,0.4,0.4&category=food&rainSafe=true&limit=1&cursor=${first.nextCursor}`)).body);
+    expect(second.items.map((place) => place.slug)).toEqual(['che-mot-phan']);
+    expect(second.nextCursor).toBeUndefined();
+    expect(PlaceListResponse.parse((await get('category=food&rainSafe=false')).body).items).toHaveLength(4);
+    expect((await get('rainSafe=yes')).status).toBe(400);
+  });
+
   it('returns only active located places in the viewport and city, matching secondary categories', async () => {
     await t.conn.collection('places').insertMany([
       fakePlaceDoc(cityId, { slug: 'trong-khung', alsoCategories: ['food'] }),

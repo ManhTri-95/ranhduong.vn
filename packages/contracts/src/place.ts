@@ -220,6 +220,8 @@ export const PlaceListQuery = z
     /** Near nhận lat,lng; kết quả đã parse là [lng,lat]. */
     near: NearQuery.optional(),
     radius: z.coerce.number().min(1).max(50_000).optional(),
+    /** S24: mái che full/partial; chuỗi false không được ép thành true. */
+    rainSafe: z.enum(['true', 'false']).transform((value) => value === 'true').optional(),
     limit: z.coerce.number().int().min(1).max(50).default(20),
   })
   .superRefine((query, ctx) => {

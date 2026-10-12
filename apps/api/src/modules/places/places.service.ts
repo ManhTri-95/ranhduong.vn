@@ -60,7 +60,7 @@ export class PlacesService {
     const city = await this.cities.resolveCity(citySlug);
     const zone = query.zone ? await this.cities.resolveZone(city.id, query.zone) : undefined;
     const [places, zoneNames, searchSlugs] = await Promise.all([
-      this.repo.listActive(city.id, { categories: query.category, zoneId: zone?.id, bbox: query.bbox, near: query.near, radius: query.radius }),
+      this.repo.listActive(city.id, { categories: query.category, zoneId: zone?.id, bbox: query.bbox, near: query.near, radius: query.radius, rainSafe: query.rainSafe }),
       this.cities.zoneNames(city.id),
       query.q && this.env?.PLACE_SEARCH_INDEX ? this.repo.searchSlugs(city.id, query.q, this.env.PLACE_SEARCH_INDEX) : undefined,
     ]);

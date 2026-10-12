@@ -18,6 +18,7 @@ import { FEATURED_QUERY } from '~/widgets/featured-places/model/query';
 import RdFeaturedPlaces from '~/widgets/featured-places/ui/RdFeaturedPlaces.vue';
 import RdItineraryStrip from '~/widgets/itinerary-strip/ui/RdItineraryStrip.vue';
 import RdSeasonBanner from '~/widgets/season-banner/ui/RdSeasonBanner.vue';
+import RdCityWeather from '~/widgets/city-weather/ui/RdCityWeather.vue';
 
 // Đường dẫn lạ (ví dụ /wp-login.php) bị chặn ngay, không gọi API; thành phố có hay không do API quyết định.
 definePageMeta({ validate: (route) => Slug.safeParse(route.params.city).success });
@@ -65,13 +66,14 @@ usePageSeo({
         <p class="lead">Ghi chép của người rành đường. Quán nào cũng được hỏi lại trước khi lên đây.</p>
       </section>
       <RdSeasonBanner v-if="city.currentNow.value?.season" :city-slug="citySlug" :current="city.currentNow.value" />
+      <RdCityWeather :city-slug="citySlug" :city-name="cityName" :weather="city.currentNow.value?.weather" />
       <RdSearchForm :action="`/${citySlug}/tim-kiem`" :city-slug="citySlug" />
       <RdCategoryChips :city-slug="citySlug" />
       <RdItineraryStrip :city-slug="citySlug" :itineraries="templateCards" :failed="templatesFailed" />
       <RdFeaturedPlaces :city-slug="citySlug" :places="featuredPlaces" :failed="featuredFailed" :now="now" />
       <RdCuratedListStrip :city-slug="citySlug" :lists="curated.data.value?.items ?? []" :failed="curatedFailed" />
     </main>
-    <NuxtLink class="rd-btn rd-btn--float home__map" :to="`/${citySlug}/ban-do`">
+    <NuxtLink class="rd-btn rd-btn--float home__map" :to="`/${citySlug}/ban-do${city.currentNow.value?.weather?.state === 'rain' ? '?rainSafe=true' : ''}`">
       <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2z" />
         <path d="M9 4v14M15 6v14" />

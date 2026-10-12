@@ -12,6 +12,7 @@ export interface PlaceListParams {
   bbox?: string;
   near?: string;
   radius?: number;
+  rainSafe?: 'true' | 'false';
 }
 
 /** GET /cities/:city/places. `immediate: false` khi chưa cần gọi (trang tìm kiếm chưa có từ khoá). */

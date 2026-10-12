@@ -21,7 +21,7 @@ Sơ đồ triển khai, đường đi của request, phân lớp NestJS, giao ti
 | Khoảng cách | OSRM chạy local một lần | Kết quả lưu vào `distance_matrix` |
 | LLM | Một model giá rẻ qua API | Chỉ viết mô tả lịch trình |
 | Hosting | Một VPS chạy Docker Compose (Nuxt, API, worker, Redis), Cloudflare làm CDN |  |
-| Thời tiết | API thời tiết gọi phía server (Open-Meteo nếu điều khoản cho phép dùng thương mại) | Cache Redis 15 phút; quy tắc trong Spec UI mục 7 |
+| Thời tiết | WeatherAPI Free gọi phía server bằng `WEATHERAPI_KEY`; chủ dự án chốt 12/10/2026 | Cache Redis tối đa 15 phút; mã WeatherAPI sang 4 trạng thái, quy tắc trong Spec UI mục 7 |
 | Ảnh vé chia sẻ, ảnh OG | Satori (HTML sang SVG) + resvg (SVG sang PNG) trong worker | Nhúng font có tiếng Việt; ảnh lưu R2; lát 2 |
 | UI | Token và component trong packages/ui theo Spec UI | Màu nhấn đổi theo thành phố và mùa qua CSS variable |
 
@@ -295,7 +295,7 @@ REST JSON dưới `/v1`, thành phố nằm trong path (`/v1/cities/:city/…`);
 | POST | `/rewards/:id/claim` | Member | Hiện mã quà |
 | GET | `/cities/:city/leaderboard?month=` | Công khai | Top 50, che bớt tên |
 | DELETE | `/me` | Member | Xoá tài khoản và dữ liệu cá nhân |
-| GET | /cities/:city/now | Công khai | Mùa hiện tại và thời tiết (trạng thái, nhiệt độ, câu gợi ý), cache 15 phút |
+| GET | /cities/:city/now | Công khai | Mùa, accent, featuredItinerary, weather nullable (state, temperatureC, isDay, rainSoon, observedAt, expiresAt); hết hạn sớm nhất mùa/thời tiết. Redis tối đa 15 phút; HTTP no-store khi thời tiết không có |
 | GET | /itineraries/:id/ticket.png | Công khai | ?format=story hoặc og; ảnh vé lịch trình từ R2, sinh lại khi lịch trình đổi (lát 2) |
 
 **Chủ quán:**

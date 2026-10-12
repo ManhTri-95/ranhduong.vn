@@ -213,16 +213,20 @@ S23: admin `/mua` có loại mùa `kind` (`flower`, `rain`, `other`) để biể
 
 **Thời tiết:**
 
-| Trạng thái | Điều kiện (mã thời tiết WMO) | Câu hiển thị (ví dụ) |
+| Trạng thái | Điều kiện (mã WeatherAPI, chốt 12/10/2026) | Câu hiển thị |
 | --- | --- | --- |
-| Sương sớm | Mã 45, 48 | Đi đồi chè, săn mây lúc này là đẹp nhất. |
-| Nắng đẹp | Mã 0, 1 | Trời trong, hợp ngồi cà phê nhìn đồi. |
-| Nhiều mây | Mã 2, 3 | Trời mát, đi dạo quanh hồ là vừa. |
-| Mưa | Mã 51–67, 80–82, 95–99, hoặc khả năng mưa từ 60% trong 3 giờ tới | Chiều nay mưa, ghé quán trong nhà cho ấm. |
+| Có sương | 1030, 1135, 1147 | Sương giăng, ghé quán làm ly nóng cho ấm. |
+| Nắng đẹp | 1000; ban đêm ghi “Trời trong” theo `is_day` | Trời trong, hợp ngồi cà phê nhìn đồi. |
+| Nhiều mây | 1003, 1006, 1009 | Trời mát, đi dạo quanh hồ là vừa. |
+| Mưa | 1063, 1072, 1087, 1150, 1153, 1168, 1171, 1180, 1183, 1186, 1189, 1192, 1195, 1198, 1201, 1240, 1243, 1246, 1273, 1276; hoặc khả năng mưa từ 60% trong 3 giờ tới | Trời có mưa, ghé quán có mái che cho ấm. |
+
+Mã khác/chưa hỗ trợ thì ẩn ô. Nếu chỉ dự báo đạt ngưỡng, tiêu đề là “Sắp có mưa” và câu gợi ý “Ba giờ tới có thể mưa, chọn chỗ có mái che nhé.” Cửa sổ `[bây giờ, bây giờ + 3 giờ)` gồm phần còn lại của giờ hiện tại và các giờ dự báo giao với khoảng này; dùng Unix timestamp, lấy hai ngày để không thiếu giờ qua nửa đêm. Thiếu/nhân đôi giờ hoặc xác suất không hợp lệ thì ẩn ô.
 
 **Chế độ mưa:** hiện liên kết "Quán trú mưa được gần bạn" dưới ô thời tiết; bản đồ mở với chip "Trú mưa được" chọn sẵn (mái che hết hoặc một phần); điểm không có mái che trong lịch trình buổi chiều có thêm gợi ý điểm trú mưa được gần đó.
 
-**Nguồn dữ liệu:** Open-Meteo dễ dùng và không cần API key, nhưng gói miễn phí dành cho mục đích phi thương mại; web có affiliate và gói trả phí nên cần kiểm tra điều khoản và cân nhắc gói trả phí hoặc nhà cung cấp khác trước khi ra mắt. API gọi phía server, cache Redis 15 phút, nên mỗi thành phố chỉ khoảng 100 lượt gọi mỗi ngày. Lỗi hoặc hết hạn cache thì ẩn ô thời tiết, không hiện số liệu cũ.
+**Nguồn dữ liệu:** Chủ dự án chốt WeatherAPI Free ngày 12/10/2026: 100.000 lượt/tháng, dự báo giờ trong 3 ngày, cho phép thương mại; [bảng giá](https://www.weatherapi.com/pricing.aspx), [điều khoản](https://www.weatherapi.com/terms.aspx). `WEATHERAPI_KEY` chỉ ở API; lấy theo tâm thành phố, không gửi vị trí/IP khách. Cache Redis tối đa 15 phút, khoảng 96 lượt/ngày/thành phố khi gọi đều; rút ngắn để quan sát không quá 30 phút tuổi. Thiếu key, lỗi, mã không hỗ trợ hoặc hết hạn thì ẩn ô, giữ nội dung/mùa; không hiện số liệu cũ.
+
+Ô có ghi nguồn WeatherAPI.com, câu “Thời tiết chỉ để tham khảo, có thể khác theo vị trí và thời điểm” và phần mở rộng nhắc xem khí tượng chính thức cho quyết định an toàn theo điều khoản nhà cung cấp. Trang chủ SSR không cache HTML để không kéo dài tuổi dữ liệu thời tiết; các route khác giữ cache mùa S23. Client ẩn ô đúng `expiresAt` trước khi tải lại.
 
 ## 8. Chuyển động
 
@@ -360,7 +364,7 @@ Toàn bộ UI trong tài liệu được làm, nhưng chia theo lát để lát 
 
 **Câu hỏi mở:**
 
-- [ ] Nhà cung cấp thời tiết dùng cho mục đích thương mại (Open-Meteo gói trả phí hay nhà cung cấp khác)
+- [x] WeatherAPI Free cho S24 (chủ dự án chốt 12/10/2026); cần cấu hình key trước khi bật dữ liệu thật
 - [ ] Ai vẽ tem: tự vẽ hay thuê hoạ sĩ; ngân sách cho 10–15 tem đầu
 - [ ] Tự host font hay dùng Google Fonts
 - [ ] Toạ độ khung nhìn bản đồ cho Đà Lạt

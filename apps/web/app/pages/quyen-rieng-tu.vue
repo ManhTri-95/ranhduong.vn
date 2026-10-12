@@ -31,6 +31,7 @@ const config = useRuntimeConfig().public;
     <section>
       <h2>4. Yêu cầu tới nhà cung cấp bên ngoài</h2>
       <p>Trình duyệt tải phông chữ từ Google Fonts, ảnh từ máy chủ ảnh và dữ liệu nền bản đồ từ OpenFreeMap khi bạn mở bản đồ. Các nhà cung cấp nhận thông tin kỹ thuật như IP để trả nội dung. Hạ tầng phục vụ website cũng xử lý thông tin kết nối để vận hành và bảo vệ dịch vụ.</p>
+      <p>Máy chủ Rành Đường gọi WeatherAPI.com bằng tọa độ tâm thành phố để lấy thời tiết. Lời gọi này không gửi IP, vị trí thiết bị hay thông tin cá nhân của khách xem cẩm nang tới nhà cung cấp thời tiết.</p>
       <p>Khi bấm Google Maps, fanpage hoặc website của địa điểm, bạn chuyển tới dịch vụ bên ngoài và chính sách của dịch vụ đó áp dụng. Rành Đường không kiểm soát cách những bên này lưu dữ liệu truy cập.</p>
     </section>
     <section>

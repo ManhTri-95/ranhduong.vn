@@ -70,6 +70,7 @@ const SUMMARY_FIELDS = {
 
 /** Lọc trong DB; thẻ, từ khoá, phân trang lọc trong bộ nhớ ở PlacesService. */
 export interface ListFilter {
+  rainSafe?: boolean;
   ids?: string[];
   categories?: PlaceCategory[];
   zoneId?: string;
@@ -166,6 +167,7 @@ export class PlacesRepository {
           // Danh mục chính hoặc một danh mục phụ (S27); $or trả mỗi địa điểm một lần.
           ...(filter.categories ? { $or: [{ category: { $in: filter.categories } }, { alsoCategories: { $in: filter.categories } }] } : {}),
           ...(filter.zoneId ? { zoneId: new Types.ObjectId(filter.zoneId) } : {}),
+          ...(filter.rainSafe ? { cover: { $in: ['full', 'partial'] } } : {}),
           ...geographic,
         },
         { ...CARD_FIELDS, ...(filter.bbox || filter.near ? { location: 1 } : {}) },

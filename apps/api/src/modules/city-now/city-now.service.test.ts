@@ -5,11 +5,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { CitiesService } from '../cities/cities.service';
 import type { ItinerariesService } from '../itineraries/itineraries.service';
 import { CityNowService, seasonCacheExpiresAt } from './city-now.service';
+import type { WeatherService } from './weather.service';
 
 const now = new Date('2026-10-12T05:00:00Z');
 function context(accent: string, updatedAt: string): CitySeasonContext {
   return {
-    id: 'aaaaaaaaaaaaaaaaaaaaaaaa', accent: '#E9B824', timezone: 'Asia/Ho_Chi_Minh', updatedAt,
+    id: 'aaaaaaaaaaaaaaaaaaaaaaaa', accent: '#E9B824', center: { type: 'Point', coordinates: [0.5, 0.5] }, timezone: 'Asia/Ho_Chi_Minh', updatedAt,
     seasons: [{ key: 'hoa-gia-lap', kind: 'flower', from: '10-01', to: '12-01', accent, title: 'Mùa Giả Lập', sub: 'Mô tả Giả Lập', illustration: 'cherry-blossom' }],
   };
 }
@@ -24,6 +25,17 @@ describe('season cache expiry', () => {
 });
 
 describe('season cache failure and concurrent updates', () => {
+  it('adds weather independently of the season cache and uses the earliest expiry', async () => {
+    const cities = { seasonContext: vi.fn().mockResolvedValue(context('#E58FA8', '2026-10-12T00:00:00.000Z')) };
+    const redis = { get: vi.fn().mockResolvedValue(null), set: vi.fn().mockResolvedValue('OK') };
+    const weather = { state: 'rain', temperatureC: 18, isDay: true, rainSoon: false, observedAt: now.toISOString(), expiresAt: '2026-10-12T05:05:00.000Z' };
+    const source = { current: vi.fn().mockResolvedValue(weather) };
+    const service = new CityNowService(cities as unknown as CitiesService, { featuredTemplate: vi.fn() } as unknown as ItinerariesService, redis as unknown as Redis, source as unknown as WeatherService);
+    expect(await service.current('thanh-pho-gia-lap', now)).toMatchObject({ weather, expiresAt: weather.expiresAt, accent: '#E58FA8' });
+    expect(JSON.parse(redis.set.mock.calls[0]![1] as string)).not.toHaveProperty('weather');
+    source.current.mockResolvedValue(null);
+    expect(await service.current('thanh-pho-gia-lap', now)).toMatchObject({ weather: null, accent: '#E58FA8' });
+  });
   it.each(['get', 'set'] as const)('serves the stored season when Redis %s fails', async (operation) => {
     vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => {});
     const cities = { seasonContext: vi.fn().mockResolvedValue(context('#E58FA8', '2026-10-12T00:00:00.000Z')) };

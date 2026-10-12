@@ -97,7 +97,7 @@ describe('S23 seasons HTTP and persistence', () => {
     expect(data.accent).toBe('#E58FA8');
     expect(data.season).not.toHaveProperty('featuredItineraryId');
     expect(data.featuredItinerary?.slug).toBe('lich-trinh-gia-lap');
-    expect(res.headers.get('cache-control')).toMatch(/max-age=\d+/);
+    expect(res.headers.get('cache-control')).toBe('no-store');
     await t.conn.collection('itineraries').updateOne({ _id: templateId }, { $set: { status: 'draft' } });
     expect(CityNow.parse(await (await call(`/cities/${CITY}/now`)).json()).featuredItinerary).toBeNull();
   });

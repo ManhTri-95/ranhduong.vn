@@ -4,6 +4,7 @@ import type { Redis } from 'ioredis';
 import { REDIS } from '../../shared/redis/redis.module';
 import { CitiesService } from '../cities/cities.service';
 import { ItinerariesService } from '../itineraries/itineraries.service';
+import { WeatherService } from './weather.service';
 
 export function seasonCacheExpiresAt(now: Date): Date {
   const dayMs = 86_400_000;
@@ -15,10 +16,11 @@ export function seasonCacheExpiresAt(now: Date): Date {
 @Injectable()
 export class CityNowService {
   private readonly logger = new Logger(CityNowService.name);
-  constructor(private readonly cities: CitiesService, private readonly itineraries: ItinerariesService, @Optional() @Inject(REDIS) private readonly redis?: Redis) {}
+  constructor(private readonly cities: CitiesService, private readonly itineraries: ItinerariesService, @Optional() @Inject(REDIS) private readonly redis?: Redis, @Optional() private readonly weather?: WeatherService) {}
 
   async current(slug: string, now = new Date()): Promise<CityNow> {
     const context = await this.cities.seasonContext(slug);
+    const weatherRequest = this.weather?.current(context, now).catch(() => null) ?? Promise.resolve(null);
     const key = `city-season:${context.id}:${context.updatedAt}:${cityMonthDay(now, context.timezone)}`;
     let result: CityNow | undefined;
     try {
@@ -36,6 +38,8 @@ export class CityNowService {
     }
     // Re-check visibility every request; a cached season never publishes a withdrawn itinerary.
     const featuredItinerary = selected?.featuredItineraryId ? await this.itineraries.featuredTemplate(context.id, selected.featuredItineraryId) : null;
-    return { ...result, featuredItinerary };
+    const weather = await weatherRequest;
+    const expiresAt = weather ? new Date(Math.min(Date.parse(result.expiresAt), Date.parse(weather.expiresAt))).toISOString() : result.expiresAt;
+    return { ...result, featuredItinerary, weather, expiresAt };
   }
 }

@@ -25,11 +25,11 @@ Seed dùng $setOnInsert cho seasons/active và giữ cấu hình đã chỉnh. S
 - `GET /v1/admin/cities/:city/seasons`: CitySeasonSettings, no-store, AdminGuard.
 - `PUT` cùng route: CitySeasonEditInput gồm seasons + updatedAt; AdminGuard và OriginGuard. Validate shared Zod trước ghi.
 - `GET /v1/admin/cities/:city/seasons/itineraries`: các ID và card hợp lệ cho picker; no-store, AdminGuard.
-- `GET /v1/cities/:city/now`: accent, season hoặc null, featuredItinerary hoặc null, expiresAt; không có ID nội bộ hoặc dữ liệu thời tiết.
+- `GET /v1/cities/:city/now`: accent, season hoặc null, featuredItinerary hoặc null, expiresAt; không có ID nội bộ. S24 bổ sung weather nullable; xem [runbook thời tiết](weather-rain-mode.md).
 
 Module city-now gọi service của cities/itineraries ở tầng ngoài cùng; CitiesModule không phụ thuộc ngược vào itineraries. Redis cache dữ liệu mùa tối đa 900 giây, rút ngắn tới nửa đêm Việt Nam. Cache key có city ID, updatedAt và ngày địa phương; một request cũ không ghi đè cache của cấu hình mới. Redis lỗi thì tính từ MongoDB. Mỗi request API kiểm lại quyền công khai của lịch trình; card không được lưu trong cache mùa.
 
-Cache HTTP của /now và HTML thành phố tối đa 15 phút; tìm kiếm và lỗi giữ no-store, sitemap vẫn 1 giờ. CDN/HTML có thể giữ nội dung đã công khai trong thời gian cache còn lại. Client cập nhật khi expiresAt tới hạn hoặc tab trở lại; lỗi thì dùng màu thành phố và ẩn banner cũ. Trang chủ có Thử lại. Thay đổi lưu trong admin có thể mất tới 15 phút để hiện trên các lớp cache web.
+Cache HTTP của /now và HTML thành phố tối đa 15 phút; tìm kiếm và lỗi giữ no-store, sitemap vẫn 1 giờ. S24: riêng trang chủ HTML no-store để không giữ thời tiết quá hạn; /now không có thời tiết cũng no-store. Các route khác vẫn cache mùa 15 phút. Client cập nhật khi expiresAt tới hạn hoặc tab trở lại; lỗi thì dùng màu thành phố và ẩn banner cũ. Trang chủ có Thử lại. Thay đổi lưu trong admin có thể mất tới 15 phút để hiện trên các lớp cache web.
 
 ## Giao diện
 

@@ -11,6 +11,7 @@ export class CityNowController {
   async current(@Param('city', new ZodValidationPipe(Slug)) city: string, @Res({ passthrough: true }) response: Response): Promise<CityNow> {
     response.setHeader('Cache-Control', 'no-store');
     const result = await this.now.current(city);
+    if (!result.weather) return result;
     const seconds = Math.max(0, Math.floor((new Date(result.expiresAt).getTime() - Date.now()) / 1000));
     response.setHeader('Cache-Control', `public, max-age=${seconds}, s-maxage=${seconds}`);
     return result;

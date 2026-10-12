@@ -30,6 +30,7 @@ let curatedFailed = false;
 let templateFailed = false;
 let seasonMode: 'flower' | 'rain' | 'sunflower' | 'none' = 'none';
 let seasonFailed = false;
+let weatherMode: 'fog' | 'sun' | 'cloud' | 'rain' | 'expired' | 'none' = 'none';
 const templateStop = (number: number, day: number, available = true) => ({
   key: `${day}-${number}`, number, start: number === 1 ? '08:00' : '10:15', end: number === 1 ? '09:00' : '11:45', travelMinFromPrev: number === 1 ? 0 : 15,
   kind: 'visit', note: 'Ghi chú lịch trình Giả Lập',
@@ -49,7 +50,7 @@ const api = createServer((req, res) => {
   } else if (url.pathname === '/v1/cities/da-lat/now') {
     if (seasonFailed) return res.writeHead(503).end(JSON.stringify({ code: 'INTERNAL_ERROR', message: 'Lỗi mùa Giả Lập' }));
     const accents = { flower: '#E58FA8', rain: '#8DB3CF', sunflower: '#E9B824', none: city.accent };
-    res.end(JSON.stringify({ accent: accents[seasonMode], season: seasonMode === 'none' ? null : { key: `mua-${seasonMode}`, kind: seasonMode === 'rain' ? 'rain' : 'flower', from: '01-01', to: '12-31', accent: accents[seasonMode], title: 'Banner mùa Giả Lập', sub: 'Mô tả mùa Giả Lập', illustration: seasonMode === 'flower' ? 'cherry-blossom' : seasonMode === 'sunflower' ? 'wild-sunflower' : 'rain' }, featuredItinerary: seasonMode === 'none' ? null : { slug: 'noi-bat-gia-lap', title: 'Lịch trình mùa Giả Lập', days: 1, transport: 'motorbike', pace: 'relaxed' }, expiresAt: new Date(Date.now() + 900_000).toISOString() }));
+    res.end(JSON.stringify({ accent: accents[seasonMode], season: seasonMode === 'none' ? null : { key: `mua-${seasonMode}`, kind: seasonMode === 'rain' ? 'rain' : 'flower', from: '01-01', to: '12-31', accent: accents[seasonMode], title: 'Banner mùa Giả Lập', sub: 'Mô tả mùa Giả Lập', illustration: seasonMode === 'flower' ? 'cherry-blossom' : seasonMode === 'sunflower' ? 'wild-sunflower' : 'rain' }, featuredItinerary: seasonMode === 'none' ? null : { slug: 'noi-bat-gia-lap', title: 'Lịch trình mùa Giả Lập', days: 1, transport: 'motorbike', pace: 'relaxed' }, weather: weatherMode === 'none' ? null : { state: weatherMode === 'expired' ? 'rain' : weatherMode, temperatureC: 18.4, isDay: true, rainSoon: false, observedAt: new Date(Date.now() - 60_000).toISOString(), expiresAt: new Date(Date.now() + (weatherMode === 'expired' ? -1 : 900_000)).toISOString() }, expiresAt: new Date(Date.now() + 900_000).toISOString() }));
   } else if (url.pathname === '/v1/cities/da-lat/places') {
     if (url.searchParams.get('limit') === '6' && url.searchParams.has('q')) suggestionRequests++;
     if (url.searchParams.has('bbox') && mapFailed) return res.writeHead(503).end(JSON.stringify({ code: 'INTERNAL_ERROR', message: 'Lỗi bản đồ Giả Lập' }));
@@ -186,13 +187,55 @@ describe('S16 public itinerary production SSR', () => {
   });
 });
 
+describe('S24 weather production SSR', () => {
+  it.each([['fog', 'Có sương'], ['sun', 'Nắng đẹp'], ['cloud', 'Nhiều mây'], ['rain', 'Mưa']] as const)('renders fresh %s weather and keeps source/disclaimer visible', async (mode, label) => {
+    weatherMode = mode;
+    try {
+      const response = await fetch(`${base}/da-lat?audit=s24-${mode}`);
+      expect(response.status).toBe(200);
+      expect(response.headers.get('cache-control')).toBe('no-store');
+      const html = await response.text();
+      expect(html).toContain('id="city-weather-title"');
+      expect(html).toContain(`${label} · 18°C`);
+      expect(html).toContain('WeatherAPI.com');
+      expect(html).toContain('Thời tiết chỉ để tham khảo');
+      expect(html.includes('Quán trú mưa được gần bạn')).toBe(mode === 'rain');
+      if (mode === 'rain') expect(html).toContain('href="/da-lat/ban-do?rainSafe=true"');
+    } finally { weatherMode = 'none'; }
+  });
+  it('never extends weather freshness by caching the home HTML on the same URL', async () => {
+    const path = '/da-lat?audit=s24-freshness';
+    weatherMode = 'rain';
+    try {
+      expect(await (await fetch(`${base}${path}`)).text()).toContain('id="city-weather-title"');
+      weatherMode = 'expired';
+      const response = await fetch(`${base}${path}`);
+      expect(response.status).toBe(200);
+      const html = await response.text();
+      expect(html).not.toContain('id="city-weather-title"');
+      expect(html).toContain('Quán Giả Lập');
+      expect(html).not.toContain('Chưa tải được hết dữ liệu');
+      weatherMode = 'none';
+      expect(await (await fetch(`${base}${path}`)).text()).not.toContain('id="city-weather-title"');
+    } finally { weatherMode = 'none'; }
+  });
+  it('preselects the rain chip and preserves independent GET category/rain filters', async () => {
+    const html = await (await fetch(`${base}/da-lat/ban-do?rainSafe=true&category=food&audit=s24-map`)).text();
+    expect(html).toMatch(/name="rainSafe" value="false"[^>]*aria-pressed="true"[^>]*>Trú mưa được/);
+    expect(html).toContain('type="hidden" name="rainSafe" value="true"');
+    expect(html).toContain('type="hidden" name="category" value="food"');
+    const unselected = await (await fetch(`${base}/da-lat/ban-do?rainSafe=false&audit=s24-off`)).text();
+    expect(unselected).toMatch(/name="rainSafe" value="true"[^>]*aria-pressed="false"[^>]*>Trú mưa được/);
+  });
+});
+
 describe('S23 seasonal production SSR', () => {
   it.each([['flower', '#E58FA8'], ['rain', '#8DB3CF'], ['sunflower', '#E9B824']] as const)('renders %s theme, banner and a featured card outside the list limit', async (mode, accent) => {
     seasonMode = mode;
     try {
       const response = await fetch(`${base}/da-lat?audit=s23-${mode}`);
       expect(response.status).toBe(200);
-      expect(response.headers.get('cache-control')).toContain('s-maxage=900');
+      expect(response.headers.get('cache-control')).toBe('no-store');
       const html = await response.text();
       expect(html).toContain(`--accent:${accent}`);
       expect(html).toContain('id="season-banner-title"');

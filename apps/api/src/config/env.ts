@@ -11,6 +11,8 @@ const EnvSchema = z.object({
   /** S13: Atlas Search index đã sẵn sàng; local để trống để tìm trong bộ nhớ. */
   PLACE_SEARCH_INDEX: z.string().default('').transform((s) => s.trim() || undefined),
   REDIS_URL: z.string().min(1).default('redis://localhost:6379'),
+  /** S24: WeatherAPI Free; chỉ API đọc key. Chưa có key thì ẩn thời tiết. */
+  WEATHERAPI_KEY: z.string().default('').transform((value) => value.trim() || undefined),
   TRUSTED_PROXY_CIDRS: z.string().default('').transform(csv).pipe(z.array(z.string().refine((value) => {
     const [ip, bits, extra] = value.split('/');
     const version = isIP(ip ?? '');

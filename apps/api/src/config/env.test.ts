@@ -18,6 +18,11 @@ const REQUIRED = {
 };
 
 describe('loadEnv', () => {
+  it('keeps weather credentials optional, trimmed and server-only', () => {
+    expect(loadEnv(REQUIRED).WEATHERAPI_KEY).toBeUndefined();
+    expect(loadEnv({ ...REQUIRED, WEATHERAPI_KEY: ' fake-key ' }).WEATHERAPI_KEY).toBe('fake-key');
+    expect(loadEnv({ ...REQUIRED, WEATHERAPI_KEY: ' ' }).WEATHERAPI_KEY).toBeUndefined();
+  });
   it('S18 trusts only an explicit valid proxy IP/CIDR allowlist', () => {
     expect(loadEnv(REQUIRED)).toMatchObject({ TRUSTED_PROXY_CIDRS: [] });
     expect(loadEnv({ ...REQUIRED, TRUSTED_PROXY_CIDRS: '127.0.0.1, 10.0.0.0/8, ::1/128' })).toMatchObject({ TRUSTED_PROXY_CIDRS: ['127.0.0.1', '10.0.0.0/8', '::1/128'] });

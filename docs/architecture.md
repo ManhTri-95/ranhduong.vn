@@ -260,7 +260,8 @@ Cache có ba tầng: Cloudflare cho trang và ảnh, Redis cho dữ liệu dùng
 | `oauth:{state}` | `code_verifier`, `returnTo` | 10 phút | Dùng xong |
 | `itin:{paramsHash}` | Kết quả tạo lịch trình | 7 ngày | Sự kiện `place.updated` / `place.statusChanged` của một điểm trong đó |
 | `itin:byplace:{placeId}` | Tập `paramsHash` có chứa địa điểm | 7 ngày | Cùng lúc với `itin:*` tương ứng |
-| `now:{city}` | Mùa hiện tại và thời tiết | 15 phút | Hết hạn; admin sửa cấu hình mùa |
+| `city-season:{id}:{updatedAt}:{MM-DD}` | Mùa hiện tại; không chứa thời tiết/lịch trình đã cache | Tối đa 15 phút tới nửa đêm Việt Nam | Hết hạn; phiên bản mới khi admin sửa mùa |
+| `city-weather:v1:{id}:{lng},{lat}` | Quan sát WeatherAPI Free đã validate, không có key | Tối đa 15 phút, không vượt 30 phút tuổi quan sát | Hết hạn; tọa độ tâm đổi dùng khoá mới |
 | `lb:{city}:{month}` | Sorted set bảng xếp hạng | 60 ngày | Job dựng lại hằng đêm |
 | `pm:{placeId}:{dayKey}` | Bộ đếm lượt xem, chỉ đường, gọi | 3 ngày | Job gộp vào `place_metrics` |
 | `seen:{visitorId}:{placeId}:{dayKey}` | Đánh dấu đã đếm lượt xem | 1 ngày | Hết hạn |
@@ -271,6 +272,8 @@ Cache có ba tầng: Cloudflare cho trang và ảnh, Redis cho dữ liệu dùng
 **Bộ nhớ tiến trình (mỗi instance API):** snapshot địa điểm `active` và ma trận khoảng cách của từng thành phố, dùng cho thuật toán lịch trình. Làm mới mỗi 10 phút hoặc ngay khi nhận `place.statusChanged`. Với 200 địa điểm và 40.000 cạnh, snapshot chỉ vài MB.
 
 **Cloudflare:** trang công khai theo `routeRules` (mục 11 thiết kế kỹ thuật); ảnh cache dài vì tên file có hash; xoá theo URL khi dữ liệu đổi (mục 3).
+
+S24: riêng trang chủ thành phố có thời tiết render SSR dùng `no-store` để HTML/CDN không kéo dài hạn quan sát. `/now` cache HTTP tới hạn sớm nhất mùa/thời tiết; không có thời tiết thì `no-store`. WeatherAPI gọi server theo tọa độ tâm City, timeout 3 giây, Redis thời tiết mỗi thao tác chờ tối đa 200ms; lỗi thì `weather: null`, không gây lỗi trang/mùa. Các request đồng thời cùng thành phố trong một tiến trình gộp chung một lời gọi đang chạy. `GET /cities/:city/places?rainSafe=true` lọc `cover` full/partial trong MongoDB trước phân trang, cùng danh mục chính/phụ và bbox/near.
 
 **Nguyên tắc:** cache chỉ để đọc nhanh, không bao giờ là nơi duy nhất giữ dữ liệu (trừ phiên và bộ đếm chưa gộp, mất thì chấp nhận được). Redis có thể xoá trắng mà hệ thống vẫn chạy đúng, chỉ chậm hơn một lúc.
 

@@ -2,6 +2,8 @@ import { z } from 'zod';
 import { CitySeason } from './city.js';
 import { HexColor, ObjectIdString } from './common.js';
 import { ItineraryCard } from './itinerary.js';
+import { GeoPoint } from './geojson.js';
+import { CityWeather } from './weather.js';
 
 export const CitySeasonSettings = z.object({ seasons: z.array(CitySeason), updatedAt: z.iso.datetime() });
 export type CitySeasonSettings = z.infer<typeof CitySeasonSettings>;
@@ -15,11 +17,11 @@ export const CitySeasonEditInput = CitySeasonSettings.extend({
   }),
 });
 export type CitySeasonEditInput = z.infer<typeof CitySeasonEditInput>;
-export const CityNow = z.object({ accent: HexColor, season: CitySeason.omit({ featuredItineraryId: true }).nullable(), featuredItinerary: ItineraryCard.nullable(), expiresAt: z.iso.datetime() });
+export const CityNow = z.object({ accent: HexColor, season: CitySeason.omit({ featuredItineraryId: true }).nullable(), featuredItinerary: ItineraryCard.nullable(), weather: CityWeather.nullable().optional(), expiresAt: z.iso.datetime() });
 export type CityNow = z.infer<typeof CityNow>;
 
 /** Internal service DTO; never send this context to public clients. */
-export const CitySeasonContext = CitySeasonSettings.extend({ id: ObjectIdString, accent: HexColor, timezone: z.literal('Asia/Ho_Chi_Minh') });
+export const CitySeasonContext = CitySeasonSettings.extend({ id: ObjectIdString, accent: HexColor, center: GeoPoint, timezone: z.literal('Asia/Ho_Chi_Minh') });
 export type CitySeasonContext = z.infer<typeof CitySeasonContext>;
 
 /** Admin-only IDs paired with public cards for the season picker. */

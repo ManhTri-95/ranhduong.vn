@@ -8,8 +8,8 @@ import { useApiBase } from '~/shared/api/client';
 import { useClientNow } from '~/shared/lib/use-client-now';
 import { usePlaceTracking } from '~/shared/lib/use-place-tracking';
 
-const props = defineProps<{ city: CityPublic; initialPage: PlaceListResponse | null; category?: PlaceCategory; failed: boolean }>();
-const emit = defineEmits<{ category: [value: PlaceCategory | undefined] }>();
+const props = defineProps<{ city: CityPublic; initialPage: PlaceListResponse | null; category?: PlaceCategory; rainSafe: boolean; failed: boolean }>();
+const emit = defineEmits<{ category: [value: PlaceCategory | undefined]; rainSafe: [value: boolean] }>();
 const apiBase = useApiBase();
 const now = useClientNow();
 const places = ref<PlaceCard[]>(props.initialPage?.items ?? []);
@@ -33,7 +33,7 @@ async function load(): Promise<void> {
   loading.value = true;
   loadFailed.value = false;
   try {
-    const result = await fetchMapPlaces(apiBase, props.city.slug, bounds, props.category, request.signal);
+    const result = await fetchMapPlaces(apiBase, props.city.slug, bounds, props.category, request.signal, props.rainSafe);
     if (disposed || controller !== request) return;
     places.value = result;
     if (!result.some((place) => place.slug === selectedSlug.value)) selectedSlug.value = null;
@@ -67,7 +67,7 @@ async function select(slug: string): Promise<void> {
   selectedHeading.value?.focus({ preventScroll: true });
 }
 
-watch(() => props.category, () => { selectedSlug.value = null; void load(); });
+watch(() => [props.category, props.rainSafe], () => { selectedSlug.value = null; places.value = []; void load(); });
 onMounted(load);
 onBeforeUnmount(() => { disposed = true; controller?.abort(); clearTimeout(timer); });
 </script>
@@ -80,8 +80,13 @@ onBeforeUnmount(() => { disposed = true; controller?.abort(); clearTimeout(timer
         <h1 class="section-title">Bản đồ {{ city.name }}</h1>
       </div>
       <form class="rd-map-explorer__filters" method="get" :action="`/${city.slug}/ban-do`" aria-label="Lọc danh mục" @submit="filter">
+        <input v-if="rainSafe" type="hidden" name="rainSafe" value="true">
         <button type="submit" name="category" value="" class="rd-chip rd-chip--filter" :aria-pressed="!category">Tất cả</button>
         <button v-for="item in PlaceCategory.options" :key="item" type="submit" name="category" :value="item" class="rd-chip rd-chip--filter" :aria-pressed="category === item">{{ CATEGORY_LABEL[item] }}</button>
+      </form>
+      <form class="rd-map-explorer__rain-filter" method="get" :action="`/${city.slug}/ban-do`" aria-label="Lọc mái che" @submit.prevent="emit('rainSafe', !rainSafe)">
+        <input v-if="category" type="hidden" name="category" :value="category">
+        <button type="submit" name="rainSafe" :value="rainSafe ? 'false' : 'true'" class="rd-chip rd-chip--filter" :aria-pressed="rainSafe">Trú mưa được</button>
       </form>
     </header>
 
@@ -138,6 +143,8 @@ onBeforeUnmount(() => { disposed = true; controller?.abort(); clearTimeout(timer
 .rd-map-explorer__back { display: inline-flex; align-items: center; justify-content: center; min-width: var(--tap-min); min-height: var(--tap-min); font-size: 24px; text-decoration: none; }
 .rd-map-explorer__filters { display: flex; gap: var(--space-2); overflow-x: auto; padding: var(--space-1) 0; }
 .rd-map-explorer__filters button { flex-shrink: 0; font: inherit; cursor: pointer; }
+.rd-map-explorer__rain-filter { padding-top: var(--space-1); }
+.rd-map-explorer__rain-filter button { min-height: var(--tap-min); font: inherit; cursor: pointer; }
 .rd-map-explorer__map { position: relative; min-height: 0; display: flex; flex-direction: column; }
 .rd-map-explorer__map > :first-child { flex: 1; min-height: 0; }
 .rd-map-explorer__placeholder { background: var(--map-land); padding: var(--space-4); }

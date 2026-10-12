@@ -2,6 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { PlaceListQuery } from './place.js';
 
 describe('S12 geographic place query', () => {
+  it('parses the explicit S24 rain chip without coercing false to true', () => {
+    expect(PlaceListQuery.parse({ rainSafe: 'true' }).rainSafe).toBe(true);
+    expect(PlaceListQuery.parse({ rainSafe: 'false' }).rainSafe).toBe(false);
+    expect(PlaceListQuery.parse({}).rainSafe).toBeUndefined();
+  });
+  it.each(['', '1', 'yes', ['true', 'false']])('rejects ambiguous rain filter %j', (rainSafe) => {
+    expect(PlaceListQuery.safeParse({ rainSafe }).success).toBe(false);
+  });
   it('reads bbox as west,south,east,north and supports cursor pages', () => {
     expect(PlaceListQuery.parse({ bbox: '0.1, 0.2,0.8,0.9', cursor: '0.-.fake', limit: '50' })).toMatchObject({
       bbox: [0.1, 0.2, 0.8, 0.9], limit: 50,

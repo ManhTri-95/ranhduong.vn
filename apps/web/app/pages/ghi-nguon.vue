@@ -26,6 +26,11 @@ import RdLegalContact from '~/shared/ui/RdLegalContact.vue';
       <p>Ảnh công khai được chuyển sang WebP và thay đổi kích thước, loại bỏ metadata; khung hiển thị có thể cắt ảnh để vừa bố cục. Nếu dùng lại ảnh Creative Commons, hãy mở nguồn gốc và thực hiện đúng yêu cầu ghi tác giả, liên kết giấy phép, nêu thay đổi và chia sẻ theo cùng giấy phép nếu có.</p>
       <a class="rd-legal__link" href="https://creativecommons.org/share-your-work/cclicenses/" target="_blank" rel="noopener noreferrer">Tìm hiểu các giấy phép Creative Commons</a>
     </section>
+    <section id="thoi-tiet">
+      <h2>Thời tiết</h2>
+      <p>Nguồn dữ liệu: <a class="rd-legal__link" href="https://www.weatherapi.com/" target="_blank" rel="noopener noreferrer">WeatherAPI.com</a>. Rành Đường lấy dữ liệu theo tâm thành phố, giữ cache tối đa 15 phút và rút gọn thành bốn trạng thái để gợi ý chỗ ghé khi có mưa.</p>
+      <p>Thời tiết chỉ để tham khảo, có thể khác theo vị trí và thời điểm. Dự báo mang tính xác suất và có thể không chính xác. Với quyết định liên quan đến an toàn cá nhân, hàng không, hàng hải hoặc ứng phó khẩn cấp, hãy xem thông tin khí tượng chính thức và hướng dẫn của cơ quan có thẩm quyền; không dùng dữ liệu này làm căn cứ duy nhất.</p>
+    </section>
     <section>
       <h2>Thông tin và ghi chú địa phương</h2>
       <p>Tên, địa chỉ, giờ mở cửa và thông tin liên hệ được thu thập thủ công từ nguồn công khai hoặc do địa điểm cung cấp. Mô tả và ghi chú được Rành Đường biên soạn. Trang địa điểm ghi ngày xác minh và cho biết khi thông tin chưa được chủ quán xác nhận.</p>

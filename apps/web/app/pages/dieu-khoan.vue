@@ -15,6 +15,7 @@ import RdLegalContact from '~/shared/ui/RdLegalContact.vue';
       <h2>2. Thông tin có thể thay đổi</h2>
       <p>Giờ mở cửa, giá, đường đi và tình trạng hoạt động có thể thay đổi sau lần xác minh gần nhất. Ngày xác minh và nhãn “Thông tin chưa được quán xác nhận” giúp bạn đánh giá thông tin trước khi đi.</p>
       <p>Gọi địa điểm để xác nhận khi cần, nhất là dịp lễ hoặc khi trang nhắc đã lâu chưa xác minh. Lịch trình là gợi ý; bạn cần tự cân nhắc thời tiết, giao thông, sức khoẻ và quy định tại nơi đến.</p>
+      <p>Ô thời tiết dùng dữ liệu WeatherAPI.com theo tâm thành phố. Dự báo chỉ để tham khảo và có thể không chính xác tại vị trí hoặc thời điểm của bạn. Với hoạt động liên quan đến an toàn, hàng không, hàng hải hoặc ứng phó khẩn cấp, hãy xem thông tin khí tượng chính thức và hướng dẫn của cơ quan có thẩm quyền; không dùng dữ liệu này làm căn cứ duy nhất.</p>
     </section>
     <section>
       <h2>3. Nội dung và quyền sử dụng ảnh</h2>
