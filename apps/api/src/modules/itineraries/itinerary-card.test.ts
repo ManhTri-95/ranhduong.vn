@@ -29,7 +29,12 @@ describe('toItineraryCard', () => {
       transport: 'car',
       pace: 'packed',
       coverKey: 'anh-c',
+      stopCount: 3,
+      season: '',
     });
+  });
+  it('gắn số điểm dừng và mùa của lịch trình', () => {
+    expect(toItineraryCard({ ...SUMMARY, season: 'Mùa Giả Lập' }, new Map())).toMatchObject({ stopCount: 3, season: 'Mùa Giả Lập' });
   });
   it('dữ liệu hỏng (số ngày sai, thiếu slug, phương tiện lạ) thì trả null', () => {
     expect(toItineraryCard({ ...SUMMARY, days: 9 }, new Map())).toBeNull();

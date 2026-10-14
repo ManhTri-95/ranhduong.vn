@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { itineraryMeta, type ItineraryCard } from '@ranhduong/contracts';
+import { formatTripLength, type ItineraryCard } from '@ranhduong/contracts';
 import { photoSrcset, photoUrl } from '~/shared/lib/media';
+import { itineraryCardMeta } from '../lib/card-meta';
 
 defineProps<{ itinerary: ItineraryCard; href: string }>();
 const mediaBase = useRuntimeConfig().public.mediaBase;
@@ -8,22 +9,27 @@ const mediaBase = useRuntimeConfig().public.mediaBase;
 
 <template>
   <NuxtLink class="rd-itin" :to="href">
-    <img
-      v-if="itinerary.coverKey"
-      class="rd-itin__img card__img"
-      :src="photoUrl(mediaBase, itinerary.coverKey, 400)"
-      :srcset="photoSrcset(mediaBase, itinerary.coverKey)"
-      sizes="250px"
-      alt=""
-      width="250"
-      height="120"
-      loading="lazy"
-      decoding="async"
-    >
-    <div v-else class="rd-itin__img">Ảnh đang cập nhật</div>
+    <!-- Chưa có ảnh: đầu vé ghi số ngày (Spec UI §9), không có ô xám "Ảnh đang cập nhật". -->
+    <div :class="['rd-itin__top', { 'rd-itin__top--stub': !itinerary.coverKey }]">
+      <img
+        v-if="itinerary.coverKey"
+        class="rd-itin__img card__img"
+        :src="photoUrl(mediaBase, itinerary.coverKey, 400)"
+        :srcset="photoSrcset(mediaBase, itinerary.coverKey)"
+        sizes="250px"
+        alt=""
+        width="250"
+        height="120"
+        loading="lazy"
+        decoding="async"
+      >
+      <span class="rd-itin__days">{{ formatTripLength(itinerary.days) }}</span>
+    </div>
     <div class="rd-itin__body">
+      <span v-if="itinerary.season" class="rd-chip rd-chip--accent">{{ itinerary.season }}</span>
       <h3 class="card__title">{{ itinerary.title }}</h3>
-      <p class="rd-place__meta card__meta">{{ itineraryMeta(itinerary) }}</p>
+      <p class="rd-place__meta card__meta">{{ itineraryCardMeta(itinerary) }}</p>
+      <span class="rd-itin__cta">Xem lịch <span aria-hidden="true">→</span></span>
     </div>
   </NuxtLink>
 </template>

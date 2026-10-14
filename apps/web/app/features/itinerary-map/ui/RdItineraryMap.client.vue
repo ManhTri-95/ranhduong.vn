@@ -2,6 +2,7 @@
 import type { CityPublic, ItineraryPublicStop } from '@ranhduong/contracts';
 import type { GeoJSONSource, Map as MapLibreMap, Marker } from 'maplibre-gl';
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { needsPan } from '~/shared/lib/map-camera';
 import { resolveMapStyleSprites } from '~/shared/lib/map-style';
 import { itineraryMapData } from '../lib/map-data';
 
@@ -41,7 +42,11 @@ function draw(): void {
     button.className = 'rd-itinerary-marker';
     button.classList.toggle('rd-itinerary-marker--last', point.number === lastNumber);
     button.dataset.stopKey = point.key;
-    button.textContent = String(point.number);
+    const graphic = document.createElement('span');
+    graphic.className = 'rd-itinerary-marker__graphic';
+    graphic.textContent = String(point.number);
+    graphic.setAttribute('aria-hidden', 'true');
+    button.append(graphic);
     button.setAttribute('aria-label', `Điểm ${point.number}: ${point.name}`);
     button.addEventListener('click', () => emit('select', point.key));
     // Repeated visits stay independently selectable at the same coordinates.
@@ -104,7 +109,13 @@ watch(() => props.stops, draw);
 watch(() => props.selectedKey, (key) => {
   highlight();
   const stop = props.stops.find((item) => item.key === key);
-  if (map && stop?.place?.location) map.easeTo({ center: stop.place.location.coordinates, duration: reducedMotion() ? 0 : 250 });
+  if (!map || !stop?.place?.location) return;
+  // Dải thẻ đổi điểm liên tục khi vuốt: chỉ dịch khi ghim đang ra ngoài khung nhìn.
+  const canvas = map.getCanvas();
+  const point = map.project(stop.place.location.coordinates);
+  if (needsPan(point, { width: canvas.clientWidth, height: canvas.clientHeight }, { top: 0, bottom: 0 })) {
+    map.easeTo({ center: stop.place.location.coordinates, duration: reducedMotion() ? 0 : 250 });
+  }
 });
 onMounted(start);
 onBeforeUnmount(() => { disposed = true; generation++; clearTimeout(timer); markers.forEach((marker) => marker.remove()); map?.remove(); });
@@ -122,13 +133,23 @@ onBeforeUnmount(() => { disposed = true; generation++; clearTimeout(timer); mark
 </template>
 
 <style scoped>
-.rd-itinerary-map { position: relative; height: 360px; }
+.rd-itinerary-map { position: relative; height: var(--itinerary-map-h, 360px); }
 .rd-itinerary-map__surface { width: 100%; height: 100%; background: var(--map-land); }
 .rd-itinerary-map__notice { position: absolute; top: var(--space-3); left: var(--space-3); right: calc(var(--tap-min) + var(--space-5)); background: var(--paper-raised); padding: var(--space-3); border: var(--border); border-radius: var(--radius-card); font-size: 14px; }
 .rd-itinerary-map__notice p { margin-top: 0; }
-.rd-itinerary-map :deep(.rd-itinerary-marker) { display: grid; place-items: center; width: var(--tap-min); height: var(--tap-min); background: var(--ink); color: var(--paper-raised); border: var(--border-ink); border-radius: var(--radius-pill); font: 700 20px var(--font-body); cursor: pointer; }
-.rd-itinerary-map :deep(.rd-itinerary-marker--last), .rd-itinerary-map :deep(.rd-itinerary-marker--selected) { background: var(--accent); color: var(--ink); }
-.rd-itinerary-map :deep(.rd-itinerary-marker--selected) { outline: 3px solid var(--ink); outline-offset: 3px; z-index: 1; }
+.rd-itinerary-map :deep(.rd-itinerary-marker) { width: var(--tap-min); height: var(--tap-min); padding: 0; border: 0; background: transparent; cursor: pointer; }
+.rd-itinerary-map :deep(.rd-itinerary-marker__graphic) { box-sizing: border-box; display: grid; place-items: center; width: 100%; height: 100%; background: var(--ink); color: var(--paper-raised); border: var(--border-ink); border-radius: var(--radius-pill); font: 700 20px var(--font-body); pointer-events: none; }
+.rd-itinerary-map :deep(.rd-itinerary-marker--last .rd-itinerary-marker__graphic), .rd-itinerary-map :deep(.rd-itinerary-marker--selected .rd-itinerary-marker__graphic) { background: var(--accent); color: var(--ink); }
+.rd-itinerary-map :deep(.rd-itinerary-marker--selected) { z-index: 1; }
+.rd-itinerary-map :deep(.rd-itinerary-marker--selected .rd-itinerary-marker__graphic) { outline: 3px solid var(--ink); outline-offset: 3px; animation: rd-itinerary-pin-drop 700ms ease-out both; }
+@keyframes rd-itinerary-pin-drop {
+  0% { transform: translateY(-40px); }
+  70% { transform: translateY(4px); }
+  100% { transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rd-itinerary-map :deep(.rd-itinerary-marker__graphic) { animation: none; transform: none; }
+}
 .rd-itinerary-map :deep(.maplibregl-ctrl button) { width: var(--tap-min); height: var(--tap-min); }
 .rd-itinerary-map :deep(.maplibregl-ctrl-group) { background: var(--paper-raised); border: var(--border-ink); border-radius: var(--radius-chip); box-shadow: none; }
 </style>

@@ -19,6 +19,7 @@ import RdFeaturedPlaces from '~/widgets/featured-places/ui/RdFeaturedPlaces.vue'
 import RdItineraryStrip from '~/widgets/itinerary-strip/ui/RdItineraryStrip.vue';
 import RdSeasonBanner from '~/widgets/season-banner/ui/RdSeasonBanner.vue';
 import RdCityWeather from '~/widgets/city-weather/ui/RdCityWeather.vue';
+import RdZoneLinks from '~/widgets/zone-links/ui/RdZoneLinks.vue';
 
 // Đường dẫn lạ (ví dụ /wp-login.php) bị chặn ngay, không gọi API; thành phố có hay không do API quyết định.
 definePageMeta({ validate: (route) => Slug.safeParse(route.params.city).success });
@@ -47,6 +48,9 @@ async function retry(): Promise<void> {
   await Promise.all([city.refresh(), city.now.refresh(), featured.refresh(), templates.refresh(), curated.refresh()]);
 }
 
+// Nút nổi "Xem bản đồ": body chừa chỗ ở cuối trang để thẻ và footer cuối không bị che.
+useHead({ bodyAttrs: { 'data-rd-bottom': 'float' } });
+
 usePageSeo({
   path: `/${citySlug}`,
   title: () => (cityName.value ? `${cityName.value} hôm nay ghé đâu? · Rành Đường` : 'Rành Đường'),
@@ -61,16 +65,20 @@ usePageSeo({
     <RdCityHeader :city-slug="citySlug" :city-name="cityName" />
     <main class="home__main">
       <RdErrorBanner v-if="loadFailed" message="Chưa tải được hết dữ liệu, có thể mạng đang chập chờn." @retry="retry" />
-      <section class="home__intro">
-        <h1 class="page-title">{{ cityName ? `${cityName} hôm nay` : 'Hôm nay' }}<br>ghé đâu?</h1>
-        <p class="lead">Ghi chép của người rành đường. Quán nào cũng được hỏi lại trước khi lên đây.</p>
-      </section>
-      <RdSeasonBanner v-if="city.currentNow.value?.season" :city-slug="citySlug" :current="city.currentNow.value" />
-      <RdCityWeather :city-slug="citySlug" :city-name="cityName" :weather="city.currentNow.value?.weather" />
-      <RdSearchForm :action="`/${citySlug}/tim-kiem`" :city-slug="citySlug" />
-      <RdCategoryChips :city-slug="citySlug" />
-      <RdItineraryStrip :city-slug="citySlug" :itineraries="templateCards" :failed="templatesFailed" />
+      <div class="home__hero">
+        <section class="home__intro">
+          <h1 class="page-title">{{ cityName ? `${cityName} hôm nay` : 'Hôm nay' }}<br>ghé đâu?</h1>
+          <p class="home__lead">Quán nào cũng được hỏi lại trước khi lên đây.</p>
+          <RdSearchForm :action="`/${citySlug}/tim-kiem`" :city-slug="citySlug" />
+          <RdCategoryChips :city-slug="citySlug" />
+        </section>
+        <RdCityWeather :city-slug="citySlug" :city-name="cityName" :weather="city.currentNow.value?.weather" />
+      </div>
+      <RdItineraryStrip :city-slug="citySlug" :itineraries="templateCards" :failed="templatesFailed">
+        <template v-if="city.currentNow.value?.season" #lead><RdSeasonBanner :city-slug="citySlug" :current="city.currentNow.value" /></template>
+      </RdItineraryStrip>
       <RdFeaturedPlaces :city-slug="citySlug" :places="featuredPlaces" :failed="featuredFailed" :now="now" />
+      <RdZoneLinks :city-slug="citySlug" :zones="city.data.value?.zones ?? []" />
       <RdCuratedListStrip :city-slug="citySlug" :lists="curated.data.value?.items ?? []" :failed="curatedFailed" />
     </main>
     <NuxtLink class="rd-btn rd-btn--float home__map" :to="`/${citySlug}/ban-do${city.currentNow.value?.weather?.state === 'rain' ? '?rainSafe=true' : ''}`">
@@ -84,9 +92,12 @@ usePageSeo({
 </template>
 
 <style scoped>
-/* Chừa chỗ cho nút nổi để thẻ cuối không bị che. */
-.home { padding-bottom: calc(var(--button-height) + 2 * var(--space-6) + env(safe-area-inset-bottom, 0px)); }
-.home__main { max-width: 1200px; margin: 0 auto; padding: var(--space-2) var(--space-5) 0; display: flex; flex-direction: column; gap: var(--space-6); }
-.home__intro { display: flex; flex-direction: column; gap: var(--space-3); }
+.home__main { max-width: 1200px; margin: 0 auto; padding: var(--space-2) var(--space-5) var(--space-7); display: flex; flex-direction: column; gap: var(--space-6); }
+.home__intro { display: flex; flex-direction: column; gap: var(--space-3); min-width: 0; }
+.home__lead { margin: 0; font-size: 14px; line-height: 1.5; color: var(--ink-soft); }
+.home__hero { display: grid; gap: var(--space-5); }
+@media (min-width: 1024px) {
+  .home__hero:has(.rd-city-weather) { grid-template-columns: minmax(0, 1.4fr) minmax(320px, 1fr); align-items: start; gap: var(--space-7); }
+}
 .home__map { position: fixed; left: 50%; bottom: calc(var(--space-6) + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 10; }
 </style>

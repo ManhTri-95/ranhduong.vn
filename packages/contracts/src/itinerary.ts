@@ -32,6 +32,10 @@ export const ItineraryCard = z.object({
   transport: ItineraryTransport,
   pace: ItineraryPace,
   coverKey: z.string().optional(),
+  /** Mọi điểm dừng, kể cả điểm không còn công khai (khớp dòng tổng quan trang lịch trình). */
+  stopCount: z.number().int().nonnegative().optional(),
+  /** Mùa admin đặt cho lịch trình; rỗng thì thẻ không có chip mùa. */
+  season: z.string().optional(),
 });
 export type ItineraryCard = z.infer<typeof ItineraryCard>;
 

@@ -2,6 +2,8 @@
 
 Soạn ngày 10/10/2026 cho trang admin `/lich-trinh/moi`, được render qua `apps/admin/src/pages/TemplateEditPage.vue`.
 
+Các mẫu bổ sung tra cứu ngày 13/10/2026: [hai tuyến Langbiang và Cầu Đất–Trại Mát, có thể ghép thành lịch trình 2 ngày](2026-10-13-da-lat-north-east-itineraries.md). Mỗi tuyến có đủ bữa sáng, trưa, tối, khoảng nghỉ và thời gian dự phòng di chuyển. [Hồ sơ 12 địa điểm bổ sung](2026-10-13-da-lat-place-research.md) ghi nguồn, địa chỉ tham khảo và các thông tin cần xác minh trước khi nhập admin.
+
 Đây là bản nội dung đã tra cứu để nhập vào bộ soạn; chưa lưu vào cơ sở dữ liệu và chưa công khai. Công cụ HTTP hiện chưa có phiên admin. Trong 15 địa điểm công khai đọc được ở local, Still Cafe đã có sẵn; các điểm còn lại của bản đề xuất chưa xuất hiện trong danh sách này.
 
 ## Giả định cho chuyến đi

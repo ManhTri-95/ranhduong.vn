@@ -84,7 +84,7 @@ usePageSeo({
         <h1 class="page-title">{{ title }}</h1>
         <p class="lead">Ghi chép của người rành đường. Chỗ nào cũng được hỏi lại trước khi lên đây.</p>
       </section>
-      <RdCategoryChips :city-slug="citySlug" />
+      <RdCategoryChips :city-slug="citySlug" variant="tabs" />
       <RdTagFilter :action="basePath" :tags="availableTags" :selected="filter.tags" />
       <RdPlaceListing
         :city-slug="citySlug"

@@ -50,7 +50,10 @@ const api = createServer((req, res) => {
   } else if (url.pathname === '/v1/cities/da-lat/now') {
     if (seasonFailed) return res.writeHead(503).end(JSON.stringify({ code: 'INTERNAL_ERROR', message: 'Lỗi mùa Giả Lập' }));
     const accents = { flower: '#E58FA8', rain: '#8DB3CF', sunflower: '#E9B824', none: city.accent };
-    res.end(JSON.stringify({ accent: accents[seasonMode], season: seasonMode === 'none' ? null : { key: `mua-${seasonMode}`, kind: seasonMode === 'rain' ? 'rain' : 'flower', from: '01-01', to: '12-31', accent: accents[seasonMode], title: 'Banner mùa Giả Lập', sub: 'Mô tả mùa Giả Lập', illustration: seasonMode === 'flower' ? 'cherry-blossom' : seasonMode === 'sunflower' ? 'wild-sunflower' : 'rain' }, featuredItinerary: seasonMode === 'none' ? null : { slug: 'noi-bat-gia-lap', title: 'Lịch trình mùa Giả Lập', days: 1, transport: 'motorbike', pace: 'relaxed' }, weather: weatherMode === 'none' ? null : { state: weatherMode === 'expired' ? 'rain' : weatherMode, temperatureC: 18.4, isDay: true, rainSoon: false, observedAt: new Date(Date.now() - 60_000).toISOString(), expiresAt: new Date(Date.now() + (weatherMode === 'expired' ? -1 : 900_000)).toISOString() }, expiresAt: new Date(Date.now() + 900_000).toISOString() }));
+    // Keep fresh fixtures inside the 15-minute window; a 1ms clock skew must not invalidate them.
+    // Expired is a full minute old: the test and Nuxt server are separate processes whose Windows clocks can differ by a few ms.
+    // Exact freshness boundaries are covered by contracts/weather.test.ts.
+    res.end(JSON.stringify({ accent: accents[seasonMode], season: seasonMode === 'none' ? null : { key: `mua-${seasonMode}`, kind: seasonMode === 'rain' ? 'rain' : 'flower', from: '01-01', to: '12-31', accent: accents[seasonMode], title: 'Banner mùa Giả Lập', sub: 'Mô tả mùa Giả Lập', illustration: seasonMode === 'flower' ? 'cherry-blossom' : seasonMode === 'sunflower' ? 'wild-sunflower' : 'rain' }, featuredItinerary: seasonMode === 'none' ? null : { slug: 'noi-bat-gia-lap', title: 'Lịch trình mùa Giả Lập', days: 1, transport: 'motorbike', pace: 'relaxed' }, weather: weatherMode === 'none' ? null : { state: weatherMode === 'expired' ? 'rain' : weatherMode, temperatureC: 18.4, isDay: true, rainSoon: false, observedAt: new Date(Date.now() - 60_000).toISOString(), expiresAt: new Date(Date.now() + (weatherMode === 'expired' ? -60_000 : 840_000)).toISOString() }, expiresAt: new Date(Date.now() + 900_000).toISOString() }));
   } else if (url.pathname === '/v1/cities/da-lat/places') {
     if (url.searchParams.get('limit') === '6' && url.searchParams.has('q')) suggestionRequests++;
     if (url.searchParams.has('bbox') && mapFailed) return res.writeHead(503).end(JSON.stringify({ code: 'INTERNAL_ERROR', message: 'Lỗi bản đồ Giả Lập' }));
@@ -60,7 +63,7 @@ const api = createServer((req, res) => {
       tags: [{ slug: 'chill', count: 25 }],
     }));
   } else if (url.pathname === '/v1/cities/da-lat/itineraries/templates') {
-    res.end(JSON.stringify({ items: [{ slug: 'lich-trinh-gia-lap', title: 'Lịch trình Giả Lập', days: 2, transport: 'motorbike', pace: 'relaxed' }] }));
+    res.end(JSON.stringify({ items: [{ slug: 'lich-trinh-gia-lap', title: 'Lịch trình Giả Lập', days: 2, transport: 'motorbike', pace: 'relaxed', stopCount: 4, season: 'Mùa lịch Giả Lập' }] }));
   } else if (url.pathname.startsWith('/v1/cities/da-lat/itineraries/templates/')) {
     if (templateFailed) return res.writeHead(503).end(JSON.stringify({ code: 'INTERNAL_ERROR', message: 'Lỗi lịch trình Giả Lập' }));
     const slug = url.pathname.split('/').at(-1);
@@ -632,5 +635,59 @@ describe('SSR trang danh mục và khu vực trên bản production', () => {
     expect(res.status).toBe(200);
     expect(res.headers.get('cache-control')).toBe('no-store');
     expect(await res.text()).toContain('name="robots" content="noindex, follow"');
+  });
+});
+
+describe('UX home and itinerary SSR', () => {
+  it('shows the overview line, day spans and compact stops without the client-only action bar', async () => {
+    const html = await (await fetch(`${base}/da-lat/lich-trinh/lich-trinh-gia-lap?audit=ux-itinerary`)).text();
+    expect(html).toMatch(/class="rd-itinerary-detail__summary"[^>]*>4 điểm</);
+    expect(html).toContain('08:00 → 11:45');
+    expect(html).not.toMatch(/<div[^>]*class="[^"]*rd-itinerary-action-bar/);
+    expect(html).not.toContain('aria-label="Chia sẻ lịch trình"');
+    expect(html).not.toContain('Xem bản đồ lịch trình');
+    expect(html.match(/data-rd-event="direction_click"/g)).toHaveLength(3);
+  });
+  it('renders the ticket card meta and season on the home page', async () => {
+    const html = await (await fetch(`${base}/da-lat?audit=ux-ticket`)).text();
+    expect(html).toContain('4 điểm · xe máy · thong thả');
+    expect(html).toContain('Mùa lịch Giả Lập');
+    expect(html).toMatch(/class="rd-itin__top rd-itin__top--stub"/);
+  });
+  it('puts search before the weather tile and links zones and the map list', async () => {
+    weatherMode = 'sun';
+    try {
+      const html = await (await fetch(`${base}/da-lat?audit=ux-home`)).text();
+      expect(html.indexOf('role="search"')).toBeGreaterThan(-1);
+      expect(html.indexOf('role="search"')).toBeLessThan(html.indexOf('id="city-weather-title"'));
+      expect(html).toContain('href="/da-lat/khu-vuc/trung-tam"');
+      expect(html).toContain('Xem tất cả trên bản đồ');
+    } finally { weatherMode = 'none'; }
+  });
+  it('summarises a curated list and keeps ranked places in an ordered list', async () => {
+    const html = await (await fetch(`${base}/da-lat/top/danh-sach-gia-lap?audit=ux-curated`)).text();
+    expect(html).toMatch(/class="rd-curated-page__summary"[^>]*>3 địa điểm · Cà phê</);
+    expect(html).toMatch(/class="rd-curated-page__rank"[^>]*>01</);
+    expect(html.indexOf('/da-lat/dia-diem/quan-gia-lap-3')).toBeLessThan(html.indexOf('/da-lat/dia-diem/quan-gia-lap-1'));
+  });
+  it('keeps the season banner inside the itinerary section', async () => {
+    seasonMode = 'flower';
+    try {
+      const html = await (await fetch(`${base}/da-lat?audit=ux-season`)).text();
+      expect(html.indexOf('id="itinerary-strip-title"')).toBeGreaterThan(-1);
+      expect(html.indexOf('id="itinerary-strip-title"')).toBeLessThan(html.indexOf('id="season-banner-title"'));
+    } finally { seasonMode = 'none'; }
+  });
+});
+
+describe('UX category tabs and tag filter SSR', () => {
+  it('shows categories as navigation tabs and tags as labelled filter chips with counts and a clear link', async () => {
+    const html = await (await fetch(`${base}/da-lat/ca-phe?tags=chill&audit=ux-tags`)).text();
+    expect(html).toMatch(/<nav[^>]*class="rd-tabs"/);
+    expect(html).toMatch(/<a(?=[^>]*aria-current="page")(?=[^>]*\brd-tab\b)[^>]*>Cà phê</);
+    expect(html).toContain('Lọc theo thẻ');
+    expect(html).toMatch(/class="rd-chip__count"[^>]*>25</);
+    expect(html).toMatch(/class="rd-tag-filter__status"[^>]*>Đang lọc: Chill/);
+    expect(html).toContain('href="/da-lat/ca-phe"');
   });
 });

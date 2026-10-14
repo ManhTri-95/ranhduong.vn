@@ -8,6 +8,8 @@ export interface TemplateSummary {
   days?: number;
   transport?: string;
   pace?: string;
+  /** Mùa admin đặt cho lịch trình (có thể rỗng). */
+  season?: string;
   /** placeId của mọi điểm dừng theo thứ tự ngày, điểm. */
   stopPlaceIds: string[];
 }
@@ -30,6 +32,8 @@ export function toItineraryCard(summary: TemplateSummary, covers: ReadonlyMap<st
     transport: summary.transport,
     pace: summary.pace,
     coverKey: pickCoverKey(summary.stopPlaceIds, covers),
+    stopCount: summary.stopPlaceIds.length,
+    season: summary.season ?? '',
   });
   return parsed.success ? parsed.data : null;
 }

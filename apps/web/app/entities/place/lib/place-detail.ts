@@ -29,3 +29,11 @@ export function openingHoursRows(slots: readonly OpeningSlot[]): OpeningHoursRow
 export function verificationDate(date: string | undefined): string | undefined {
   return date ? new Intl.DateTimeFormat('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(date)) : undefined;
 }
+
+const WEEKDAY_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const weekdayFormat = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Ho_Chi_Minh', weekday: 'short' });
+
+/** Thứ hiện tại (0 = Chủ nhật) theo giờ Việt Nam, để tô dòng hôm nay trong bảng giờ. */
+export function vietnamWeekday(now: Date): number {
+  return WEEKDAY_EN.indexOf(weekdayFormat.format(now));
+}

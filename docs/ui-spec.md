@@ -70,6 +70,8 @@ Không dùng Patrick Hand cho thông tin quan trọng (giờ mở cửa, giá, t
 - Bo góc: chip 10–14px; nút 22–26px (dạng viên thuốc); thẻ 16px; ô ảnh trong thẻ 12px; bottom sheet 24px ở hai góc trên; ghi chú 4px.
 - Viền: thẻ 1.5px `--line`; nút phụ và ô tìm kiếm 1.5px `--ink`; thẻ nổi bật 2px `--ink`; viền nét đứt cho hành động "tạo, sưu tầm" (vé, tem).
 - Bóng: hầu như không dùng; chỉ ghi chú (`0 2px 0 --note-edge`) và nút nổi "Xem bản đồ" (`0 6px 16px rgba(30,58,47,.25)`).
+- Chuyển động (mục 8): `--dur-micro` 140ms (phản hồi bấm), `--dur-standard` 200ms (đổi trạng thái), `--dur-panel` 250ms (bottom sheet), `--ease-out` cubic-bezier(0.22, 1, 0.36, 1), `--press-scale` 0.98.
+- Chừa chỗ cho phần cố định ở đáy: `--action-bar-height` 80px (thanh Chỉ đường), `--float-clearance` (nút nổi "Xem bản đồ").
 
 ## 3. Giọng văn người địa phương
 
@@ -115,10 +117,11 @@ Component dùng chung nằm ở `packages/ui` (Vue 3), dùng cho cả web khách
 
 | Chip | Kiểu | Khi nào |
 | --- | --- | --- |
-| Danh mục (Cà phê, Ăn uống…) | Đang chọn: nền `--ink`; chưa chọn: viền `--line` | Lọc trên trang chủ và bản đồ |
+| Danh mục (Cà phê, Ăn uống…) | Đang chọn: nền `--ink`; chưa chọn: viền `--line` | Lối tắt trên trang chủ, lọc trên bản đồ. Trên trang danh mục, danh mục là **tab điều hướng** (`rd-tabs`, `rd-tab`): chữ, gạch chân 3px `--ink` dưới mục đang xem, 4 mục giãn đều trên điện thoại, không cuộn |
+| Lọc theo thẻ (Chill, Sống ảo…) | `rd-chip--tag`: nền `--mist`, số chỗ cạnh tên; đang chọn: nền `--paper-raised`, viền 2px `--ink` và dấu ✓ | Trang danh mục và khu vực, có nhãn "Lọc theo thẻ"; xuống dòng, không cuộn ngang; quá 8 thẻ thì hiện 8 thẻ nhiều chỗ nhất và "Thêm n thẻ" (thẻ đang chọn luôn hiện); khi đang lọc có dòng "Đang lọc: … · Bỏ lọc" |
 | Đang mở | Nền `--accent` | Đang trong giờ mở cửa theo giờ Việt Nam |
 | Đóng lúc HH:mm / Mở lúc HH:mm | Chữ `--ink-soft`, không nền | Đi kèm chip trạng thái |
-| Thông tin chưa được quán xác nhận | Chữ `--ink-soft` | `verifySource` là admin với quán (không áp cho điểm công cộng) |
+| Thông tin chưa được quán xác nhận | Chữ `--ink-soft` | `verifySource` là admin với quán (không áp cho điểm công cộng). Từ 13/10/2026 quán chưa xác nhận vẫn hiện trạng thái mở cửa, nhưng chip "Đang mở" dùng viền `--ink` không nền (`rd-chip--outline`) và luôn kèm dòng này, trên cả thẻ lẫn trang địa điểm |
 | Đối tác | Viền 1.5px `--ink`, không nền | Địa điểm VIP trong lịch trình và danh sách |
 | Tiện đường | Nền `--accent` | Điểm có detour dưới 10 phút |
 | Theo mùa | Nền `--accent` | Lịch trình, banner theo mùa |
@@ -126,21 +129,23 @@ Component dùng chung nằm ở `packages/ui` (Vue 3), dùng cho cả web khách
 
 **Thẻ:**
 
-- **Thẻ địa điểm ngang:** ảnh 96×96 bên trái; tên, danh mục (chính rồi phụ, ví dụ "Cà phê, Ăn uống") và khu vực, một câu ghi chú viết tay (nếu có), chip trạng thái.
-- **Thẻ lịch trình:** rộng 250px, cuộn ngang; ảnh 120px; chip, tên, "số ngày · phương tiện · nhịp độ".
+- **Thẻ địa điểm ngang:** ảnh 96×96 bên trái; tên, danh mục (chính rồi phụ, ví dụ "Cà phê, Ăn uống") và khu vực, một câu ghi chú viết tay (nếu có), chip trạng thái. Chưa có ảnh: ô `--mist` có nét vẽ danh mục (cùng nguồn với ghim bản đồ) và chữ "Ảnh đang cập nhật". Thẻ gọn (`rd-place--compact`, dùng cho "Tiện đường ghé thêm"): ảnh 64×64, không có ghi chú viết tay.
+- **Thẻ lịch trình (kiểu vé):** rộng 250px, cuộn ngang trên điện thoại, lưới 3 cột từ 1024px. Có ảnh bìa: ảnh 120px, nhãn số ngày trên ảnh. Chưa có ảnh: đầu vé cao 64px ghi số ngày (Lora, in hoa), răng cưa nét đứt và hai khuyết tròn, không có ô xám. Thân vé: chip mùa (nền nhấn, nếu có), tên, "{số điểm} điểm · phương tiện · nhịp độ" (`stopCount`, `season` từ API), "Xem lịch →".
 - **Banner theo mùa:** viền 2px `--ink`; chip mùa, tiêu đề Lora, mô tả, liên kết lịch trình; hình minh hoạ 96×96 bên phải có chuyển động lắc nhẹ.
-- **Ô thời tiết "Đà Lạt lúc này":** nền `--ink`, chữ sáng; biểu tượng theo trạng thái, tiêu đề "trạng thái · nhiệt độ", một câu gợi ý.
+- **Ô thời tiết "Đà Lạt lúc này":** nền `--ink`, chữ sáng; biểu tượng theo trạng thái, tiêu đề "trạng thái · nhiệt độ", một câu gợi ý; liên kết quán trú mưa khi mưa. Ghi nguồn WeatherAPI.com, câu "Thời tiết chỉ để tham khảo…" và "Lưu ý khi xem dự báo" nằm trong ô, ngăn bằng một đường mảnh, chữ 12px sáng 86%.
 - **Thẻ trạng thái mở cửa:** chip trạng thái, giờ hôm nay, dòng "Đã hỏi lại ngày…", nút "Giờ từng ngày".
 
-**Ghi chú viết tay:** nền `--note`, bo 4px, xoay -1°, bóng `--note-edge`, font Patrick Hand; có thể có nhãn nhỏ "Người địa phương nói". Mỗi màn hình tối đa 2 ghi chú.
+**Ghi chú viết tay:** nền `--note`, bo 4px, xoay -1°, bóng `--note-edge`, font Patrick Hand; có thể có nhãn nhỏ "Người địa phương nói". Mỗi màn hình tối đa 2 ghi chú. Đoạn ghi chú dài trên trang địa điểm (`practicalNotes`) giữ nền `--note` nhưng không xoay, chữ Be Vietnam Pro 16px/1.65, rộng tối đa 65 ký tự; chỉ nhãn "Người địa phương nói" dùng Patrick Hand.
 
-**Thanh hành động cố định:** đáy màn hình, nền `--paper-raised`, viền trên `--line`, đệm dưới tính cả vùng an toàn của điện thoại (`env(safe-area-inset-bottom)`).
+**Thanh hành động cố định:** đáy màn hình, nền `--paper-raised`, viền trên `--line`, đệm dưới tính cả vùng an toàn của điện thoại (`env(safe-area-inset-bottom)`). Trên trang địa điểm thanh chỉ có một hàng, cao khoảng 80px: "Chỉ đường" (nút nhấn, chiếm phần lớn) và "Gọi quán" (nút tròn 52px có nhãn ẩn cho trình đọc màn hình). Fanpage và Website nằm ở mục "Liên hệ" trong trang. Quán đã đóng cửa thì không có thanh. Trang có thanh cố định đặt `data-rd-bottom` trên `body` để chừa đúng chiều cao thanh ở cuối tài liệu; footer không chừa sẵn.
 
-**Bottom sheet (bản đồ):** bo 24px hai góc trên, viền trên 2px `--ink`, thanh kéo 44×5px; ba mức: thu gọn (chỉ thanh kéo và tên), nửa màn hình (thẻ đầy đủ), toàn màn hình (danh sách).
+**Bottom sheet (bản đồ):** bo 24px hai góc trên, viền trên 2px `--ink`, thanh kéo 44×5px; ba mức: thu gọn (chỉ thanh kéo và tiêu đề), nửa màn hình (50% chiều cao), mở rộng (chừa header và khe 40px cho dòng ghi nguồn OSM). Chỉ kéo được ở phần đầu sheet; danh sách cuộn riêng. Thả tay thì về mức gần nhất, vuốt nhanh (từ 0,4px/ms) thì sang mức kế tiếp; kéo quá giới hạn chỉ đi thêm 30%. Bấm thanh kéo đổi mức theo vòng nửa → mở rộng → thu gọn; phím mũi tên lên/xuống cũng đổi mức. Khi thu gọn, danh sách là `inert`. Footer pháp lý nằm cuối danh sách, không nằm dưới khung bản đồ.
 
 **Ghim bản đồ:** hình giọt nước vẽ tay, nền `--paper-raised`, viền `--ink`, biểu tượng theo danh mục (ly cà phê, bát, mặt trời…); ghim đang chọn to hơn 25%, nền `--accent`.
 
-**Mốc lịch trình:** vòng tròn 36px đánh số nền `--ink`; điểm cuối nền `--accent`; nối bằng đường nét đứt 2px; dòng nghiêng nhỏ "Xe máy · khoảng x phút" giữa hai điểm.
+**Mốc lịch trình:** vòng tròn 36px đánh số nền `--ink`; điểm cuối nền `--accent`; nối bằng đường nét đứt 2px; dòng nghiêng nhỏ "Xe máy · khoảng x phút" giữa hai điểm. Mỗi điểm: giờ và nhãn "Bữa ăn", tên quán (Lora 19px), nút chỉ đường tròn 44px viền `--ink` ở cạnh phải tên (không dùng nút nhấn vàng cho từng điểm), "danh mục · khu vực", nhãn chưa xác nhận; ghi chú chữ nội dung 15px, quá 90 ký tự thì rút còn 2 dòng kèm "Xem thêm" (checkbox + label, không cần JavaScript); địa chỉ xem ở trang địa điểm.
+
+**Thanh ngày và thanh hành động lịch trình:** thanh ngày dính ở đầu màn hình ("Ngày n · x điểm", tự đổi theo điểm đang xem) kèm công tắc **Lịch | Bản đồ** trên điện thoại (dưới 400px chip chỉ ghi "Ngày n", chip đang chọn tự cuộn vào hàng); Bản đồ hiện map của ngày (khoảng 55% màn hình) và dải thẻ điểm cuộn ngang, vuốt thẻ thì đổi ghim. Thanh cố định đáy: nút tròn Chia sẻ (bảng chia sẻ của máy, không có thì cuộn tới "Rủ bạn đi cùng") và nút nhấn hai dòng "Chỉ đường · điểm n" / tên quán cho điểm đang xem (vạch 40% chiều cao màn hình), chỉ render ở client. Điểm chưa có vị trí: khi bản đồ đang ẩn thì nút đổi thành "Xem bản đồ ngày n", khi bản đồ đã hiện thì chỉ có dòng "vị trí đang cập nhật". Desktop: bản đồ cột phải tự tải và dính theo, khối chỉ đường nằm dưới bản đồ.
 
 **Ô tìm kiếm:** có nhãn "Tìm kiếm" hiển thị, cao 52px, viền 1.5px `--ink`, biểu tượng kính lúp, placeholder gợi ý cụ thể.
 
@@ -150,10 +155,10 @@ Sáu màn hình trong bản mẫu; URL theo mục 11 tài liệu thiết kế k�
 
 | Màn hình | URL | Thành phần chính (từ trên xuống) | Lát |
 | --- | --- | --- | --- |
-| Trang chủ thành phố | `/da-lat` | Header (logo, chọn thành phố) · Đà Lạt lúc này · tiêu đề "Đà Lạt hôm nay ghé đâu?" · banner theo mùa · tìm kiếm · chip danh mục · lịch trình mẫu · Chỗ dân ở đây hay ngồi · nút nổi "Xem bản đồ" | 1 |
-| Bản đồ | `/da-lat/ban-do` | Bản đồ phong cách sổ tay toàn màn hình · nút quay lại + tìm quanh đây · chip lọc (Cà phê, Đang mở, Trú mưa được…) · ghim · bottom sheet thẻ địa điểm | 1 |
-| Lịch trình | `/da-lat/lich-trinh/{slug}`, `/l/{shareId}` | Tiêu đề, mô tả, chip · mốc theo giờ nối nét đứt · ghi chú · nhãn Đối tác, Tiện đường · thanh hành động: Tạo vé để chia sẻ + Chỉ đường điểm tiếp theo | 1 (mẫu), 2 (tạo theo yêu cầu, vé) |
-| Địa điểm | `/da-lat/dia-diem/{slug}` | Ảnh + tem góc phải · tên, danh mục, khu vực · chip thuộc tính · thẻ trạng thái mở cửa · Người địa phương nói · lời mời check-in lấy tem · Tiện đường ghé thêm · bản đồ nhỏ · nguồn ảnh · thanh Chỉ đường + Lưu | 1 (tem trang trí: khi có minh hoạ) |
+| Trang chủ thành phố | `/da-lat` | Header (logo, chọn thành phố) · tiêu đề "Đà Lạt hôm nay ghé đâu?" và một dòng giới thiệu · tìm kiếm · chip danh mục một hàng cuộn ngang · Đà Lạt lúc này · Đi theo lịch có sẵn (banner theo mùa đứng đầu, thẻ vé) · Chỗ dân ở đây hay ngồi (4 quán trên điện thoại, 6 trên desktop, "Xem tất cả trên bản đồ") · Theo khu vực · Gợi ý theo chủ đề · nút nổi "Xem bản đồ". Desktop: phần đầu hai cột (tiêu đề, tìm kiếm, chip / Đà Lạt lúc này) khi có thời tiết | 1 |
+| Bản đồ | `/da-lat/ban-do` | Bản đồ phong cách sổ tay toàn màn hình · header nổi: nút quay lại, tiêu đề, một hàng chip cuộn ngang ("Trú mưa được" đứng đầu, rồi danh mục) · nút zoom dưới header · ghim · bottom sheet danh sách/thẻ địa điểm. Chọn ghim hoặc nút ghim trên thẻ thì sheet về mức nửa và hiện thẻ; bản đồ chỉ dịch khi ghim bị header, sheet hoặc mép màn hình che. Bấm Back từ trang địa điểm thì giữ khung nhìn, ghim đang chọn, mức sheet và vị trí cuộn danh sách (trạng thái trong phiên, không ghi vào URL để không làm phình cache SWR) | 1 |
+| Lịch trình | `/da-lat/lich-trinh/{slug}`, `/l/{shareId}` | Eyebrow "Lịch trình · số ngày", tiêu đề, chip phương tiện, nhịp độ, mùa, phong cách · dòng tổng quan "{n} điểm · {m} bữa ăn · khu vực" · mô tả 3 dòng + "Đọc thêm" · thanh ngày dính + Lịch, Bản đồ · mốc theo giờ nối nét đứt · ghi chú · nhãn Đối tác, Tiện đường · Rủ bạn đi cùng · thanh hành động: Chia sẻ + Chỉ đường điểm đang xem (lát 2: Tạo vé để chia sẻ) | 1 (mẫu), 2 (tạo theo yêu cầu, vé) |
+| Địa điểm | `/da-lat/dia-diem/{slug}` | Ảnh bìa (ảnh còn lại một hàng cuộn ngang) + tem góc phải · danh mục, khu vực · tên · địa chỉ · trạng thái mở cửa, lời nhắc chưa xác nhận, ngày xác minh · chip thuộc tính · Người địa phương nói · thẻ giờ mở cửa (hôm nay + "Giờ từng ngày" thu gọn, tô dòng hôm nay) · Liên hệ · Tiện đường ghé thêm (3 thẻ gọn + "Xem thêm gần đây") · lời mời check-in lấy tem · bản đồ nhỏ · nguồn ảnh · thanh Chỉ đường + Gọi ("Lưu" chờ có đăng nhập cho khách) | 1 (tem trang trí: khi có minh hoạ) |
 | Vé lịch trình | Ảnh tạo từ `/l/{shareId}` | Xem mục 9 | 2 |
 | Sổ tem | `/da-lat/so-tem` (cần đăng nhập) | Tiêu đề, tiến độ "Đã có x/y tem" · lưới tem 3 cột · ghi chú | 4 |
 
@@ -163,7 +168,7 @@ Sáu màn hình trong bản mẫu; URL theo mục 11 tài liệu thiết kế k�
 - **Rỗng:** câu giọng địa phương + gợi ý hành động, ví dụ "Khu này mình chưa ghi chép quán nào. Xem khu Trung tâm nhé?".
 - **Lỗi mạng:** giữ nội dung đã tải, hiện dải thông báo nhỏ ở đầu trang và nút thử lại.
 - **Địa điểm đã đóng:** trang vẫn hiển thị với nhãn "Đã đóng cửa", ẩn nút Chỉ đường, gợi ý 3 quán tương tự gần đó.
-- **Chưa có ảnh:** ô `--mist` với chữ "Ảnh đang cập nhật".
+- **Chưa có ảnh:** ô `--mist` với nét vẽ danh mục và chữ "Ảnh đang cập nhật". Trang địa điểm dùng dải gọn cao khoảng 72px thay cho khung 3:2, để tên quán và trạng thái nằm trong màn hình đầu.
 
 **Desktop (từ 1024px):** nội dung tối đa 1200px; trang chủ và danh sách hiển thị 2–3 cột; trang bản đồ chia đôi (danh sách bên trái, bản đồ bên phải); trang địa điểm đặt thanh Chỉ đường thành khối cố định ở cột phải.
 
@@ -239,7 +244,10 @@ Chỉ dùng chuyển động ở vài chỗ có ý nghĩa, làm bằng CSS (`tra
 | Ghim rơi | Ghim đang chọn trên bản đồ | `translateY` -40px → 4px → 0, 700ms ease-out |
 | Lắc nhẹ | Hình minh hoạ banner theo mùa | Xoay -2° ↔ 2°, 4 giây, lặp lại |
 | Tem đóng dấu | Khi check-in thành công (lát 4) | `scale` 1.3 → 1 kèm xoay nhẹ, 350ms |
-| Bottom sheet | Bản đồ | Kéo theo tay; thả thì trượt về mức gần nhất trong 250ms |
+| Bottom sheet | Bản đồ | Kéo theo tay; thả thì trượt về mức gần nhất trong 250ms (`--dur-panel`, `--ease-out`); chỉ animate `transform`, chiều cao danh sách chỉ đổi khi sheet dừng |
+| Phản hồi bấm | Nút, chip lọc, thẻ địa điểm | Thuộc tính `scale` 0.98 (`--press-scale`) trong 140ms (`--dur-micro`); đổi nền/viền chip trong 200ms (`--dur-standard`); hover chỉ trên thiết bị có chuột |
+| Hiện ra nhẹ | Giờ từng ngày, Xem thêm gần đây, thẻ đang chọn trên bản đồ, trạng thái rỗng | `rd-fade-up`: `opacity` 0 → 1 và `translateY` 6px → 0, 200ms |
+| Khung xương | Danh sách bản đồ khi đang tải | Nhịp mờ `opacity` 1 → 0.55, 1,6 giây; tắt khi giảm chuyển động |
 
 **Quy tắc:**
 

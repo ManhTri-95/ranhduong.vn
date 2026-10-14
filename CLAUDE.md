@@ -99,6 +99,8 @@ pnpm --filter @ranhduong/geo test        # test một package
 
 ## Trạng thái
 
+- S25 code xong trên `feat/S25-ui-motion`: timeline cuộn tới một lần/mốc 400ms/nét nối 600ms/stagger 500ms/hàng đợi, hai bản đồ ghim rơi 700ms trên child, banner mùa 4s sau cuộn/pause ngoài viewport-tab ẩn, live reduced motion về trạng thái cuối. 20 task workspace, 107 test web, 75 SSR và Chrome 390px/desktop/focus/không JS/hai map đạt; review độc lập sạch. Runbook `docs/runbooks/ui-motion.md` ghi bản sửa fixture S24 SSR sát biên 1ms; chờ CI remote, staging, điện thoại thật và Sentry 24 giờ.
+
 - S24 code xong trên `feat/S24-weather-rain-mode`: chủ dự án chốt WeatherAPI Free thay Open-Meteo/WMO; key server-only, cache Redis riêng tối đa 15 phút/tuổi quan sát 30 phút, timeout 3 giây, null khi lỗi. Tile SSR/source/disclaimer/expiry; home no-store giữ dữ liệu mới. Rain URL chọn sẵn chip mái che full/partial, lọc trước pagination và form GET giữ danh mục/chip. 20 task workspace, 75 SSR và Chrome 390px/desktop/bản đồ/không JS/expiry xanh; review độc lập sạch. Runbook `docs/runbooks/weather-rain-mode.md`; chờ API key/dữ liệu thật, CI remote, staging, điện thoại thật và Sentry 24 giờ.
 
 - S23 code xong trên `feat/S23-seasonal-ui`: admin `/mua` chỉnh mùa/lịch trình nổi bật, CAS theo updatedAt và khôi phục input; `/now` cache Redis/HTTP 15 phút tới nửa đêm, ưu tiên hoa và khoảng MM-DD qua năm mới; web SSR áp dụng --accent theo route, banner SVG/giảm chuyển động và promotion không trùng. 20 task workspace, 69 test SSR, Chrome 390px/desktop/chuyển trang/expiry/retry/401 recovery xanh; review độc lập đã kiểm và sửa lỗi bỏ lời nhắc khôi phục xoá bản nhập mới. Runbook `docs/runbooks/seasonal-ui.md`; chờ CI remote, staging, ngày mùa/lịch trình thật, điện thoại thật và Sentry 24 giờ.

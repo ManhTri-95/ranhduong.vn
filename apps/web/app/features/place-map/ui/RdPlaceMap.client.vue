@@ -6,10 +6,12 @@ import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { intersectMapBounds } from '~/entities/place/lib/map-places';
 import { placePinSvg } from '~/entities/place/lib/map-pin';
 import { resolveMapStyleSprites } from '~/shared/lib/map-style';
+import { MAP_MIN_ZOOM, needsPan, type MapInsets, type MapView } from '~/shared/lib/map-camera';
 import { addPlaceLayers, CLUSTERS, PLACE_SOURCE, POINTS, selectPlaceLayer, updatePlaceLayers } from '../lib/map-layers';
 
-const props = defineProps<{ city: CityPublic; places: PlaceCard[]; selectedSlug: string | null }>();
-const emit = defineEmits<{ viewport: [bbox: BBox]; select: [slug: string]; ready: []; error: [] }>();
+/** initialView: khung nhìn khôi phục khi quay lại trang; insets: phần header và sheet đang che bản đồ (px). */
+const props = defineProps<{ city: CityPublic; places: PlaceCard[]; selectedSlug: string | null; initialView?: MapView; insets?: MapInsets }>();
+const emit = defineEmits<{ viewport: [bbox: BBox]; select: [slug: string]; camera: [view: MapView]; ready: []; error: [] }>();
 const styleUrl = useRuntimeConfig().public.mapStyleUrl;
 const container = ref<HTMLDivElement | null>(null);
 const failed = ref(false);
@@ -22,6 +24,7 @@ let disposed = false;
 let generation = 0;
 let startupTimer: ReturnType<typeof setTimeout> | undefined;
 const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const padding = () => ({ top: props.insets?.top ?? 0, bottom: props.insets?.bottom ?? 0, left: 0, right: 0 });
 
 function syncSelectedMarker(): void {
   if (!map?.getLayer(POINTS) || !maplibre) return;
@@ -56,6 +59,8 @@ function syncSelectedMarker(): void {
 
 function emitViewport(): void {
   if (!map) return;
+  const center = map.getCenter();
+  emit('camera', { center: [center.lng, center.lat], zoom: map.getZoom() });
   const bounds = map.getBounds();
   const clipped = intersectMapBounds([bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()], props.city.mapBounds);
   if (clipped) emit('viewport', clipped);
@@ -79,8 +84,8 @@ async function start(): Promise<void> {
     library.setWorkerUrl(mapWorkerUrl);
     const element = container.value;
     const instance = new library.Map({
-      container: element, center: props.city.center.coordinates, zoom: 12,
-      minZoom: 11, maxBounds: props.city.mapBounds, attributionControl: false,
+      container: element, center: props.initialView?.center ?? props.city.center.coordinates, zoom: props.initialView?.zoom ?? 12,
+      minZoom: MAP_MIN_ZOOM, maxBounds: props.city.mapBounds, attributionControl: false,
       dragRotate: false, pitchWithRotate: false,
       locale: { 'NavigationControl.ZoomIn': 'Phóng to', 'NavigationControl.ZoomOut': 'Thu nhỏ' },
     });
@@ -100,7 +105,8 @@ async function start(): Promise<void> {
       updatePlaceLayers(instance, props.places, props.selectedSlug);
       syncSelectedMarker();
       const chosen = props.places.find((place) => place.slug === props.selectedSlug);
-      if (chosen?.location) instance.jumpTo({ center: chosen.location.coordinates });
+      // Khung nhìn khôi phục đã chứa ghim đang chọn; chỉ canh giữa khi mở mới.
+      if (chosen?.location && !props.initialView) instance.jumpTo({ center: chosen.location.coordinates, padding: padding() });
       loading.value = false;
       // MapLibre may emit load after a sprite failure; retain the notice until retry.
       if (!failed.value) emit('ready');
@@ -122,7 +128,7 @@ async function start(): Promise<void> {
         const zoom = await (instance.getSource(PLACE_SOURCE) as GeoJSONSource).getClusterExpansionZoom(cluster.properties.cluster_id as number);
         if (disposed || instance !== map) return;
         const [lng, lat] = cluster.geometry.coordinates;
-        if (lng !== undefined && lat !== undefined) instance.easeTo({ center: [lng, lat], zoom, duration: reducedMotion() ? 0 : 300 });
+        if (lng !== undefined && lat !== undefined) instance.easeTo({ center: [lng, lat], zoom, padding: padding(), duration: reducedMotion() ? 0 : 300 });
       } catch { reportError(); }
     });
     instance.on('mousemove', (event) => {
@@ -154,7 +160,13 @@ watch(() => props.selectedSlug, (slug) => {
   if (!map?.getLayer(POINTS)) return;
   syncSelectedMarker();
   const place = props.places.find((item) => item.slug === slug);
-  if (place?.location) map.easeTo({ center: place.location.coordinates, duration: reducedMotion() ? 0 : 250 });
+  if (!place?.location) return;
+  // Chỉ dịch khi ghim bị header, sheet hoặc mép màn hình che, tránh bản đồ nhảy mỗi lần chọn.
+  const canvas = map.getCanvas();
+  const point = map.project(place.location.coordinates);
+  if (needsPan(point, { width: canvas.clientWidth, height: canvas.clientHeight }, padding())) {
+    map.easeTo({ center: place.location.coordinates, padding: padding(), duration: reducedMotion() ? 0 : 300 });
+  }
 });
 onMounted(start);
 onBeforeUnmount(() => { disposed = true; generation++; clearTimeout(startupTimer); selectedMarker?.remove(); map?.remove(); });
@@ -175,8 +187,10 @@ onBeforeUnmount(() => { disposed = true; generation++; clearTimeout(startupTimer
 .rd-map-canvas, .rd-map-canvas__surface { width: 100%; height: 100%; }
 .rd-map-canvas { position: relative; }
 .rd-map-canvas__surface { background: var(--map-land); }
-.rd-map-canvas__notice { position: absolute; top: var(--space-3); left: var(--space-3); right: calc(var(--tap-min) + var(--space-5)); padding: var(--space-3); background: var(--paper-raised); border: var(--border); border-radius: var(--radius-card); font-size: 14px; }
+.rd-map-canvas__notice { position: absolute; top: calc(var(--map-controls-top, 0px) + var(--space-3)); left: var(--space-3); right: calc(var(--tap-min) + var(--space-5)); padding: var(--space-3); background: var(--paper-raised); border: var(--border); border-radius: var(--radius-card); font-size: 14px; }
 .rd-map-canvas__notice p { margin-top: 0; }
+/* Nút zoom nằm dưới header nổi của trang bản đồ (--map-controls-top do trang đặt). */
+.rd-map-canvas :deep(.maplibregl-ctrl-top-right) { top: var(--map-controls-top, 0px); }
 .rd-map-canvas :deep(.maplibregl-ctrl button) { width: var(--tap-min); height: var(--tap-min); }
 .rd-map-canvas :deep(.maplibregl-ctrl-group) { background: var(--paper-raised); border: var(--border-ink); border-radius: var(--radius-chip); box-shadow: none; }
 .rd-map-canvas :deep(.rd-map-pin) { width: 45px; height: 55px; padding: 0; border: 0; background: transparent; cursor: pointer; z-index: 1; }

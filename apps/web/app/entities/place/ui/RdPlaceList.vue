@@ -2,13 +2,13 @@
 import type { PlaceCard } from '@ranhduong/contracts';
 import RdPlaceCard from './RdPlaceCard.vue';
 
-defineProps<{ places: PlaceCard[]; citySlug: string; now: Date | null }>();
+defineProps<{ places: PlaceCard[]; citySlug: string; now: Date | null; compact?: boolean }>();
 </script>
 
 <template>
   <ul class="list">
     <li v-for="place in places" :key="place.slug">
-      <RdPlaceCard :place="place" :href="`/${citySlug}/dia-diem/${place.slug}`" :now="now" />
+      <RdPlaceCard :place="place" :href="`/${citySlug}/dia-diem/${place.slug}`" :now="now" :compact="compact" />
     </li>
   </ul>
 </template>

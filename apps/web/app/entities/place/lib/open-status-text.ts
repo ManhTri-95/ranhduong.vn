@@ -22,3 +22,17 @@ export function openStatusText(status: OpenStatus): OpenStatusText {
     }
   }
 }
+
+export const UNCONFIRMED_LABEL = 'Thông tin chưa được quán xác nhận';
+
+export interface PlaceStatusText extends OpenStatusText {
+  /** Chỉ quán đã xác nhận mới được dùng chip nền nhấn cho "Đang mở". */
+  accent: boolean;
+  caveat?: typeof UNCONFIRMED_LABEL;
+}
+
+/** Trạng thái cho thẻ và trang địa điểm: quán chưa xác nhận vẫn thấy giờ nhưng chip trung tính kèm lời nhắc. */
+export function placeStatusText(status: OpenStatus, unconfirmed: boolean): PlaceStatusText {
+  const base = openStatusText(status);
+  return { ...base, accent: Boolean(base.chip) && !unconfirmed, ...(unconfirmed ? { caveat: UNCONFIRMED_LABEL } : {}) };
+}

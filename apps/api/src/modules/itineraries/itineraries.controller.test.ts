@@ -57,8 +57,8 @@ describe('GET /v1/cities/:city/itineraries/templates', () => {
     const { status, body } = await get(`/cities/${CITY}/itineraries/templates`);
     expect(status).toBe(200);
     expect((body as ItineraryCardList).items).toEqual([
-      { slug: 'moi', title: 'Lịch trình Giả Lập', days: 3, transport: 'car', pace: 'packed' },
-      { slug: 'cu', title: 'Lịch trình Giả Lập', days: 1, transport: 'motorbike', pace: 'relaxed' },
+      { slug: 'moi', title: 'Lịch trình Giả Lập', days: 3, transport: 'car', pace: 'packed', stopCount: 0, season: '' },
+      { slug: 'cu', title: 'Lịch trình Giả Lập', days: 1, transport: 'motorbike', pace: 'relaxed', stopCount: 0, season: '' },
     ]);
   });
 

@@ -168,7 +168,7 @@ export const PlaceCard = z.object({
   note: z.string().optional(),
   /** Trình duyệt tự tính trạng thái mở cửa theo giờ Việt Nam, vì trang được cache SWR. */
   openingHours: z.array(OpeningSlot),
-  /** true: dòng trạng thái thay bằng "Thông tin chưa được quán xác nhận". */
+  /** true: trạng thái mở cửa hiện bằng chip trung tính, kèm dòng "Thông tin chưa được quán xác nhận". */
   unconfirmed: z.boolean(),
   coverKey: z.string().optional(),
   /** Chỉ trả khi lọc theo bbox hoặc near, dùng cho ghim bản đồ công khai. */

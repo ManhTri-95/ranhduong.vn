@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { directionHref, openingHoursRows, verificationDate } from './place-detail';
+import { directionHref, openingHoursRows, verificationDate, vietnamWeekday } from './place-detail';
 
 describe('place detail helpers', () => {
   it('builds Google Maps directions with lat/lng and optional place ID', () => {
@@ -27,5 +27,14 @@ describe('place detail helpers', () => {
   it('displays verification dates in Vietnam, including UTC day crossover', () => {
     expect(verificationDate('2026-10-08T18:00:00.000Z')).toBe('09/10/2026');
     expect(verificationDate(undefined)).toBeUndefined();
+  });
+});
+
+describe('vietnamWeekday', () => {
+  it('lấy thứ theo giờ Việt Nam, không theo múi giờ máy', () => {
+    // 2026-10-12 17:30 UTC là 00:30 thứ Ba 13/10 ở Việt Nam.
+    expect(vietnamWeekday(new Date('2026-10-12T17:30:00Z'))).toBe(2);
+    expect(vietnamWeekday(new Date('2026-10-12T16:59:00Z'))).toBe(1);
+    expect(vietnamWeekday(new Date('2026-10-11T03:00:00Z'))).toBe(0);
   });
 });

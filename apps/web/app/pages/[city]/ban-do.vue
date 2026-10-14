@@ -8,8 +8,10 @@ import { markUnavailableOnServer, throwIfNotFound } from '~/shared/api/page-stat
 import { usePageSeo } from '~/shared/lib/use-page-seo';
 import RdErrorBanner from '~/shared/ui/RdErrorBanner.vue';
 import RdMapExplorer from '~/widgets/place-map/ui/RdMapExplorer.vue';
+import RdSiteFooter from '~/widgets/site-footer/ui/RdSiteFooter.vue';
 
-definePageMeta({ validate: (route) => Slug.safeParse(route.params.city).success, key: (route) => String(route.params.city) });
+// fullscreen: app.vue không đặt footer dưới khung bản đồ; footer nằm cuối danh sách trong bottom sheet.
+definePageMeta({ validate: (route) => Slug.safeParse(route.params.city).success, key: (route) => String(route.params.city), fullscreen: true });
 const route = useRoute();
 const router = useRouter();
 const citySlug = String(route.params.city);
@@ -41,11 +43,14 @@ usePageSeo({ path: `/${citySlug}/ban-do`, title: () => `Bản đồ ${city.data.
 </script>
 
 <template>
-  <RdMapExplorer v-if="city.data.value" :key="citySlug" :city="city.data.value" :initial-page="places.data.value ?? null" :category="category" :rain-safe="rainSafe" :failed="Boolean(places.error.value)" @category="changeCategory" @rain-safe="changeRainSafe" />
+  <RdMapExplorer v-if="city.data.value" :key="citySlug" :city="city.data.value" :initial-page="places.data.value ?? null" :category="category" :rain-safe="rainSafe" :failed="Boolean(places.error.value)" @category="changeCategory" @rain-safe="changeRainSafe">
+    <template #footer><RdSiteFooter /></template>
+  </RdMapExplorer>
   <main v-else class="rd-map-unavailable">
     <NuxtLink :to="`/${citySlug}`">← Về trang thành phố</NuxtLink>
     <h1 class="page-title">Bản đồ địa điểm</h1>
     <RdErrorBanner message="Chưa tải được thông tin thành phố, thử lại nhé." @retry="retryCity" />
+    <RdSiteFooter />
   </main>
 </template>
 

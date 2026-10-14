@@ -69,7 +69,7 @@ describe('ItinerarySchema và ItinerariesRepository', () => {
     await model.collection.insertMany([
       { ...fakeItinerary({ cityId, slug: 'cu', status: 'published' }), createdAt: new Date('2026-10-01') },
       {
-        ...fakeItinerary({ cityId, slug: 'moi', status: 'published', days: [{ day: 1, stops: [stop(placeA)] }, { day: 2, stops: [stop(placeB)] }] }),
+        ...fakeItinerary({ cityId, slug: 'moi', status: 'published', season: 'Mùa Giả Lập', days: [{ day: 1, stops: [stop(placeA)] }, { day: 2, stops: [stop(placeB)] }] }),
         createdAt: new Date('2026-10-05'),
       },
       { ...fakeItinerary({ cityId, slug: 'nhap' }), status: 'draft', createdAt: new Date('2026-10-06') },
@@ -81,6 +81,7 @@ describe('ItinerarySchema và ItinerariesRepository', () => {
     expect(list.map((t) => t.slug)).toEqual(['moi', 'cu']);
     expect(list[0]).toMatchObject({ title: 'Lịch trình Giả Lập', days: 1, transport: 'motorbike', pace: 'relaxed' });
     expect(list[0]?.stopPlaceIds).toEqual([placeA.toString(), placeB.toString()]);
+    expect(list[0]).toMatchObject({ season: 'Mùa Giả Lập' });
     expect(await repo.listPublishedTemplates(cityId.toString(), 1)).toHaveLength(1);
   });
 });

@@ -45,6 +45,7 @@ interface TemplateRow {
   slug?: string | null;
   title: string;
   params?: { days?: number; transport?: string; pace?: string } | null;
+  season?: string | null;
   days?: { stops?: { placeId: Types.ObjectId }[] }[];
 }
 
@@ -101,7 +102,7 @@ export class ItinerariesRepository {
     const docs = await this.itineraries
       .find(
         { cityId: new Types.ObjectId(cityId), kind: 'template', status: 'published', visibility: { $ne: 'unlisted' }, slug: { $type: 'string' } },
-        { slug: 1, title: 1, 'params.days': 1, 'params.transport': 1, 'params.pace': 1, 'days.stops.placeId': 1 },
+        { slug: 1, title: 1, season: 1, 'params.days': 1, 'params.transport': 1, 'params.pace': 1, 'days.stops.placeId': 1 },
       )
       .sort({ createdAt: -1, _id: -1 })
       .limit(limit)
@@ -113,6 +114,7 @@ export class ItinerariesRepository {
       days: d.params?.days,
       transport: d.params?.transport,
       pace: d.params?.pace,
+      season: d.season ?? undefined,
       stopPlaceIds: (d.days ?? []).flatMap((day) => (day.stops ?? []).map((stop) => stop.placeId.toString())),
     }));
   }

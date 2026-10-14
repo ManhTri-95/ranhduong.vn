@@ -14,6 +14,11 @@ describe('ItineraryCard', () => {
     expect(ItineraryCard.safeParse({ ...CARD, transport: 'bike' }).success).toBe(false);
     expect(ItineraryCard.safeParse({ ...CARD, slug: undefined }).success).toBe(false);
   });
+  it('nhận số điểm dừng và mùa; từ chối số điểm âm hoặc không nguyên', () => {
+    expect(ItineraryCard.parse({ ...CARD, stopCount: 12, season: 'Mùa Giả Lập' })).toMatchObject({ stopCount: 12, season: 'Mùa Giả Lập' });
+    expect(ItineraryCard.safeParse({ ...CARD, stopCount: -1 }).success).toBe(false);
+    expect(ItineraryCard.safeParse({ ...CARD, stopCount: 1.5 }).success).toBe(false);
+  });
 });
 
 describe('ItineraryTemplateQuery', () => {

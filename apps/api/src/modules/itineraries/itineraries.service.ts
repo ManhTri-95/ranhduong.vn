@@ -29,7 +29,8 @@ export class ItinerariesService {
     if (!row || !schedule.success) return null;
     const stopPlaceIds = schedule.data.days.flatMap((day) => day.stops.map((stop) => stop.placeId));
     const covers = await this.places.coverKeys([...new Set(stopPlaceIds)]);
-    return toItineraryCard({ id, slug: row.slug ?? undefined, title: row.title, days: row.params.days, transport: row.params.transport, pace: row.params.pace, stopPlaceIds }, covers);
+    // Same card fields as the list (season chip, stopCount): promoteItinerary swaps the list copy for this one.
+    return toItineraryCard({ id, slug: row.slug ?? undefined, title: row.title, days: row.params.days, transport: row.params.transport, pace: row.params.pace, season: row.season ?? undefined, stopPlaceIds }, covers);
   }
 
   async seasonOptions(cityId: string): Promise<SeasonItineraryOptions> {

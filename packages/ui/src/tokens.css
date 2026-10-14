@@ -43,6 +43,15 @@
   --shadow-note: 0 2px 0 var(--note-edge);
   --shadow-float: 0 6px 16px rgba(30, 58, 47, 0.25);
   --page-gutter: 20px;
+  /* Chuyển động (ui-spec mục 8): phản hồi bấm, đổi trạng thái, panel/bottom sheet. Chỉ animate transform và opacity. */
+  --dur-micro: 140ms;
+  --dur-standard: 200ms;
+  --dur-panel: 250ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --press-scale: 0.98;
+  /* Thanh cố định ở đáy (trang địa điểm) và nút nổi (trang chủ): trang chừa đúng chỗ này ở cuối. */
+  --action-bar-height: 80px;
+  --float-clearance: calc(var(--button-height) + 2 * var(--space-6));
   /* Màu trạng thái, chỉ dùng trong quản trị (ui-spec mục 12): chữ / nền. */
   --status-ok: #1F6B3F;
   --status-ok-bg: #DCEFE2;
