@@ -14,7 +14,7 @@ import RdFormSection from '@/shared/ui/RdFormSection.vue';
 import RdPageHeader from '@/shared/ui/RdPageHeader.vue';
 import RdSkeleton from '@/shared/ui/RdSkeleton.vue';
 import RdStickyActions from '@/shared/ui/RdStickyActions.vue';
-import { firstIssueTarget, issueCounts, publishConfirm, templateMeta } from '../model/summary';
+import { firstIssueTarget, issueCounts, publishBlocker as blockerFor, publishConfirm, templateMeta } from '../model/summary';
 import { useTemplateEditor } from '../model/use-template-editor';
 import RdTemplatePicker from './RdTemplatePicker.vue';
 import RdTemplatePreview from './RdTemplatePreview.vue';
@@ -46,14 +46,13 @@ const publicUrl = computed(() => `https://ranhduong.vn/${CITY_SLUG}/lich-trinh/$
 const isPublished = computed(() => template.value?.status === 'published');
 const title = computed(() => (loading.value ? 'Đang tải lịch trình…' : form.value.title.trim() || (template.value ? 'Lịch trình mẫu' : 'Lịch trình mới')));
 const crumbs = [{ label: 'Lịch trình mẫu', to: listReturnLocation('templates') }];
-const publishBlocker = computed(() => {
-  if (!form.value.title.trim()) return 'Chưa có tên';
-  return counts.value.errors > 0 ? `Còn ${counts.value.errors} lỗi` : '';
-});
+const publishBlocker = computed(() => blockerFor(form.value.title, analysis.value));
 const saveState = computed(() => {
   if (busy.value) return 'Đang lưu…';
-  if (dirty.value) return localKept.value ? 'Có thay đổi chưa lưu (đã giữ trên máy này).' : 'Có thay đổi chưa lưu.';
-  return template.value ? 'Đã lưu. Khi công khai, lịch trình dùng giờ mở cửa hiện tại của địa điểm.' : '';
+  // Lý do nút công khai đang tắt hiện ngay trên thanh (spec 8.7), không chỉ trong tooltip.
+  const blocker = publishBlocker.value ? ` Chưa công khai được: ${publishBlocker.value}.` : '';
+  if (dirty.value) return (localKept.value ? 'Có thay đổi chưa lưu (đã giữ trên máy này).' : 'Có thay đổi chưa lưu.') + blocker;
+  return (template.value ? 'Đã lưu. Khi công khai, lịch trình dùng giờ mở cửa hiện tại của địa điểm.' : '') + blocker;
 });
 
 const feedbackEl = ref<HTMLElement | null>(null);

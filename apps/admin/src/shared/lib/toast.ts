@@ -21,7 +21,9 @@ export function createToastStore(durationMs = 4000) {
   }
   return {
     current,
+    // Thông báo mới hoặc đóng tay: phần tử cũ đã gỡ nên mouseleave/focusout không tới, phải tự bỏ trạng thái dừng đếm.
     show(message: string): void {
+      paused = false;
       current.value = { id: ++seq, message };
       schedule();
     },
@@ -34,6 +36,7 @@ export function createToastStore(durationMs = 4000) {
       schedule();
     },
     dismiss(): void {
+      paused = false;
       clearTimeout(timer);
       current.value = null;
     },

@@ -26,3 +26,15 @@ describe('createConfirmQueue', () => {
     expect(queue.current.value).toBeNull();
   });
 });
+
+describe('S28 review: rời trang khi còn hộp hỏi', () => {
+  it('cancelAll trả "không" cho mọi lời hỏi đang chờ và đóng hộp', async () => {
+    const queue = createConfirmQueue();
+    const first = queue.ask({ ...REQUEST, title: 'Thứ nhất' });
+    const second = queue.ask({ ...REQUEST, title: 'Thứ hai' });
+    queue.cancelAll();
+    await expect(first).resolves.toBe(false);
+    await expect(second).resolves.toBe(false);
+    expect(queue.current.value).toBeNull();
+  });
+});

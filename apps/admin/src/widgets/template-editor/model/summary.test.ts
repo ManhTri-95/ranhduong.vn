@@ -1,6 +1,6 @@
 import type { TemplateDayInput, TemplateIssue } from '@ranhduong/contracts';
 import { describe, expect, it } from 'vitest';
-import { firstIssueTarget, issueCounts, moveAnnouncement, publishConfirm, stopPosition, stopRow, templateMeta } from './summary';
+import { firstIssueTarget, issueCounts, moveAnnouncement, publishBlocker, publishConfirm, stopPosition, stopRow, templateMeta } from './summary';
 
 const place = '111111111111111111111111';
 const k1 = '11111111-1111-4111-8111-111111111111';
@@ -55,5 +55,14 @@ describe('publishConfirm', () => {
     expect(publishConfirm('published', 'draft')).toBe('unpublish');
     expect(publishConfirm('published', 'published')).toBeNull();
     expect(publishConfirm('draft', 'draft')).toBeNull();
+  });
+});
+
+describe('S28 review: publishBlocker', () => {
+  it('ghi lý do chưa công khai được để hiện cạnh nút', () => {
+    expect(publishBlocker('Giả Lập', { issues: [], canPublish: true })).toBe('');
+    expect(publishBlocker('  ', { issues: [], canPublish: true })).toBe('Chưa có tên');
+    expect(publishBlocker('Giả Lập', { issues: [issue('error', 0, k1), issue('error', 1), issue('warning', 0)], canPublish: false })).toBe('Còn 2 lỗi');
+    expect(publishBlocker('Giả Lập', { issues: [], canPublish: false })).toBe('Còn lỗi cần sửa');
   });
 });

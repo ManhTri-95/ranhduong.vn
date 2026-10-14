@@ -36,3 +36,15 @@ describe('createToastStore', () => {
     expect(toast.current.value).toBeNull();
   });
 });
+
+describe('S28 review: đóng tay khi đang rê chuột', () => {
+  it('đóng bằng × lúc đang dừng đếm thì thông báo sau vẫn tự ẩn', () => {
+    const toast = createToastStore();
+    toast.show('Cũ Giả Lập');
+    toast.pause();
+    toast.dismiss();
+    toast.show('Mới Giả Lập');
+    vi.advanceTimersByTime(4000);
+    expect(toast.current.value).toBeNull();
+  });
+});

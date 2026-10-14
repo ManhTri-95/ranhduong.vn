@@ -3,6 +3,7 @@ import { computed, nextTick, onUnmounted, ref, shallowRef, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { sessionState } from '@/entities/session';
 import { logout } from '@/features/auth';
+import { cancelPendingConfirms } from '@/shared/lib/confirm';
 import { formatDocumentTitle } from '@/shared/lib/document-title';
 import { listReturnLocation } from '@/shared/lib/list-return';
 import RdConfirmDialog from '@/shared/ui/RdConfirmDialog.vue';
@@ -47,6 +48,8 @@ function focusPageTitle(): void {
 const stopAfterEach = router.afterEach(async (to, from, failure) => {
   if (failure) return;
   menuOpen.value = false;
+  // Hộp hỏi còn mở của trang cũ (bấm Back khi đang hỏi): trả "không" để code của trang cũ không lưu hay xoá gì.
+  if (to.path !== from.path) cancelPendingConfirms();
   const effects = routeChangeEffects(to, from);
   if (effects.resetTitle) document.title = formatDocumentTitle(to.meta.title ?? '');
   if (!effects.moveFocus) return;

@@ -82,3 +82,11 @@ export function publishConfirm(current: ItineraryStatus | null, target: Itinerar
   if (target === 'draft' && current === 'published') return 'unpublish';
   return null;
 }
+
+/** Lý do nút công khai đang tắt, hiện cạnh thanh lưu; rỗng là công khai được. */
+export function publishBlocker(title: string, analysis: Pick<TemplateAnalysis, 'issues' | 'canPublish'>): string {
+  if (!title.trim()) return 'Chưa có tên';
+  const { errors } = issueCounts(analysis);
+  if (errors > 0) return `Còn ${errors} lỗi`;
+  return analysis.canPublish ? '' : 'Còn lỗi cần sửa';
+}
