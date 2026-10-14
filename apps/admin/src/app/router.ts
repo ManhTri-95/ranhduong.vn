@@ -5,22 +5,30 @@ declare module 'vue-router' {
   interface RouteMeta {
     /** Trang mở được khi chưa đăng nhập. */
     public?: boolean;
+    /** Tên trên tab trình duyệt; trang có RdPageHeader tự đặt tên cụ thể hơn (tên địa điểm, lịch trình). */
+    title?: string;
   }
 }
 
 export const router = createRouter({
   history: createWebHistory(),
+  // Back/Forward trả lại chỗ cũ. Cùng một trang (đổi bộ lọc, /moi thành /{id} sau khi tạo) giữ nguyên chỗ đang cuộn.
+  scrollBehavior(to, from, savedPosition) {
+    if (savedPosition) return savedPosition;
+    if (to.matched.at(-1) === from.matched.at(-1)) return false;
+    return { top: 0 };
+  },
   routes: [
     { path: '/', redirect: '/dia-diem' },
-    { path: '/dang-nhap', component: () => import('@/pages/LoginPage.vue'), meta: { public: true } },
-    { path: '/dia-diem', component: () => import('@/pages/PlacesPage.vue') },
-    { path: '/dia-diem/:id', component: () => import('@/pages/PlaceEditPage.vue') },
-    { path: '/danh-sach', component: () => import('@/pages/CuratedListsPage.vue') },
-    { path: '/danh-sach/:id', component: () => import('@/pages/CuratedListEditPage.vue') },
-    { path: '/lich-trinh', component: () => import('@/pages/TemplatesPage.vue') },
-    { path: '/lich-trinh/:id', component: () => import('@/pages/TemplateEditPage.vue') },
-    { path: '/bao-cao', component: () => import('@/pages/MetricsPage.vue') },
-    { path: '/mua', component: () => import('@/pages/SeasonsPage.vue') },
+    { path: '/dang-nhap', component: () => import('@/pages/LoginPage.vue'), meta: { public: true, title: 'Đăng nhập' } },
+    { path: '/dia-diem', component: () => import('@/pages/PlacesPage.vue'), meta: { title: 'Địa điểm' } },
+    { path: '/dia-diem/:id', component: () => import('@/pages/PlaceEditPage.vue'), meta: { title: 'Địa điểm' } },
+    { path: '/danh-sach', component: () => import('@/pages/CuratedListsPage.vue'), meta: { title: 'Danh sách gợi ý' } },
+    { path: '/danh-sach/:id', component: () => import('@/pages/CuratedListEditPage.vue'), meta: { title: 'Danh sách gợi ý' } },
+    { path: '/lich-trinh', component: () => import('@/pages/TemplatesPage.vue'), meta: { title: 'Lịch trình mẫu' } },
+    { path: '/lich-trinh/:id', component: () => import('@/pages/TemplateEditPage.vue'), meta: { title: 'Lịch trình mẫu' } },
+    { path: '/bao-cao', component: () => import('@/pages/MetricsPage.vue'), meta: { title: 'Báo cáo' } },
+    { path: '/mua', component: () => import('@/pages/SeasonsPage.vue'), meta: { title: 'Mùa & giao diện' } },
     { path: '/:pathMatch(.*)*', redirect: '/dia-diem' },
   ],
 });
