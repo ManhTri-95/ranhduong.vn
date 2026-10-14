@@ -62,3 +62,22 @@ describe('S15 editor local recovery and saves', () => {
     await editor.save('draft'); expect(createTemplate).toHaveBeenCalledOnce(); expect(updateTemplate).toHaveBeenCalledWith(id, input);
   });
 });
+describe('S28 bỏ thay đổi, giờ đã giữ trên máy', () => {
+  it('"Bỏ thay đổi" trả form về bản đã lưu và xoá bản trên máy', async () => {
+    const editor = await open();
+    editor.form.value.title = 'Đổi Giả Lập';
+    expect(storage.size).toBe(1);
+    editor.discardChanges();
+    expect(editor.form.value.title).toBe('');
+    expect(editor.dirty.value).toBe(false);
+    expect(editor.localKept.value).toBe(false);
+    expect(storage.size).toBe(0);
+  });
+  it('khung khôi phục biết bản trên máy được giữ lúc nào', async () => {
+    storage.set('rd:template:da-lat:moi', JSON.stringify({ savedAt: '2026-10-14T02:00:00.000Z', value: input }));
+    const editor = await open();
+    expect(editor.restorableSavedAt.value).toBe('2026-10-14T02:00:00.000Z');
+    editor.discardLocal();
+    expect(editor.restorableSavedAt.value).toBeNull();
+  });
+});

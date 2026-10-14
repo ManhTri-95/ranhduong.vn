@@ -19,6 +19,7 @@ export function useTemplateEditor(initialId: string | null, onCreated: (id: stri
   const notice = ref('');
   const loginRequired = ref(false);
   const restorable = ref<TemplateEditInput | null>(null);
+  const restorableSavedAt = ref<string | null>(null);
   const localKept = ref(false);
   const baseline = ref(JSON.stringify(form.value));
   const dirty = computed(() => JSON.stringify(form.value) !== baseline.value);
@@ -43,12 +44,19 @@ export function useTemplateEditor(initialId: string | null, onCreated: (id: stri
       places.value = candidates; template.value = saved;
       if (saved) form.value = TemplateEditInput.parse(saved);
       baseline.value = JSON.stringify(form.value);
-      restorable.value = readLocalDraft(storageKey(), TemplateLocalDraft)?.value ?? null;
+      const local = readLocalDraft(storageKey(), TemplateLocalDraft);
+      restorable.value = local?.value ?? null;
+      restorableSavedAt.value = local?.savedAt ?? null;
     } catch (err) { if (!disposed) { loginRequired.value = toApiFailure(err).status === 401; loadError.value = toApiFailure(err).status === 404 ? 'Không tìm thấy lịch trình mẫu.' : 'Chưa tải được lịch trình, thử lại nhé.'; } }
     finally { if (!disposed) loading.value = false; }
   }
-  function restore(): void { if (restorable.value) form.value = { ...restorable.value, status: template.value?.status ?? 'draft' }; restorable.value = null; }
-  function discardLocal(): void { restorable.value = null; removeLocalDraft(storageKey()); localKept.value = false; }
+  function restore(): void { if (restorable.value) form.value = { ...restorable.value, status: template.value?.status ?? 'draft' }; restorable.value = null; restorableSavedAt.value = null; }
+  function discardLocal(): void { restorable.value = null; restorableSavedAt.value = null; removeLocalDraft(storageKey()); localKept.value = false; }
+  /** "Bỏ thay đổi": form về bản đã lưu (hoặc trống khi chưa lưu), xoá bản trên máy và lời hỏi khôi phục. */
+  function discardChanges(): void {
+    form.value = TemplateLocalDraft.parse(JSON.parse(baseline.value));
+    removeLocalDraft(storageKey()); localKept.value = false; restorable.value = null; restorableSavedAt.value = null; errors.value = []; notice.value = '';
+  }
   async function refreshPlaces(): Promise<void> {
     try { const values = await fetchTemplatePlaces(CITY_SLUG); if (!disposed) places.value = values; }
     catch (err) { loginRequired.value = toApiFailure(err).status === 401; errors.value = ['Chưa kiểm lại được dữ liệu địa điểm, thử lại nhé.']; }
@@ -82,7 +90,7 @@ export function useTemplateEditor(initialId: string | null, onCreated: (id: stri
     } finally { if (!disposed) busy.value = false; }
   }
   void load();
-  return { id, template, form, places, analysis, loading, busy, loadError, errors, notice, loginRequired, loginReturnTo, restorable, localKept, dirty, load, restore, discardLocal, refreshPlaces, save, setStop,
+  return { id, template, form, places, analysis, loading, busy, loadError, errors, notice, loginRequired, loginReturnTo, restorable, restorableSavedAt, localKept, dirty, load, restore, discardLocal, discardChanges, refreshPlaces, save, setStop,
     add: (day: number, placeId: string) => { form.value.days = addStop(form.value.days, day, placeId); },
     move: (key: string, day: number, index: number) => { form.value.days = moveStop(form.value.days, key, day, index); },
     remove: (key: string) => { form.value.days = removeStop(form.value.days, key); },
