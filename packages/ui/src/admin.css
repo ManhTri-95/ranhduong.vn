@@ -139,3 +139,72 @@ html { scroll-padding-bottom: var(--admin-bar-height, 0px); }
 .rd-admin-nav__account { margin-top: auto; padding: var(--space-4) 10px 0; display: flex; flex-direction: column; gap: 6px; }
 .rd-admin-nav__email { font-size: 12px; overflow-wrap: anywhere; }
 .rd-admin-nav__logout { min-height: var(--tap-min); border: var(--border-hair) solid var(--paper-raised); border-radius: var(--radius-chip); background: transparent; color: var(--paper-raised); font: inherit; font-size: 14px; cursor: pointer; }
+
+/* Trang và đầu trang (RdPageHeader). */
+.rd-admin-page { display: flex; flex-direction: column; gap: var(--space-4); max-width: var(--admin-content-max); }
+.rd-admin-header { display: flex; flex-direction: column; gap: var(--space-1); }
+.rd-admin-crumbs ol { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1); margin: 0; padding: 0; list-style: none; font-size: 13px; color: var(--ink-soft); }
+.rd-admin-crumbs li + li::before { content: '/'; margin-right: var(--space-1); }
+.rd-admin-crumbs a { display: inline-flex; align-items: center; min-height: var(--tap-min); color: var(--ink); font-weight: 600; }
+.rd-admin-crumbs [aria-current='page'] { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 40ch; }
+.rd-admin-header__row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); }
+.rd-admin-header__title { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); min-width: 0; }
+.rd-admin-header h1 { margin: 0; font: 700 22px/1.3 var(--font-display); overflow-wrap: anywhere; }
+.rd-admin-header h1:focus { outline: none; }
+.rd-admin-header__actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.rd-admin-header__meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); font-size: 13px; color: var(--ink-soft); overflow-wrap: anywhere; }
+@media (min-width: 768px) { .rd-admin-header h1 { font-size: 26px; } }
+
+/* Thanh lọc (RdFilterBar): lưới 2 cột dưới 1024px, một hàng từ 1024px. */
+.rd-admin-filters { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.rd-admin-filters__fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2); flex: 1 1 100%; }
+.rd-admin-filters__search { grid-column: 1 / -1; }
+@media (min-width: 1024px) {
+  .rd-admin-filters { flex-wrap: nowrap; }
+  .rd-admin-filters__fields { display: flex; flex: 1 1 auto; }
+  .rd-admin-filters__fields > * { flex: 1 1 150px; min-width: 0; }
+  .rd-admin-filters__fields > .rd-admin-filters__search { flex: 2 1 240px; }
+}
+
+/* Bảng (RdDataTable): tiêu đề dính theo trang nên khung bảng không cuộn ngang. */
+.rd-admin-table { width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 0; background: var(--paper-raised); border: var(--border); border-radius: var(--radius-card); font-size: 14px; }
+.rd-admin-table th { position: sticky; top: 0; z-index: var(--z-sticky); padding: 0 12px; background: var(--paper-raised); border-bottom: var(--border); text-align: left; font-size: 13px; font-weight: 600; color: var(--ink-soft); }
+.rd-admin-table th:first-child { border-top-left-radius: var(--radius-card); }
+.rd-admin-table th:last-child { border-top-right-radius: var(--radius-card); }
+.rd-admin-table td { padding: var(--space-2) 12px; border-bottom: var(--border-hair) solid var(--mist); vertical-align: middle; overflow-wrap: anywhere; }
+.rd-admin-table tbody tr:last-child td { border-bottom: 0; }
+.rd-admin-table tbody tr { transition: background-color var(--dur-micro) var(--ease-out); }
+@media (hover: hover) { .rd-admin-table tbody tr:hover { background: var(--paper); } }
+/* Tab ngược lên không để link nằm dưới tiêu đề bảng đang dính. */
+.rd-admin-table :is(a, button) { scroll-margin-top: 56px; }
+.rd-admin-table__sort { display: inline-flex; align-items: center; gap: var(--space-1); min-height: var(--tap-min); padding: 0; border: 0; background: none; font: inherit; color: inherit; cursor: pointer; }
+.rd-admin-col--from-1024 { display: none; }
+@media (min-width: 1024px) { .rd-admin-col--from-1024 { display: table-cell; } }
+.rd-admin-cards { display: none; margin: 0; padding: 0; list-style: none; gap: var(--space-3); }
+.rd-admin-card { display: flex; flex-direction: column; gap: var(--space-1); padding: var(--space-3) var(--space-4); background: var(--paper-raised); border: var(--border); border-radius: var(--radius-card); }
+.rd-admin-card p { margin: 0; }
+@media (max-width: 767.98px) { .rd-admin-table { display: none; } .rd-admin-cards { display: grid; } }
+
+/* Ô và dòng trong bảng, thẻ. */
+.rd-admin-stack { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.rd-admin-truncate { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rd-admin-row-title { display: block; padding: 12px 0; line-height: 20px; color: var(--ink); font-weight: 700; }
+.rd-admin-row-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--space-2); }
+.rd-admin-card .rd-admin-row-actions { justify-content: space-between; }
+
+/* Trạng thái rỗng, lỗi (RdEmptyState) và khung xương (RdSkeleton). */
+.rd-admin-empty { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); padding: var(--space-6) var(--space-5); text-align: center; background: var(--paper-raised); border: var(--border); border-radius: var(--radius-card); animation: rd-fade-up var(--dur-standard) var(--ease-out); }
+.rd-admin-empty--error { background: var(--status-bad-bg); color: var(--status-bad); border-color: transparent; }
+.rd-admin-empty__title { margin: 0; font-weight: 700; }
+.rd-admin-empty__body { margin: 0; color: var(--ink-soft); }
+.rd-admin-empty--error .rd-admin-empty__body { color: inherit; }
+.rd-admin-empty__actions { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-2); }
+.rd-admin-skeleton { display: flex; flex-direction: column; gap: var(--space-2); }
+.rd-admin-skeleton--table .rd-admin-skeleton__row { height: 56px; }
+.rd-admin-skeleton--card .rd-admin-skeleton__row { height: 132px; border-radius: var(--radius-card); }
+
+/* Hiện theo độ rộng (đặt sau các khối trên để thắng display của chúng). */
+.rd-admin-skeleton.rd-admin-only-cards { display: none; }
+@media (max-width: 767.98px) { .rd-admin-skeleton.rd-admin-only-table { display: none; } .rd-admin-skeleton.rd-admin-only-cards { display: flex; } }
+@media (min-width: 1024px) { .rd-admin-only-narrow { display: none; } }
+@media (max-width: 1023.98px) { .rd-admin-only-wide { display: none; } }
