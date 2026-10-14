@@ -38,7 +38,9 @@ function drag(event: DragEvent, place: TemplatePlace): void {
 <style scoped>
 .rd-template-picker { min-width: 0; align-self: start; }
 .rd-template-picker__filters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2); }
-.rd-template-picker__places { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); max-height: 650px; overflow-y: auto; }
-.rd-template-picker__place { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-3); border: var(--border); border-radius: var(--radius-chip); background: var(--paper); overflow-wrap: anywhere; }
+.rd-template-picker__places { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); }
+.rd-template-picker__place { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 2px var(--space-3); padding: var(--space-2) var(--space-3); border: var(--border); border-radius: var(--radius-chip); background: var(--paper); overflow-wrap: anywhere; }
+.rd-template-picker__place > :not(.rd-btn) { grid-column: 1; }
+.rd-template-picker__place > .rd-btn { grid-column: 2; grid-row: 1 / span 3; }
 .rd-template-picker__place[draggable='true'] { cursor: grab; }
 </style>
