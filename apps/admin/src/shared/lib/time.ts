@@ -33,3 +33,16 @@ export function daysAgoText(iso: string, now: Date): string {
   if (days === 1) return 'Hôm qua';
   return `${days} ngày trước`;
 }
+
+/** Ngày theo giờ Việt Nam, ví dụ "08/10/2026" (khung Xác minh của form). */
+export function formatLocalDate(iso: string): string {
+  const parts = DAY_PARTS.formatToParts(new Date(iso));
+  const part = (type: Intl.DateTimeFormatPartTypes) => parts.find((p) => p.type === type)?.value ?? '';
+  return `${part('day')}/${part('month')}/${part('year')}`;
+}
+
+/** Cột "Cập nhật": sửa trong hôm nay thì ghi giờ ("Hôm nay 10:05"), còn lại như cột xác minh. */
+export function updatedAgoText(iso: string, now: Date): string {
+  if (vnDayIndex(now) - vnDayIndex(new Date(iso)) <= 0) return `Hôm nay ${formatLocalTime(iso).split(' ')[0] ?? ''}`;
+  return daysAgoText(iso, now);
+}

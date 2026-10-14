@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { daysAgoText, formatLocalTime } from './time';
+import { daysAgoText, formatLocalDate, formatLocalTime, updatedAgoText } from './time';
 
 describe('formatLocalTime', () => {
   it('hiện theo giờ Việt Nam (UTC+7)', () => {
@@ -23,5 +23,17 @@ describe('daysAgoText', () => {
     const now = new Date('2026-10-08T03:00:00Z');
     expect(daysAgoText('2026-10-06T03:00:00Z', now)).toBe('2 ngày trước');
     expect(daysAgoText('2026-07-10T03:00:00Z', now)).toBe('90 ngày trước');
+  });
+});
+
+describe('S28 formatLocalDate, updatedAgoText', () => {
+  it('ngày theo giờ Việt Nam, đủ năm', () => {
+    expect(formatLocalDate('2026-10-07T18:30:00Z')).toBe('08/10/2026');
+  });
+  it('sửa hôm nay thì ghi giờ; hôm trước thì như cột xác minh', () => {
+    const now = new Date('2026-10-08T10:00:00Z');
+    expect(updatedAgoText('2026-10-08T03:05:00Z', now)).toBe('Hôm nay 10:05');
+    expect(updatedAgoText('2026-10-07T03:00:00Z', now)).toBe('Hôm qua');
+    expect(updatedAgoText('2026-10-01T03:00:00Z', now)).toBe('7 ngày trước');
   });
 });

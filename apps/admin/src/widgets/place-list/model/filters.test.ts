@@ -1,8 +1,13 @@
 import { AdminPlaceSummary } from '@ranhduong/contracts';
 import { describe, expect, it } from 'vitest';
 import {
+  clearFilters,
   DEFAULT_FILTERS,
   filtersFromQuery,
+  hasActiveFilters,
+  SORT_OPTIONS,
+  sortToTable,
+  tableToSort,
   filtersToQuery,
   inTab,
   matchesFilters,
@@ -170,5 +175,29 @@ describe('withKnownZone', () => {
     expect(withKnownZone(filters({ zone: 'cum-gia-lap-a', tab: 'draft' }), zones)).toEqual(filters({ zone: 'cum-gia-lap-a', tab: 'draft' }));
     expect(withKnownZone(filters({ zone: NO_ZONE }), zones).zone).toBe(NO_ZONE);
     expect(withKnownZone(filters(), zones).zone).toBe('');
+  });
+});
+
+describe('S28 xếp, xoá bộ lọc', () => {
+  it('"Lâu chưa sửa" xếp sửa cũ nhất trước', () => {
+    const old = row({ name: 'Cũ Giả Lập', updatedAt: '2026-09-01T03:00:00.000Z' });
+    const recent = row({ name: 'Mới Giả Lập', updatedAt: '2026-10-07T03:00:00.000Z' });
+    expect(names(sortRows([recent, old], '-updated'))).toEqual(['Cũ Giả Lập', 'Mới Giả Lập']);
+    expect(filtersFromQuery({ sort: '-updated' }).sort).toBe('-updated');
+  });
+  it('ô Xếp và tiêu đề cột luôn khớp nhau, có đủ sáu cách xếp', () => {
+    expect(SORT_OPTIONS.map((option) => option.value)).toEqual(['updated', '-updated', 'name', '-name', 'verified', '-verified']);
+    for (const option of SORT_OPTIONS) expect(tableToSort(sortToTable(option.value))).toBe(option.value);
+    expect(sortToTable('updated')).toEqual({ key: 'updated', dir: 'desc' });
+    expect(tableToSort(null)).toBe('updated');
+    expect(tableToSort({ key: 'la', dir: 'asc' })).toBe('updated');
+  });
+  it('đang lọc khi có từ khoá, cụm, danh mục hay nguồn; xoá thì giữ tab và cách xếp', () => {
+    expect(hasActiveFilters(filters())).toBe(false);
+    expect(hasActiveFilters(filters({ tab: 'draft', sort: 'name' }))).toBe(false);
+    expect(hasActiveFilters(filters({ q: '  ' }))).toBe(false);
+    expect(hasActiveFilters(filters({ zone: NO_ZONE }))).toBe(true);
+    const active = filters({ tab: 'draft', sort: 'name', q: 'giả', zone: NO_ZONE, category: 'cafe', verify: 'owner' });
+    expect(clearFilters(active)).toEqual(filters({ tab: 'draft', sort: 'name' }));
   });
 });

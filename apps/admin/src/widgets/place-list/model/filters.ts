@@ -1,6 +1,7 @@
 import { PlaceCategory, servesCategory, Slug, verificationStale, type AdminPlaceSummary } from '@ranhduong/contracts';
 import { matchScore, searchKey } from '@ranhduong/geo';
 import { z } from 'zod';
+import type { TableSort } from '@/shared/lib/table';
 
 /** Tab trạng thái (ui-spec mục 12) và tab "Ẩn hoặc đã đóng" thêm ở S07 để tìm lại chỗ đã ẩn, đã đóng. */
 export const ListTab = z.enum(['all', 'draft', 'active', 'suspected', 'stale', 'inactive']);
@@ -24,8 +25,8 @@ export const VERIFY_FILTERS: readonly { value: VerifyFilter; label: string }[] =
   { value: 'none', label: 'Chưa chọn' },
 ];
 
-/** updated: sửa gần nhất trước; name: A→Z; verified: chưa xác minh và lâu nhất trước; dấu trừ là chiều ngược lại. */
-export const ListSort = z.enum(['updated', 'name', '-name', 'verified', '-verified']);
+/** updated: sửa gần nhất trước; -updated: sửa lâu nhất trước; name: A→Z; verified: chưa xác minh và lâu nhất trước; dấu trừ là chiều ngược lại. */
+export const ListSort = z.enum(['updated', '-updated', 'name', '-name', 'verified', '-verified']);
 export type ListSort = z.infer<typeof ListSort>;
 
 /** Giá trị lọc cụm cho chỗ chưa chọn cụm; không phải slug hợp lệ nên không trùng cụm nào. */
@@ -143,6 +144,7 @@ const byName: Compare = (a, b) => collator.compare(a.name, b.name);
 const verifiedTime = (row: AdminPlaceSummary) => (row.lastVerifiedAt ? Date.parse(row.lastVerifiedAt) : -Infinity);
 const COMPARE: Record<ListSort, Compare> = {
   updated: (a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt) || byName(a, b),
+  '-updated': (a, b) => Date.parse(a.updatedAt) - Date.parse(b.updatedAt) || byName(a, b),
   name: byName,
   '-name': (a, b) => byName(b, a),
   // -Infinity trừ -Infinity ra NaN (falsy) nên hai chỗ chưa xác minh xếp theo tên.
@@ -161,4 +163,44 @@ export function visibleRows(rows: readonly AdminPlaceSummary[], filters: ListFil
     rows.filter((row) => inTab(row, filters.tab, now) && matchesFilters(row, filters)),
     filters.sort,
   );
+}
+
+/** Ô "Xếp" (spec S28 mục 6.2); nhãn hiện sau chữ "Xếp: ". */
+export const SORT_OPTIONS: readonly { value: ListSort; label: string }[] = [
+  { value: 'updated', label: 'Mới sửa' },
+  { value: '-updated', label: 'Lâu chưa sửa' },
+  { value: 'name', label: 'Tên A→Z' },
+  { value: '-name', label: 'Tên Z→A' },
+  { value: 'verified', label: 'Lâu chưa xác minh' },
+  { value: '-verified', label: 'Mới xác minh' },
+];
+
+/** Cách xếp ↔ cột bảng; chiều là chiều thật của giá trị trong cột (mới sửa trước là giảm dần theo thời gian). */
+const SORT_TABLE: Record<ListSort, TableSort> = {
+  updated: { key: 'updated', dir: 'desc' },
+  '-updated': { key: 'updated', dir: 'asc' },
+  name: { key: 'name', dir: 'asc' },
+  '-name': { key: 'name', dir: 'desc' },
+  verified: { key: 'verified', dir: 'asc' },
+  '-verified': { key: 'verified', dir: 'desc' },
+};
+
+export function sortToTable(sort: ListSort): TableSort {
+  return SORT_TABLE[sort];
+}
+
+/** Cột không xếp được hoặc lạ thì về mặc định "Mới sửa". */
+export function tableToSort(table: TableSort | null): ListSort {
+  if (!table) return DEFAULT_FILTERS.sort;
+  return ListSort.options.find((sort) => SORT_TABLE[sort].key === table.key && SORT_TABLE[sort].dir === table.dir) ?? DEFAULT_FILTERS.sort;
+}
+
+/** Có lọc gì ngoài tab và cách xếp không (hiện nút "Xoá bộ lọc"). */
+export function hasActiveFilters(filters: ListFilters): boolean {
+  return filters.q.trim() !== '' || filters.zone !== '' || filters.category !== '' || filters.verify !== '';
+}
+
+/** "Xoá bộ lọc": bỏ từ khoá, cụm, danh mục, nguồn; giữ tab và cách xếp. */
+export function clearFilters(filters: ListFilters): ListFilters {
+  return { ...filters, q: '', zone: '', category: '', verify: '' };
 }
