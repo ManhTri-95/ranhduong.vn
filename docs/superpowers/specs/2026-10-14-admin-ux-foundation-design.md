@@ -102,7 +102,7 @@ Tiêu đề "Địa điểm", dòng phụ "{n} địa điểm", nút chính "Th�
 
 ### 6.2 Thanh lọc
 
-Một hàng trên desktop: ô tìm (giữ cách tìm không dấu theo tên và tên khác), Cụm, Danh mục, Nguồn xác nhận, **Xếp** (Mới sửa, Tên A→Z, Tên Z→A, Lâu chưa xác minh, Mới xác minh = `updated`, `name`, `-name`, `verified`, `-verified`). Nhãn `sr-only`, lựa chọn mặc định ghi rõ nghĩa. Điện thoại: ô tìm hết hàng, bốn ô chọn lưới 2 cột. Bấm tiêu đề cột vẫn xếp và đồng bộ với ô Xếp. "Xoá bộ lọc" xoá `q`, `zone`, `category`, `verify`, giữ tab và cách xếp. Dòng "Đang hiện {x} trong {y}" giữ `aria-live`.
+Một hàng trên desktop: ô tìm (giữ cách tìm không dấu theo tên và tên khác), Cụm, Danh mục, Nguồn xác nhận, **Xếp** (Mới sửa, Lâu chưa sửa, Tên A→Z, Tên Z→A, Lâu chưa xác minh, Mới xác minh = `updated`, `-updated`, `name`, `-name`, `verified`, `-verified`; `-updated` mới, để bấm tiêu đề cột Cập nhật lần hai có chiều ngược lại). Nhãn `sr-only`, lựa chọn mặc định ghi rõ nghĩa. Điện thoại: ô tìm hết hàng, bốn ô chọn lưới 2 cột. Bấm tiêu đề cột vẫn xếp và đồng bộ với ô Xếp. "Xoá bộ lọc" xoá `q`, `zone`, `category`, `verify`, giữ tab và cách xếp. Dòng "Đang hiện {x} trong {y}" giữ `aria-live`.
 
 ### 6.3 Bảng và thẻ
 
@@ -111,7 +111,7 @@ Một hàng trên desktop: ô tìm (giữ cách tìm không dấu theo tên và 
 | Địa điểm | Tên (link, cắt "…", `title` gồm tên và tên khác); dòng 2 "{danh mục chính, phụ} · {cụm hoặc Chưa chọn cụm}" | Có | |
 | Trạng thái | `statusChip` hiện tại | | |
 | Còn thiếu | `missingLabels(activationIssues)`: Vị trí, Giờ mở cửa, Nguồn xác nhận, Nguồn ảnh; rỗng thì "Đủ" kèm chấm `--status-ok` | | |
-| Xác minh | Dòng 1 `verifySourceLabel`; dòng 2 `daysAgoText` hoặc "Chưa xác minh" | Có | |
+| Xác minh | Dòng 1 `verifySourceLabel`; dòng 2 `daysAgoText` hoặc "Chưa xác minh" | Có | Có (ở 768px cột Địa điểm cần khoảng 270px; vẫn xếp được bằng ô Xếp) |
 | Ảnh | `photoCount` | | Có |
 | Cập nhật | Thời gian tương đối từ `updatedAt` | Có | Có |
 | Thao tác | Nút chính theo `primaryAction` và nút ⋯ mở `RdPlaceActionsDialog` | | |
@@ -189,7 +189,7 @@ Phân trang (API trả hết, lọc trong trình duyệt; xem lại khi quá kho
 
 - Hàng: số thứ tự, khoảng giờ, tên, "{danh mục} · {phút dừng}'", huy hiệu "✕ {n}" và "⚠ {n}" (có chữ cho trình đọc màn hình), nút mở rộng (`aria-expanded`, `aria-controls`). Giữa hai hàng có dòng "{n} phút di chuyển (ước lượng)".
 - Mỗi lần mở một điểm; điểm đang mở có viền `--ink` 2px. Khi mở: giờ đến, giờ đi, thời gian dừng, loại điểm, "Đã sửa tay" và "Tính lại tự động", ghi chú, đổi địa điểm, chuyển ngày, [↑ Lên] [↓ Xuống] [Bỏ điểm], các lỗi và nhắc của điểm.
-- Lỗi cấp ngày dưới tiêu đề ngày. "Bỏ ngày" trong menu ⋯ của ngày, hỏi bằng `useConfirm()` khi ngày còn điểm.
+- Lỗi cấp ngày dưới tiêu đề ngày. Nút chữ "Bỏ ngày {d}" ở tiêu đề ngày (menu ⋯ chỉ có một mục thì không cần), hỏi bằng `useConfirm()` khi ngày còn điểm.
 - Sau Lên, Xuống, Chuyển ngày: focus về nút vừa bấm của đúng điểm, vùng `aria-live` báo "Đã chuyển {tên} lên vị trí {n}, ngày {d}".
 - Ô "Giờ đi" giữ ô chữ `HH:mm` vì phải nhận `24:00` (runbook template-editor mục 4). GĐ2: thêm gợi ý "HH:mm, nhận 24:00".
 
@@ -234,7 +234,7 @@ MapLibre tải khi mở tab Bản đồ; chip "Ngày 1…Tất cả"; ghim đán
 | Viền focus | Không animate | 0 | — |
 | Tab | Màu chữ, gạch chân (đã có) | 200ms | Đổi ngay |
 | Ngăn trượt | `translateX(-100%)` → 0; nền mờ `opacity` | 250ms `--dur-panel`; nền 200ms | Hiện ngay |
-| Hộp thoại | `opacity` và `scale` 0.98 → 1 bằng `@starting-style`; đóng nhanh hơn | Mở 200ms, đóng 150ms | Hiện ngay |
+| Hộp thoại | `opacity` và `scale` 0.98 → 1 bằng `@starting-style`; đóng nhanh hơn | Mở 200ms (`--dur-standard`), đóng 140ms (`--dur-micro`) | Hiện ngay |
 | Toast | `translateY(8px)` → 0 và `opacity` | 200ms | Hiện ngay |
 | Câu lỗi, khung báo | `rd-fade-up` (đã có) | 200ms | Hiện ngay |
 | Mở/gập mục, mở điểm dừng | Nội dung `opacity` và `translateY(6px)`; chiều cao không animate | 200ms | Hiện ngay |
