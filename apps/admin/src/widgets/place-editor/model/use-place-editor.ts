@@ -8,7 +8,7 @@ import { failureMessages, toApiFailure, type ApiFailure } from '@/shared/api/err
 import { CITY_SLUG } from '@/shared/config';
 import { readLocalDraft, removeLocalDraft, writeLocalDraft } from '@/shared/lib/local-draft';
 import { withoutPrimary } from './also-categories';
-import { emptyForm, formActivationIssues, formFromPlace, formToInput, PlaceFormState, sameForm, type FieldErrors } from './form';
+import { emptyForm, formActivationIssues, formFromPlace, formToInput, PlaceFormState, remainingErrors, sameForm, type FieldErrors } from './form';
 import { zoneHint, type ZoneHint } from './zone-hint';
 
 /** Bản đang sửa giữ trên máy: form và updatedAt của bản server lúc bắt đầu sửa (null khi tạo mới). */
@@ -122,6 +122,14 @@ export function usePlaceEditor(initialId: string | null, onCreated: (id: string)
       if (load.value.kind !== 'ready') return;
       clearTimeout(localTimer);
       localTimer = setTimeout(flushLocal, LOCAL_SAVE_MS);
+    },
+    { deep: true },
+  );
+  // Ô đã báo lỗi được kiểm lại mỗi lần sửa: sửa đúng thì lỗi mất ngay, không phải bấm lưu lại.
+  watch(
+    form,
+    () => {
+      if (Object.keys(errors.value).length > 0) errors.value = remainingErrors(form.value, errors.value);
     },
     { deep: true },
   );
@@ -285,6 +293,34 @@ export function usePlaceEditor(initialId: string | null, onCreated: (id: string)
     flushLocal();
   }
 
+  /** "Bỏ thay đổi": form về bản đã lưu (hoặc trống khi chưa lưu lần nào), xoá bản giữ trên máy và lời hỏi khôi phục. */
+  function discardChanges(): void {
+    clearTimeout(localTimer);
+    localTimer = undefined;
+    form.value = clone(saved.value);
+    errors.value = {};
+    notice.value = null;
+    restorable.value = null;
+    removeLocalDraft(placeDraftKey(placeId.value));
+    localKept.value = false;
+  }
+
+  /** Tải lại bản trên máy chủ sau khi xác minh, đổi trạng thái; chỉ chạy khi form không còn thay đổi chưa lưu. */
+  async function refresh(): Promise<void> {
+    const id = placeId.value;
+    if (!id || dirty.value) return;
+    try {
+      const updated = await fetchPlace(id);
+      if (dirty.value) return;
+      place.value = updated;
+      saved.value = formFromPlace(updated);
+      form.value = clone(saved.value);
+    } catch (err) {
+      const failure = toApiFailure(err);
+      notice.value = { kind: 'bad', messages: [loadErrorMessage(failure)], login: failure.status === 401 };
+    }
+  }
+
   // Rời form (đổi trang, đóng component) khi chưa tới lượt tự lưu thì ghi ngay vào máy.
   onScopeDispose(() => {
     if (localTimer !== undefined) flushLocal();
@@ -316,6 +352,9 @@ export function usePlaceEditor(initialId: string | null, onCreated: (id: string)
     discardLocal,
     acceptZone,
     applyPhotos,
+    flushLocal,
+    discardChanges,
+    refresh,
     retry: init,
   };
 }

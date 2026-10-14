@@ -1,7 +1,7 @@
 import { AdminPlace, parseOpeningHours } from '@ranhduong/contracts';
 import { describe, expect, it } from 'vitest';
 import { setDayKind } from '@/features/opening-hours-editor/lib/week';
-import { emptyForm, formActivationIssues, formFromPlace, formToInput, PlaceFormState, sameForm } from './form';
+import { emptyForm, formActivationIssues, formFromPlace, formToInput, PlaceFormState, remainingErrors, sameForm } from './form';
 
 // Dữ liệu giả, tên rõ là giả; toạ độ quanh [0, 0].
 const PLACE = AdminPlace.parse({
@@ -111,5 +111,16 @@ describe('sameForm và PlaceFormState', () => {
     expect(sameForm(form, PlaceFormState.parse(JSON.parse(JSON.stringify(form))))).toBe(true);
     expect(sameForm(form, { ...form, name: 'Quán Giả Lập Khác' })).toBe(false);
     expect(PlaceFormState.safeParse(emptyForm()).success).toBe(true);
+  });
+});
+
+describe('S28 remainingErrors', () => {
+  const valid = { ...emptyForm(), name: 'Quán Giả Lập', category: 'cafe' as const };
+  it('chỉ giữ lỗi của ô đang báo lỗi mà vẫn còn sai', () => {
+    const form = { ...valid, phone: 'không phải số', website: 'không phải link' };
+    expect(Object.keys(remainingErrors(form, { phone: 'cũ', name: 'cũ' }))).toEqual(['phone']);
+  });
+  it('sửa đúng hết thì không còn lỗi', () => {
+    expect(remainingErrors(valid, { name: 'cũ' })).toEqual({});
   });
 });

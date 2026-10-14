@@ -1,6 +1,6 @@
-import type { AdminPlaceSummary } from '@ranhduong/contracts';
+import { statusActionsFor, type AdminPlaceSummary } from '@ranhduong/contracts';
 import { describe, expect, it } from 'vitest';
-import { actionFailure, doneMessage, menuActions, primaryAction, readyToVerify, stepFor } from './actions';
+import { actionFailure, doneMessage, editorActions, menuActions, primaryAction, readyToVerify, STATUS_ACTION_LABEL, stepFor } from './actions';
 
 const NOW = new Date('2026-10-08T03:00:00Z');
 type Row = Pick<AdminPlaceSummary, 'status' | 'activationIssues' | 'lastVerifiedAt'>;
@@ -92,5 +92,20 @@ describe('actionFailure', () => {
       login: false,
     });
     expect(actionFailure({ status: 500, error: null })).toEqual({ messages: ['Chưa làm được, thử lại.'], login: false });
+  });
+});
+
+describe('S28 editorActions', () => {
+  it('nháp chỉ thiếu nguồn xác nhận: có Xác minh, đủ thao tác trạng thái và Xoá nháp', () => {
+    const actions = editorActions({ status: 'draft', activationIssues: ['verify_source_missing'] }, false);
+    expect(actions.verify?.kind).toBe('verify');
+    expect(actions.status.map((a) => a.label)).toEqual([...statusActionsFor('draft').map((a) => STATUS_ACTION_LABEL[a]), 'Xoá nháp']);
+    expect(actions.locked).toBe(false);
+  });
+  it('còn thiếu điều kiện khác thì chưa xác minh được; có thay đổi chưa lưu thì khoá hết', () => {
+    const actions = editorActions({ status: 'active', activationIssues: ['location_missing'] }, true);
+    expect(actions.verify).toBeNull();
+    expect(actions.status.some((a) => a.kind === 'delete')).toBe(false);
+    expect(actions.locked).toBe(true);
   });
 });

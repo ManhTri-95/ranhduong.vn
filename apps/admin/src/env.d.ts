@@ -9,5 +9,7 @@ interface ImportMetaEnv {
   readonly VITE_MEDIA_BASE?: string;
   /** Style MapLibre cho bản đồ ghim; để trống thì dùng positron của OpenFreeMap. */
   readonly VITE_MAP_STYLE_URL?: string;
+  /** Web khách (link "Xem trên web"); mặc định http://localhost:3100. */
+  readonly VITE_WEB_BASE?: string;
 }
 interface ImportMeta { readonly env: ImportMetaEnv }

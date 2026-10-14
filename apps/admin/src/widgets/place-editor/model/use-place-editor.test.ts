@@ -5,6 +5,7 @@ import { fetchCity, fetchZoneSuggestions } from '@/entities/city/api/city';
 import { checkDuplicates, fetchPlace, updatePlace } from '@/entities/place/api/places';
 import { formFromPlace } from './form';
 import { usePlaceEditor } from './use-place-editor';
+import { shouldConfirmLeave } from '@/shared/lib/unsaved-guard';
 
 vi.mock('@/entities/city/api/city', () => ({ fetchCity: vi.fn(), fetchZoneSuggestions: vi.fn() }));
 vi.mock('@/entities/place/api/places', () => ({
@@ -159,5 +160,47 @@ describe('usePlaceEditor: danh mục phụ', () => {
     editor.form.value.category = 'food';
     await vi.advanceTimersByTimeAsync(0);
     expect(editor.form.value.alsoCategories).toEqual(['activity']);
+  });
+});
+
+describe('usePlaceEditor: S28', () => {
+  it('"Bỏ thay đổi": form về bản đã lưu, xoá bản trên máy và lời hỏi khôi phục', async () => {
+    const storage = memoryStorage();
+    storage.data.set(KEY, oldDraft('Bản Cũ Giả Lập'));
+    const { editor } = await open(storage);
+    editor.form.value.name = 'Bản Mới Giả Lập';
+    await vi.advanceTimersByTimeAsync(800);
+    expect(storedName(storage)).toBe('Bản Mới Giả Lập');
+    editor.discardChanges();
+    await vi.advanceTimersByTimeAsync(800);
+    expect(editor.form.value.name).toBe('Quán Giả Lập');
+    expect(editor.dirty.value).toBe(false);
+    expect(editor.restorable.value).toBeNull();
+    expect(storedName(storage)).toBeNull();
+  });
+  it('ô đã báo lỗi được kiểm lại khi sửa', async () => {
+    const { editor } = await open(memoryStorage());
+    editor.form.value.name = '';
+    await editor.save();
+    expect(editor.errors.value.name).toBeDefined();
+    editor.form.value.name = 'Quán Sửa Giả Lập';
+    await vi.advanceTimersByTimeAsync(0);
+    expect(editor.errors.value.name).toBeUndefined();
+  });
+  it('tải lại sau thao tác trạng thái; còn thay đổi chưa lưu thì không gọi API, không ghi đè form', async () => {
+    const { editor } = await open(memoryStorage());
+    vi.mocked(fetchPlace).mockResolvedValue({ ...PLACE, status: 'active', lastVerifiedAt: '2026-10-09T03:00:00.000Z' });
+    await editor.refresh();
+    expect(editor.place.value?.status).toBe('active');
+    editor.form.value.name = 'Đang Sửa Giả Lập';
+    vi.mocked(fetchPlace).mockClear();
+    await editor.refresh();
+    expect(fetchPlace).not.toHaveBeenCalled();
+    expect(editor.form.value.name).toBe('Đang Sửa Giả Lập');
+  });
+  it('máy không cho lưu bản đang sửa: rời trang phải hỏi lại', async () => {
+    const { editor } = await open(memoryStorage(true));
+    editor.form.value.name = 'Bản Mới Giả Lập';
+    expect(shouldConfirmLeave(editor.dirty.value, editor.flushLocal())).toBe(true);
   });
 });

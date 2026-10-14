@@ -120,3 +120,19 @@ export function actionFailure(failure: ApiFailure): ActionFailure {
   const messages = failureMessages(failure);
   return { messages: messages.length > 0 ? messages : ['Chưa làm được, thử lại.'], login: false };
 }
+
+export interface EditorActions {
+  verify: PlaceAction | null;
+  status: PlaceAction[];
+  /** Form còn thay đổi chưa lưu: API xác minh, đổi trạng thái ghi đè verifySource và status nên khoá hết. */
+  locked: boolean;
+}
+
+/** Thao tác ở cột phụ của form địa điểm (spec S28 mục 7.5). */
+export function editorActions(row: Pick<AdminPlaceSummary, 'status' | 'activationIssues'>, dirty: boolean): EditorActions {
+  return {
+    verify: readyToVerify(row) ? VERIFY : null,
+    status: [...statusActionsFor(row.status).map(statusAction), ...(row.status === 'draft' ? [DELETE] : [])],
+    locked: dirty,
+  };
+}

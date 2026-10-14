@@ -197,3 +197,15 @@ export function formActivationIssues(form: PlaceFormState, photos: readonly unkn
 export function sameForm(a: PlaceFormState, b: PlaceFormState): boolean {
   return JSON.stringify(PlaceFormState.parse(a)) === JSON.stringify(PlaceFormState.parse(b));
 }
+
+/** Kiểm lại các ô đang báo lỗi: chỉ giữ lỗi của ô vẫn còn sai (sửa đúng thì lỗi mất ngay, không phải bấm lưu). */
+export function remainingErrors(form: PlaceFormState, errors: FieldErrors): FieldErrors {
+  const result = formToInput(form);
+  if (result.ok) return {};
+  const next: FieldErrors = {};
+  for (const field of Object.keys(errors) as FormField[]) {
+    const message = result.errors[field];
+    if (message !== undefined) next[field] = message;
+  }
+  return next;
+}
