@@ -208,3 +208,47 @@ html { scroll-padding-bottom: var(--admin-bar-height, 0px); }
 @media (max-width: 767.98px) { .rd-admin-skeleton.rd-admin-only-table { display: none; } .rd-admin-skeleton.rd-admin-only-cards { display: flex; } }
 @media (min-width: 1024px) { .rd-admin-only-narrow { display: none; } }
 @media (max-width: 1023.98px) { .rd-admin-only-wide { display: none; } }
+
+/* Thanh lưu dính (RdStickyActions): điện thoại khoảng 94px, tràn hết lề; từ 768px là khung bo góc. */
+.rd-admin-bar { position: sticky; bottom: 0; z-index: var(--z-sticky); display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); margin: 0 calc(-1 * var(--page-gutter)); padding: var(--space-3) var(--page-gutter) calc(var(--space-3) + env(safe-area-inset-bottom, 0px)); background: var(--paper-raised); border-top: var(--border-hair) solid var(--line); }
+.rd-admin-bar__state { flex: 1 1 100%; min-height: 18px; margin: 0; font-size: 13px; color: var(--ink-soft); }
+.rd-admin-bar__actions { display: flex; flex: 1 1 100%; gap: var(--space-2); }
+.rd-admin-bar__actions .rd-btn { flex: 1 1 0; }
+@media (min-width: 768px) {
+  .rd-admin-bar { margin: 0; padding: var(--space-3) var(--space-4); border: var(--border); border-radius: var(--radius-card); }
+  .rd-admin-bar__state { flex: 1 1 auto; }
+  .rd-admin-bar__actions { flex: 0 0 auto; }
+  .rd-admin-bar__actions .rd-btn { flex: 0 0 auto; }
+}
+
+/* Mục form (RdFormSection) và ô (RdField). */
+.rd-admin-form-section { scroll-margin-top: var(--space-4); }
+.rd-admin-form-section__head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); }
+.rd-admin-form-section__head h2:focus { outline: none; }
+.rd-admin-form-section__toggle { display: inline-flex; align-items: center; gap: var(--space-2); min-height: var(--tap-min); padding: 0; border: 0; background: none; font: inherit; color: inherit; cursor: pointer; }
+.rd-admin-form-section__toggle::after { content: '▾'; transition: rotate var(--dur-standard) var(--ease-out); }
+.rd-admin-form-section__toggle[aria-expanded='false']::after { rotate: -90deg; }
+.rd-admin-form-section__body { display: flex; flex-direction: column; gap: var(--space-4); animation: rd-fade-up var(--dur-standard) var(--ease-out); }
+.rd-admin-form-section__summary { margin: 0; font-size: 13px; color: var(--ink-soft); overflow-wrap: anywhere; }
+.rd-admin .rd-field__error { animation: rd-fade-up var(--dur-standard) var(--ease-out); }
+.rd-admin-count { margin-left: var(--space-2); font-variant-numeric: tabular-nums; }
+
+/* Trình soạn: hai cột từ 1024px, cột phụ dính. */
+.rd-admin-editor { display: flex; flex-direction: column; gap: var(--space-4); max-width: var(--admin-editor-max); }
+.rd-admin-editor__grid { display: grid; gap: var(--space-4); align-items: start; }
+.rd-admin-editor__main, .rd-admin-editor__side { display: flex; flex-direction: column; gap: var(--space-4); min-width: 0; }
+@media (min-width: 1024px) {
+  .rd-admin-editor__grid { grid-template-columns: minmax(0, 720px) 300px; }
+  .rd-admin-editor__side { position: sticky; top: var(--space-6); max-height: calc(100vh - 2 * var(--space-6) - var(--admin-bar-height, 0px)); overflow-y: auto; }
+}
+.rd-admin-card-title { margin: 0; font: 700 15px/1.3 var(--font-body); }
+.rd-admin-line { margin: 0; }
+.rd-admin-banner { display: flex; flex-direction: column; gap: var(--space-3); }
+.rd-admin-banner__actions, .rd-admin-side-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.rd-admin-link { display: inline-flex; align-items: center; min-height: var(--tap-min); color: var(--ink); font-weight: 600; }
+.rd-admin-checklist { display: flex; flex-direction: column; gap: var(--space-1); margin: 0; padding: 0; list-style: none; }
+.rd-admin-checklist a { display: flex; align-items: center; gap: var(--space-2); min-height: var(--tap-min); color: var(--ink); }
+.rd-admin-checklist__mark { width: 20px; font-weight: 700; text-align: center; }
+.rd-admin-checklist__mark.is-ok { color: var(--status-ok); }
+.rd-admin-checklist__mark.is-missing { color: var(--status-bad); }
+.rd-admin-checklist__details { margin: 0 0 var(--space-2); padding-left: 44px; font-size: 13px; color: var(--ink-soft); }

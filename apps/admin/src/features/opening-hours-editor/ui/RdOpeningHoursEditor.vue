@@ -68,6 +68,7 @@ function applyPaste(): void {
       <p v-else-if="pasteDone" class="rd-field__hint" role="status">Đã điền giờ cả tuần, xem lại bảng bên dưới.</p>
     </div>
 
+    <p v-if="slots.length === 0" class="rd-callout rd-callout--warn">Chưa nhập giờ mở cửa: các ngày đang để Đóng.</p>
     <fieldset v-for="{ day, label } in WEEK_DAYS" :key="day" class="day">
       <legend class="day__label">{{ label }}</legend>
       <div class="rd-choices">
