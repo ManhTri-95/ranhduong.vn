@@ -59,7 +59,7 @@ Story P1 (S13 tìm kiếm không dấu) chèn vào tuần nào còn dư giờ. S
 
 ## 4. Backlog
 
-27 story, tổng khoảng 141 giờ; phần P0 khoảng 130 giờ. Làm theo thứ tự ID, vì công cụ nhập liệu phải xong sớm để chuyển dữ liệu từ Google Sheet vào admin từ cuối tuần 2.
+28 story, tổng khoảng 169 giờ; phần P0 khoảng 130 giờ. Làm theo thứ tự ID, vì công cụ nhập liệu phải xong sớm để chuyển dữ liệu từ Google Sheet vào admin từ cuối tuần 2.
 
 | ID | Epic | Story | Tiêu chí nghiệm thu | Giờ | Ưu tiên | Trạng thái |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -90,6 +90,7 @@ Story P1 (S13 tìm kiếm không dấu) chèn vào tuần nào còn dư giờ. S
 | S25 | UI | Chuyển động | Nét đứt tự vẽ và mốc hiện ra khi cuộn tới; ghim rơi; minh hoạ mùa lắc nhẹ; tắt hết khi người dùng bật giảm chuyển động (mục 8 Spec UI) | 3 | P1 | Code xong trên `feat/S25-ui-motion`: timeline IntersectionObserver/400ms mốc/600ms nét nối/stagger 500ms và hàng đợi, hai ghim rơi 700ms, mùa lắc 4s sau cuộn/dừng ngoài viewport, live reduced motion giữ trạng thái cuối. 20 task workspace, 107 test web, 75 SSR và Chrome 390px/desktop/focus/không JS/hai bản đồ đạt; review độc lập sạch. Runbook `docs/runbooks/ui-motion.md` ghi bản sửa fixture SSR S24 sát biên 1ms; chờ CI remote, staging, điện thoại thật và Sentry 24 giờ |
 | S26 | Nền tảng | Dựng app admin riêng | apps/admin (Vue 3 + Vite, FSD) build tĩnh lên Cloudflare Pages tại admin.ranhduong.vn; Cloudflare Access chỉ cho email được phép; API bật CORS có credentials cho ranhduong.vn và admin.ranhduong.vn, kiểm Origin cùng danh sách; layout thanh bên theo Spec UI mục 12 | 5 | P0 | Chưa làm |
 | S27 | Nhập liệu | Danh mục phụ và mức mái che | Tối đa 2 danh mục phụ, khác danh mục chính; quán hiện ở trang của danh mục chính và phụ, thẻ ghi đủ danh mục, tìm không dấu theo cả danh mục phụ; mức mái che (che hết, một phần, không che) thay trong nhà/ngoài trời; form admin "Cũng phục vụ", "Mái che"; cột Sheet `also_category`, `cover` | 4 | P0 | Code xong (nhánh `feat/S27-also-categories` dựa trên S05, chưa mở PR) |
+| S28 | Nhập liệu | Nền UX admin dùng chung (giai đoạn 1) | Khung trang (thanh bên từ 1280px, ngăn trượt dưới 1280px) và component dùng chung trong `apps/admin/src/shared/ui`; danh sách địa điểm có cột Còn thiếu, ô Xếp, Xoá bộ lọc, thẻ trên điện thoại, nhớ bộ lọc và vị trí cuộn; form địa điểm hai cột, cột phụ xác minh và đổi trạng thái, Bỏ thay đổi, chặn rời trang khi không giữ được bản trên máy; lịch trình hai cột, điểm dừng dạng hàng gọn, thanh lưu dính, hỏi lại khi công khai lần đầu và khi chuyển về nháp (spec `docs/superpowers/specs/2026-10-14-admin-ux-foundation-design.md`) | 28 | P1 | Đang làm trên `feat/S28-admin-ux` |
 
 ## 5. Dữ liệu và nội dung
 

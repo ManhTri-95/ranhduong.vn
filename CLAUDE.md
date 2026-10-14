@@ -99,6 +99,8 @@ pnpm --filter @ranhduong/geo test        # test một package
 
 ## Trạng thái
 
+- S28 giai đoạn 1 code xong trên `feat/S28-admin-ux`: khung trang admin (thanh bên từ 1280px, ngăn trượt), component dùng chung `apps/admin/src/shared/ui` với luật lint chặn import tầng trên; danh sách địa điểm cột Còn thiếu/Cập nhật, ô Xếp, Xoá bộ lọc, thẻ điện thoại, nhớ bộ lọc và vị trí cuộn; form địa điểm hai cột, cột phụ xác minh/đổi trạng thái, Bỏ thay đổi, chặn rời trang; lịch trình hai cột, hàng điểm gọn, thanh lưu dính, hỏi lại khi công khai/chuyển nháp. Runbook `docs/runbooks/admin-ux.md`; chờ kiểm trình duyệt có phiên admin, CI remote, staging và điện thoại thật.
+
 - S25 code xong trên `feat/S25-ui-motion`: timeline cuộn tới một lần/mốc 400ms/nét nối 600ms/stagger 500ms/hàng đợi, hai bản đồ ghim rơi 700ms trên child, banner mùa 4s sau cuộn/pause ngoài viewport-tab ẩn, live reduced motion về trạng thái cuối. 20 task workspace, 107 test web, 75 SSR và Chrome 390px/desktop/focus/không JS/hai map đạt; review độc lập sạch. Runbook `docs/runbooks/ui-motion.md` ghi bản sửa fixture S24 SSR sát biên 1ms; chờ CI remote, staging, điện thoại thật và Sentry 24 giờ.
 
 - S24 code xong trên `feat/S24-weather-rain-mode`: chủ dự án chốt WeatherAPI Free thay Open-Meteo/WMO; key server-only, cache Redis riêng tối đa 15 phút/tuổi quan sát 30 phút, timeout 3 giây, null khi lỗi. Tile SSR/source/disclaimer/expiry; home no-store giữ dữ liệu mới. Rain URL chọn sẵn chip mái che full/partial, lọc trước pagination và form GET giữ danh mục/chip. 20 task workspace, 75 SSR và Chrome 390px/desktop/bản đồ/không JS/expiry xanh; review độc lập sạch. Runbook `docs/runbooks/weather-rain-mode.md`; chờ API key/dữ liệu thật, CI remote, staging, điện thoại thật và Sentry 24 giờ.
