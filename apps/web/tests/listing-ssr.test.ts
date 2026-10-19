@@ -190,6 +190,29 @@ describe('S16 public itinerary production SSR', () => {
   });
 });
 
+describe('S30 itinerary ticket production SSR', () => {
+  const meta = (html: string, attr: string) => html.match(new RegExp(`<meta ${attr}="([^"]+)"`))?.[1];
+  it('uses the template ticket as OG image and links the story ticket for sharing', async () => {
+    const html = await (await fetch(`${base}/da-lat/lich-trinh/lich-trinh-gia-lap?audit=s30-og`)).text();
+    const og = `${apiBase}/cities/da-lat/itineraries/templates/lich-trinh-gia-lap/ticket.png?format=og`;
+    expect(meta(html, 'property="og:image" content')).toBe(og);
+    expect(meta(html, 'name="twitter:image" content')).toBe(og);
+    expect(og).not.toContain('0123456789abcdef01234567');
+    expect(html).toMatch(new RegExp(`href="${apiBase}/cities/da-lat/itineraries/templates/lich-trinh-gia-lap/ticket\\.png\\?format=story"[^>]*>\\s*Tạo vé để chia sẻ`));
+  });
+  it('falls back to the default OG image when the template cannot load', async () => {
+    templateFailed = true;
+    try {
+      const html = await (await fetch(`${base}/da-lat/lich-trinh/lich-trinh-gia-lap?audit=s30-og-down`)).text();
+      expect(meta(html, 'property="og:image" content')).toBe('https://ranhduong.vn/og-default.png');
+    } finally { templateFailed = false; }
+  });
+  it('credits the ticket fonts on /ghi-nguon', async () => {
+    const html = await (await fetch(`${base}/ghi-nguon`)).text();
+    for (const text of ['id="font-ve"', 'Lora', 'Be Vietnam Pro', 'Patrick Hand', 'SIL Open Font License']) expect(html).toContain(text);
+  });
+});
+
 describe('S24 weather production SSR', () => {
   it.each([['fog', 'Có sương'], ['sun', 'Nắng đẹp'], ['cloud', 'Nhiều mây'], ['rain', 'Mưa']] as const)('renders fresh %s weather and keeps source/disclaimer visible', async (mode, label) => {
     weatherMode = mode;
@@ -412,6 +435,8 @@ describe('S11 detail production SSR', () => {
 });
 let web: ChildProcess | undefined;
 let base: string;
+/** Gốc API giả (có /v1), cũng là NUXT_PUBLIC_API_BASE của Nuxt test. */
+let apiBase: string;
 
 async function unusedPort(): Promise<number> {
   const server = createPortServer();
@@ -429,7 +454,7 @@ beforeAll(async () => {
   const address = api.address();
   if (!address || typeof address === 'string') throw new Error('Không có cổng API test');
   const port = await unusedPort();
-  const apiBase = `http://127.0.0.1:${address.port}/v1`;
+  apiBase = `http://127.0.0.1:${address.port}/v1`;
   base = `http://127.0.0.1:${port}`;
   web = spawn(process.execPath, [fileURLToPath(new URL('../.output/server/index.mjs', import.meta.url))], {
     env: {

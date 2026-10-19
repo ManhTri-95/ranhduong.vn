@@ -3,8 +3,8 @@ import { Slug } from '@ranhduong/contracts';
 import { computed } from 'vue';
 import { useCity } from '~/entities/city/api/city';
 import { useTemplateDetail } from '~/entities/itinerary/api/itineraries';
+import { templateTicketUrl } from '~/entities/itinerary/lib/ticket-url';
 import { markUnavailableOnServer, throwIfNotFound } from '~/shared/api/page-status';
-import { photoOgUrl } from '~/shared/lib/media';
 import { absoluteUrl } from '~/shared/lib/seo';
 import { usePageSeo } from '~/shared/lib/use-page-seo';
 import { tripJsonLd } from '~/entities/itinerary/lib/itinerary-seo';
@@ -34,9 +34,9 @@ async function retry(): Promise<void> {
 }
 const title = computed(() => `${template.data.value?.seoTitle || template.data.value?.title || 'Lịch trình mẫu'} · Rành Đường`);
 const description = computed(() => template.data.value?.seoDescription || template.data.value?.description || `Lịch trình gợi ý ở ${city.data.value?.name || 'Đà Lạt'}.`);
-const mediaBase = useRuntimeConfig().public.mediaBase;
-const cover = computed(() => template.data.value?.days.flatMap((day) => day.stops).find((stop) => stop.place?.coverKey)?.place?.coverKey);
-usePageSeo({ path, title, description, image: () => cover.value ? photoOgUrl(mediaBase, cover.value) : undefined,
+// S30: ảnh xem trước là vé (API sinh khi được gọi lần đầu, chưa xong thì trả ảnh mặc định). URL công khai, không phải địa chỉ nội bộ SSR.
+const ogTicket = templateTicketUrl(seoConfig.apiBase, citySlug, slug, 'og');
+usePageSeo({ path, title, description, image: () => template.data.value && !failed.value ? ogTicket : undefined,
   breadcrumbs: () => [{ name: city.data.value?.name || 'Thành phố', path: `/${citySlug}` }, { name: template.data.value?.title || 'Lịch trình mẫu', path }],
   jsonLd: () => template.data.value && !failed.value ? [tripJsonLd(template.data.value, seoConfig.siteUrl, citySlug)] : [], noindex: failed,
 });

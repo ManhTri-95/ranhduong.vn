@@ -26,6 +26,16 @@ import RdLegalContact from '~/shared/ui/RdLegalContact.vue';
       <p>Ảnh công khai được chuyển sang WebP và thay đổi kích thước, loại bỏ metadata; khung hiển thị có thể cắt ảnh để vừa bố cục. Nếu dùng lại ảnh Creative Commons, hãy mở nguồn gốc và thực hiện đúng yêu cầu ghi tác giả, liên kết giấy phép, nêu thay đổi và chia sẻ theo cùng giấy phép nếu có.</p>
       <a class="rd-legal__link" href="https://creativecommons.org/share-your-work/cclicenses/" target="_blank" rel="noopener noreferrer">Tìm hiểu các giấy phép Creative Commons</a>
     </section>
+    <section id="font-ve">
+      <h2>Font trên vé lịch trình</h2>
+      <p>Ba font này chỉ dùng để in vé lịch trình dạng ảnh; chữ trên web tải từ Google Fonts. Cả ba dùng giấy phép SIL Open Font License 1.1.</p>
+      <ul>
+        <li><a class="rd-legal__link" href="https://github.com/cyrealtype/Lora-Cyrillic" target="_blank" rel="noopener noreferrer">Lora</a> · © 2011 The Lora Project Authors (Cyreal)</li>
+        <li><a class="rd-legal__link" href="https://github.com/bettergui/BeVietnamPro" target="_blank" rel="noopener noreferrer">Be Vietnam Pro</a> · © 2021 The Be Vietnam Pro Project Authors</li>
+        <li><a class="rd-legal__link" href="https://fonts.google.com/specimen/Patrick+Hand" target="_blank" rel="noopener noreferrer">Patrick Hand</a> · © 2010–2012 Patrick Wagesreiter</li>
+      </ul>
+      <a class="rd-legal__link" href="https://openfontlicense.org" target="_blank" rel="noopener noreferrer">SIL Open Font License 1.1</a>
+    </section>
     <section id="thoi-tiet">
       <h2>Thời tiết</h2>
       <p>Nguồn dữ liệu: <a class="rd-legal__link" href="https://www.weatherapi.com/" target="_blank" rel="noopener noreferrer">WeatherAPI.com</a>. Rành Đường lấy dữ liệu theo tâm thành phố, giữ cache tối đa 15 phút và rút gọn thành bốn trạng thái để gợi ý chỗ ghé khi có mưa.</p>
