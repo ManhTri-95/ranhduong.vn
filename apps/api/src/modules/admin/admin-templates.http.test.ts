@@ -1,4 +1,5 @@
 import { Types } from 'mongoose';
+import { type AdminTemplate, TemplateEditInput } from '@ranhduong/contracts';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createAdminTestApp, type AdminTestApp } from '../../testing/admin-app';
 import { fakeCitySeed, fakePlaceDoc, FAKE_PHOTO } from '../../testing/fixtures';
@@ -32,6 +33,57 @@ describe('S15 template editor HTTP', () => {
   async function create(body: unknown = input): Promise<Template> {
     const response = await call(collection, 'POST', body); expect(response.status).toBe(201); return await response.json() as Template;
   }
+  it('S32 round-trips interests and audience independently of style, including clearing both', async () => {
+    const styledInput = { ...input, style: 'couple' };
+    const preferences = { tags: ['chill_cafe', 'photo_spots', 'clouds_hills'], with: 'family' };
+    const created = await create({ ...styledInput, ...preferences });
+    expect(created).toMatchObject(preferences);
+    const path = `/admin/itineraries/templates/${created.id}`;
+    expect(await (await call(path)).json()).toMatchObject(preferences);
+    expect(await (await call(collection)).json()).toMatchObject({ items: [expect.objectContaining(preferences)] });
+    expect(await t.conn.collection('itineraries').findOne({ _id: new Types.ObjectId(created.id) })).toMatchObject({ style: styledInput.style, params: preferences });
+    const updated = await call(path, 'PUT', { ...styledInput, tags: ['nature_adventure'], with: 'solo' });
+    expect(updated.status).toBe(200);
+    expect(await updated.json()).toMatchObject({ tags: ['nature_adventure'], with: 'solo' });
+    const cleared = await call(path, 'PUT', { ...styledInput, tags: [] });
+    expect(cleared.status).toBe(200);
+    const saved = await t.conn.collection('itineraries').findOne({ _id: new Types.ObjectId(created.id) });
+    expect(saved?.params).toMatchObject({ tags: [] });
+    expect(saved?.params.with).toBeNull();
+    expect((await (await call(path)).json() as AdminTemplate).with).toBeUndefined();
+    expect(saved?.style).toBe(styledInput.style);
+  });
+  it('S32 opens and saves legacy preferences, falling back only to a matching style enum', async () => {
+    for (const [style, oldWith, expected] of [
+      ['couple', undefined, 'couple'], ['friends', 'cap-doi', 'friends'],
+      ['family', 'solo', 'solo'], ['cap-doi', 'cap-doi', undefined], ['', undefined, undefined],
+    ] as const) {
+      const legacyId = new Types.ObjectId();
+      await t.conn.collection('itineraries').insertOne({ _id: legacyId, cityId: new Types.ObjectId(cityId), kind: 'template', title: 'Mẫu cũ Giả Lập', style, params: { days: 1, transport: 'car', pace: 'relaxed', ...(oldWith ? { with: oldWith } : {}) }, days: [], status: 'draft' });
+      const path = `/admin/itineraries/templates/${legacyId}`;
+      const response = await call(path);
+      expect(response.status).toBe(200);
+      const opened = await response.json() as AdminTemplate;
+      expect(opened.tags).toEqual([]);
+      expect(opened.with).toBe(expected);
+      const storedBefore = await t.conn.collection('itineraries').findOne({ _id: legacyId });
+      expect(storedBefore?.params.tags).toBeUndefined();
+      const saved = await call(path, 'PUT', TemplateEditInput.parse(opened));
+      expect(saved.status).toBe(200);
+      const stored = await t.conn.collection('itineraries').findOne({ _id: legacyId });
+      expect(stored?.params.tags).toEqual([]);
+      expect(stored?.params.with).toBe(expected ?? null);
+      expect(stored?.style).toBe(style);
+    }
+  });
+  it('S32 rejects invalid preferences before creating or changing a template', async () => {
+    const created = await create();
+    for (const patch of [{ tags: ['chill_cafe', 'clouds_hills', 'photo_spots', 'nature_adventure'] }, { tags: ['chill_cafe', 'chill_cafe'] }, { tags: ['chill'] }, { with: 'cap-doi' }]) {
+      expect((await call(collection, 'POST', { ...input, ...patch })).status).toBe(400);
+      expect((await call(`/admin/itineraries/templates/${created.id}`, 'PUT', { ...input, ...patch })).status).toBe(400);
+    }
+    expect(await t.conn.collection('itineraries').countDocuments()).toBe(1);
+  });
   it('protects every admin route and requires Origin on writes', async () => {
     for (const [path, method] of [[collection, 'GET'], [collection, 'POST'], [`${collection}/preview`, 'POST'], [`/admin/cities/${CITY}/template-places`, 'GET'], [`/admin/itineraries/templates/${id}`, 'GET'], [`/admin/itineraries/templates/${id}`, 'PUT']]) {
       expect((await call(path!, method, method === 'GET' ? undefined : input, false)).status).toBe(401);

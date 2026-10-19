@@ -1,4 +1,4 @@
-import { analyzeTemplate, TemplateEditInput, TemplateLocalDraft, type AdminTemplate, type TemplateAnalysis, type TemplatePlace, type TemplateStopInput, type ItineraryStatus } from '@ranhduong/contracts';
+import { analyzeTemplate, TemplateEditInput, TemplateLocalDraft, TripWith, type TripInterest, type AdminTemplate, type TemplateAnalysis, type TemplatePlace, type TemplateStopInput, type ItineraryStatus } from '@ranhduong/contracts';
 import { estimateTemplateTravelMinutes } from '@ranhduong/geo';
 import { computed, onScopeDispose, ref, watch } from 'vue';
 import { createTemplate, fetchTemplate, fetchTemplatePlaces, updateTemplate } from '@/entities/itinerary/api/templates';
@@ -10,7 +10,7 @@ import { addDay, addStop, moveStop, removeDay, removeStop, replaceStop } from '.
 export function useTemplateEditor(initialId: string | null, onCreated: (id: string) => void) {
   const id = ref(initialId);
   const template = ref<AdminTemplate | null>(null);
-  const form = ref<TemplateEditInput>({ title: '', description: '', season: '', style: '', transport: 'motorbike', pace: 'relaxed', startWeekday: 6, seoTitle: '', seoDescription: '', status: 'draft', days: [{ startTime: '07:00', stops: [] }] });
+  const form = ref<TemplateEditInput>(TemplateLocalDraft.parse({ title: '', description: '', season: '', style: '', transport: 'motorbike', pace: 'relaxed', startWeekday: 6, seoTitle: '', seoDescription: '', status: 'draft', days: [{ startTime: '07:00', stops: [] }] }));
   const places = ref<TemplatePlace[]>([]);
   const loading = ref(true);
   const busy = ref(false);
@@ -44,8 +44,12 @@ export function useTemplateEditor(initialId: string | null, onCreated: (id: stri
       places.value = candidates; template.value = saved;
       if (saved) form.value = TemplateEditInput.parse(saved);
       baseline.value = JSON.stringify(form.value);
-      const local = readLocalDraft(storageKey(), TemplateLocalDraft);
-      restorable.value = local?.value ?? null;
+      // Giữ dấu hiệu thiếu tags để nhận ra bản trước S32; bản mới bỏ chọn with không được suy lại từ style.
+      const local = readLocalDraft(storageKey(), TemplateLocalDraft.extend({ tags: TemplateLocalDraft.shape.tags.unwrap().optional() }));
+      restorable.value = local ? {
+        ...local.value, tags: local.value.tags ?? [],
+        with: local.value.tags === undefined ? local.value.with ?? TripWith.safeParse(local.value.style).data : local.value.with,
+      } : null;
       restorableSavedAt.value = local?.savedAt ?? null;
     } catch (err) { if (!disposed) { loginRequired.value = toApiFailure(err).status === 401; loadError.value = toApiFailure(err).status === 404 ? 'Không tìm thấy lịch trình mẫu.' : 'Chưa tải được lịch trình, thử lại nhé.'; } }
     finally { if (!disposed) loading.value = false; }
@@ -63,6 +67,12 @@ export function useTemplateEditor(initialId: string | null, onCreated: (id: stri
   }
   function setStop(key: string, patch: Partial<TemplateStopInput>): void {
     form.value.days = form.value.days.map((day) => ({ ...day, stops: day.stops.map((stop) => stop.key === key ? { ...stop, ...patch } : stop) }));
+  }
+  function toggleInterest(interest: TripInterest): void {
+    if (busy.value || loading.value) return;
+    const tags = form.value.tags;
+    if (tags.includes(interest)) form.value.tags = tags.filter((tag) => tag !== interest);
+    else if (tags.length < 3) form.value.tags = [...tags, interest];
   }
   async function save(status: ItineraryStatus): Promise<void> {
     if (busy.value || loading.value) return;
@@ -90,7 +100,7 @@ export function useTemplateEditor(initialId: string | null, onCreated: (id: stri
     } finally { if (!disposed) busy.value = false; }
   }
   void load();
-  return { id, template, form, places, analysis, loading, busy, loadError, errors, notice, loginRequired, loginReturnTo, restorable, restorableSavedAt, localKept, dirty, load, restore, discardLocal, discardChanges, refreshPlaces, save, setStop,
+  return { id, template, form, places, analysis, loading, busy, loadError, errors, notice, loginRequired, loginReturnTo, restorable, restorableSavedAt, localKept, dirty, load, restore, discardLocal, discardChanges, refreshPlaces, save, setStop, toggleInterest,
     add: (day: number, placeId: string) => { form.value.days = addStop(form.value.days, day, placeId); },
     move: (key: string, day: number, index: number) => { form.value.days = moveStop(form.value.days, key, day, index); },
     remove: (key: string) => { form.value.days = removeStop(form.value.days, key); },

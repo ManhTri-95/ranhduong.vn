@@ -4,6 +4,7 @@ import { GeoPoint } from './geojson.js';
 import { PlaceCategory, PlaceStatus } from './enums.js';
 import { OpeningSlot } from './opening-hours.js';
 import { ItineraryPace, ItineraryStatus, ItineraryTransport, StopKind } from './itinerary.js';
+import { TripInterest, TripWith } from './trip.js';
 
 export const TemplateTime = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Giờ phải từ 00:00 đến 23:59');
 export const TemplateEndTime = z.string().regex(/^(([01]\d|2[0-3]):[0-5]\d|24:00)$/, 'Giờ đi phải từ 00:00 đến 24:00');
@@ -21,6 +22,9 @@ export const TemplateDayInput = z.object({ startTime: TemplateTime, stops: z.arr
 export type TemplateDayInput = z.infer<typeof TemplateDayInput>;
 export const TemplateLocalDraft = z.object({
   title: z.string(), description: z.string().max(4000), season: z.string().max(100), style: z.string().max(100),
+  tags: z.array(TripInterest).max(3, 'Chọn tối đa 3 gu')
+    .refine((tags) => new Set(tags).size === tags.length, 'Không chọn gu trùng nhau').default([]),
+  with: TripWith.optional(),
   transport: ItineraryTransport, pace: ItineraryPace, startWeekday: z.number().int().min(0).max(6),
   seoTitle: z.string().max(200), seoDescription: z.string().max(500),
   // Keep unfinished time text during local recovery; only API input accepts validated times.

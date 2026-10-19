@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Types } from 'mongoose';
-import { Slug, TemplateEditInput, TripDays, type AdminTemplate, type TemplateAnalysis, type TemplatePlace } from '@ranhduong/contracts';
+import { Slug, TemplateEditInput, TripDays, TripWith, type AdminTemplate, type TemplateAnalysis, type TemplatePlace } from '@ranhduong/contracts';
 import type { TemplateSummary } from './itinerary-card';
 import { ITINERARY_MODEL, type ItineraryDoc, type ItineraryModel } from './schemas/itinerary.schema';
 import { sitemapSources, type SitemapSource } from '@ranhduong/contracts';
@@ -15,6 +15,9 @@ function toEditor(row: EditorRow): TemplateRecord | null {
   const sourceDays = row.days?.length ? row.days : Array.from({ length: legacyDayCount.data }, () => ({ startTime: '07:00', stops: [] }));
   const parsed = TemplateEditInput.safeParse({
     title: row.title, description: row.description ?? row.narrative ?? '', season: row.season ?? '', style: row.style ?? '',
+    tags: row.params.tags ?? [],
+    // null đánh dấu lựa chọn trống đã lưu ở S32; chỉ mẫu cũ mới suy từ style.
+    with: row.params.with === null ? undefined : TripWith.safeParse(row.params.with).data ?? TripWith.safeParse(row.style).data,
     seoTitle: row.seoTitle ?? '', seoDescription: row.seoDescription ?? '', status: row.status ?? 'draft',
     transport: row.params.transport, pace: row.params.pace, startWeekday: row.params.startWeekday ?? 6,
     days: sourceDays.map((day, d) => ({ startTime: day.startTime ?? day.stops[0]?.start ?? '07:00', stops: day.stops.map((stop, s) => ({
@@ -30,7 +33,7 @@ function editorFields(input: TemplateEditInput, analysis: TemplateAnalysis, plac
   return {
     title: input.title, description: input.description, narrative: input.description, season: input.season, style: input.style,
     seoTitle: input.seoTitle, seoDescription: input.seoDescription, status: input.status,
-    params: { days: input.days.length, transport: input.transport, pace: input.pace, startWeekday: input.startWeekday, with: input.style, tags: [] },
+    params: { days: input.days.length, transport: input.transport, pace: input.pace, startWeekday: input.startWeekday, with: input.with ?? null, tags: input.tags },
     days: analysis.days.map((day) => ({ ...day,
       zoneIds: [...new Set(day.stops.flatMap((stop) => candidates.get(stop.placeId)?.zoneId ?? []))].map((id) => new Types.ObjectId(id)),
       stops: day.stops.map((stop) => ({ ...stop, placeId: new Types.ObjectId(stop.placeId), locked: Boolean(stop.manualStart || stop.manualEnd), isVip: false })),

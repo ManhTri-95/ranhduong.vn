@@ -1,5 +1,18 @@
 import type { BestTime, PlaceCategory, PlaceCover, PlaceStatus, Transport } from './enums.js';
 import type { ItineraryPace, ItineraryTransport } from './itinerary.js';
+import type { TripInterest, TripWith } from './trip.js';
+
+export const TRIP_WITH_LABEL: Readonly<Record<TripWith, string>> = {
+  solo: 'Một mình', couple: 'Cặp đôi', friends: 'Nhóm bạn', family: 'Gia đình',
+};
+
+export const TRIP_INTEREST_LABEL: Readonly<Record<TripInterest, string>> = {
+  chill_cafe: 'Cà phê chill',
+  clouds_hills: 'Săn mây, view đồi',
+  photo_spots: 'Sống ảo',
+  nature_adventure: 'Thiên nhiên, mạo hiểm',
+  breakfast_specialties: 'Ăn sáng, đặc sản',
+};
 
 /** Tên danh mục hiển thị cho người dùng. */
 export const CATEGORY_LABEL: Record<PlaceCategory, string> = {

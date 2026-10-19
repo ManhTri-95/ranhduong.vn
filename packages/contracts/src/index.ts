@@ -22,5 +22,6 @@ export * from './place.js';
 export * from './place-detail.js';
 export * from './seo.js';
 export * from './ticket.js';
+export * from './trip.js';
 export * from './metrics.js';
 export * from './weather.js';

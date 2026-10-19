@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { TemplateDragPayload, WEEK_DAYS, type ItineraryStatus } from '@ranhduong/contracts';
+import { TemplateDragPayload, TripInterest, TripWith, TRIP_INTEREST_LABEL, TRIP_WITH_LABEL, WEEK_DAYS, type ItineraryStatus } from '@ranhduong/contracts';
 import { slugify } from '@ranhduong/geo';
 import { computed, nextTick, ref, watch } from 'vue';
 import { RouterLink } from 'vue-router';
@@ -184,6 +184,29 @@ async function jumpToIssue(): Promise<void> {
             <label class="rd-field"><span class="rd-field__label">Nhịp độ</span><select v-model="form.pace" class="rd-input"><option value="relaxed">Thong thả</option><option value="packed">Đi nhiều</option></select></label>
             <label class="rd-field"><span class="rd-field__label">Slug</span><input class="rd-input" :value="slug" readonly /><span class="rd-field__hint">Tự tạo khi lưu lần đầu; giữ nguyên khi sửa tên.</span></label>
           </div>
+          <fieldset class="rd-template-editor__preferences" aria-describedby="tpl-interests-hint">
+            <legend class="rd-field__label">Gu</legend>
+            <p id="tpl-interests-hint" class="rd-field__hint rd-admin-line">Chọn tối đa 3 gu ({{ form.tags.length }}/3). Bấm lại để bỏ chọn.</p>
+            <div class="rd-template-editor__chips">
+              <button
+                v-for="interest in TripInterest.options" :key="interest" type="button" class="rd-chip rd-chip--filter"
+                :aria-pressed="form.tags.includes(interest)"
+                :disabled="!form.tags.includes(interest) && form.tags.length >= 3"
+                @click="editor.toggleInterest(interest)"
+              >{{ TRIP_INTEREST_LABEL[interest] }}</button>
+            </div>
+          </fieldset>
+          <fieldset class="rd-template-editor__preferences" aria-describedby="tpl-with-hint">
+            <legend class="rd-field__label">Đi cùng ai</legend>
+            <p id="tpl-with-hint" class="rd-field__hint rd-admin-line">Chọn một nhóm phù hợp. Bấm lại để bỏ chọn.</p>
+            <div class="rd-template-editor__chips">
+              <button
+                v-for="withValue in TripWith.options" :key="withValue" type="button" class="rd-chip rd-chip--filter"
+                :aria-pressed="form.with === withValue"
+                @click="form.with = form.with === withValue ? undefined : withValue"
+              >{{ TRIP_WITH_LABEL[withValue] }}</button>
+            </div>
+          </fieldset>
           <details>
             <summary class="rd-template-editor__summary">Tiêu đề và mô tả trên Google</summary>
             <label class="rd-field"><span class="rd-field__label">Tiêu đề Google (để trống dùng tên lịch trình)</span><input v-model="form.seoTitle" class="rd-input" maxlength="200" /></label>
@@ -263,6 +286,9 @@ async function jumpToIssue(): Promise<void> {
 .rd-template-editor__form { display: flex; flex-direction: column; gap: var(--space-4); min-width: 0; }
 .rd-template-editor__fieldset { display: flex; flex-direction: column; gap: var(--space-3); min-width: 0; margin: 0; padding: 0; border: 0; }
 .rd-template-editor__metadata { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); }
+.rd-template-editor__preferences { min-width: 0; margin: 0; padding: 0; border: 0; }
+.rd-template-editor__chips { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-2); }
+.rd-template-editor__chips .rd-chip { min-width: var(--tap-min); }
 .rd-template-editor__summary { display: flex; align-items: center; min-height: var(--tap-min); font-weight: 600; cursor: pointer; }
 .rd-template-editor__tabs { justify-content: flex-start; gap: var(--space-5); }
 .rd-template-editor__columns { display: grid; gap: var(--space-4); align-items: start; }

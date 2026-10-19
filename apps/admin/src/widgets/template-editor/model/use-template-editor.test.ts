@@ -1,12 +1,13 @@
 import { FetchError } from 'ofetch';
 import { effectScope } from 'vue';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createTemplate, fetchTemplatePlaces, updateTemplate } from '@/entities/itinerary/api/templates';
+import { createTemplate, fetchTemplate, fetchTemplatePlaces, updateTemplate } from '@/entities/itinerary/api/templates';
+import { TemplateEditInput, type AdminTemplate } from '@ranhduong/contracts';
 import { useTemplateEditor } from './use-template-editor';
 vi.mock('@/entities/itinerary/api/templates', () => ({ createTemplate: vi.fn(), fetchTemplate: vi.fn(), fetchTemplatePlaces: vi.fn(), updateTemplate: vi.fn() }));
 const id = '111111111111111111111111';
 const key = '11111111-1111-4111-8111-111111111111';
-const input = { title: 'Giả Lập', description: '', season: '', style: '', transport: 'motorbike' as const, pace: 'relaxed' as const, startWeekday: 6, seoTitle: '', seoDescription: '', status: 'draft' as const, days: [{ startTime: '07:00', stops: [{ key, placeId: id, note: 'Ghi chú Giả Lập', kind: 'visit' as const }] }] };
+const input = { title: 'Giả Lập', description: '', season: '', style: '', tags: [], transport: 'motorbike' as const, pace: 'relaxed' as const, startWeekday: 6, seoTitle: '', seoDescription: '', status: 'draft' as const, days: [{ startTime: '07:00', stops: [{ key, placeId: id, note: 'Ghi chú Giả Lập', kind: 'visit' as const }] }] };
 let scope: ReturnType<typeof effectScope>;
 let storage: Map<string, string>;
 beforeEach(() => {
@@ -15,11 +16,60 @@ beforeEach(() => {
   vi.mocked(fetchTemplatePlaces).mockResolvedValue([{ id, slug: 'gia-lap', name: 'Quán Giả Lập', category: 'cafe', alsoCategories: [], status: 'active', validPhoto: false, location: { type: 'Point', coordinates: [0, 0] }, openingHours: [{ day: 6, open: '00:00', close: '24:00' }] }]);
 });
 afterEach(() => { scope?.stop(); vi.unstubAllGlobals(); vi.clearAllMocks(); });
-async function open(created = vi.fn()) {
-  scope = effectScope(); const editor = scope.run(() => useTemplateEditor(null, created));
+async function open(created = vi.fn(), templateId: string | null = null) {
+  scope = effectScope(); const editor = scope.run(() => useTemplateEditor(templateId, created));
   if (!editor) throw new Error('Không dựng được editor');
   await vi.waitFor(() => expect(editor.loading.value).toBe(false)); return editor;
 }
+describe('S32 trip preferences', () => {
+  it('starts with empty interests and no audience, limits to three and permits deselection', async () => {
+    const editor = await open();
+    expect(editor.form.value.tags).toEqual([]);
+    expect(editor.form.value.with).toBeUndefined();
+    editor.toggleInterest('chill_cafe'); editor.toggleInterest('photo_spots'); editor.toggleInterest('clouds_hills');
+    editor.toggleInterest('nature_adventure');
+    expect(editor.form.value.tags).toEqual(['chill_cafe', 'photo_spots', 'clouds_hills']);
+    editor.toggleInterest('photo_spots'); editor.toggleInterest('nature_adventure');
+    expect(editor.form.value.tags).toEqual(['chill_cafe', 'clouds_hills', 'nature_adventure']);
+    const err = new FetchError('Mất mạng Giả Lập');
+    vi.mocked(createTemplate).mockRejectedValue(err);
+    editor.form.value.title = 'Giả Lập'; editor.form.value.with = 'friends'; await editor.save('draft');
+    expect(editor.form.value.with).toBe('friends');
+    expect(editor.localKept.value).toBe(true);
+    scope.stop();
+    const recovered = await open(); recovered.restore();
+    expect(recovered.form.value).toMatchObject({ tags: ['chill_cafe', 'clouds_hills', 'nature_adventure'], with: 'friends' });
+  });
+  it('restores pre-S32 local drafts and migrates only matching styles', async () => {
+    for (const [style, expected] of [['family', 'family'], ['cap-doi', undefined]] as const) {
+      storage.set('rd:template:da-lat:moi', JSON.stringify({ savedAt: new Date().toISOString(), value: { ...input, tags: undefined, style } }));
+      const editor = await open(); editor.restore();
+      expect(editor.form.value.tags).toEqual([]);
+      expect(editor.form.value.with).toBe(expected);
+      expect(editor.form.value.style).toBe(style);
+      scope.stop();
+    }
+  });
+  it('keeps an explicitly empty audience in a new local draft even when style matches an enum', async () => {
+    storage.set('rd:template:da-lat:moi', JSON.stringify({ savedAt: new Date().toISOString(), value: { ...input, style: 'family', tags: [] } }));
+    const editor = await open(); editor.restore();
+    expect(editor.form.value.with).toBeUndefined();
+    expect(editor.form.value.tags).toEqual([]);
+  });
+  it('saves, loads and discards audience and interest edits independently of style', async () => {
+    const preferences = TemplateEditInput.parse({ ...input, style: 'couple', tags: ['chill_cafe'], with: 'family' });
+    const saved: AdminTemplate = { ...preferences, id, cityId: id, slug: 'gia-lap', analysis: { days: [], issues: [], canPublish: true } };
+    vi.mocked(createTemplate).mockResolvedValue(saved); vi.mocked(fetchTemplate).mockResolvedValue(saved);
+    const editor = await open(); editor.form.value = structuredClone(preferences); await editor.save('draft');
+    expect(createTemplate).toHaveBeenCalledWith('da-lat', preferences);
+    scope.stop();
+    const reopened = await open(vi.fn(), id);
+    expect(reopened.form.value).toEqual(preferences);
+    reopened.form.value.with = 'solo'; reopened.toggleInterest('photo_spots'); reopened.discardChanges();
+    expect(reopened.form.value).toEqual(preferences);
+    expect(reopened.dirty.value).toBe(false);
+  });
+});
 describe('S15 editor local recovery and saves', () => {
   it('keeps partial title, days, notes and manual times through local restore', async () => {
     storage.set('rd:template:da-lat:moi', JSON.stringify({ savedAt: new Date().toISOString(), value: { ...input, title: '', days: [{ ...input.days[0], stops: [{ ...input.days[0]!.stops[0], manualStart: '09:00' }] }] } }));
