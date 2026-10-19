@@ -1,5 +1,6 @@
 import type { GeoPoint } from './geojson.js';
 import type { TemplateAnalysis, TemplateEditInput, TemplateIssue, TemplatePlace } from './itinerary-admin.js';
+import { MEAL_WINDOWS } from './itinerary-meals.js';
 import { verificationStale } from './place.js';
 
 const minutes = (time: string) => Number(time.slice(0, 2)) * 60 + Number(time.slice(3, 5));
@@ -60,8 +61,8 @@ export function analyzeTemplate(input: TemplateEditInput, candidates: readonly T
     const first = intervals[0];
     const last = intervals.at(-1);
     if (first && last) {
-      for (const [from, to, code, label] of [[690, 810, 'missing_lunch', 'bữa trưa (11:30–13:30)'], [1080, 1200, 'missing_dinner', 'bữa tối (18:00–20:00)']] as const) {
-        if (first.start < to && last.end > from && !intervals.some((slot) => slot.meal && slot.start < to && slot.end > from)) issue(code, 'warning', `Lịch trình đi qua khung giờ nhưng thiếu ${label}`);
+      for (const { kind, start, end, label } of MEAL_WINDOWS) {
+        if (first.start < end && last.end > start && !intervals.some((slot) => slot.meal && slot.start < end && slot.end > start)) issue(`missing_${kind}`, 'warning', `Lịch trình đi qua khung giờ nhưng thiếu ${label}`);
       }
       if (last.end > 1290) issue('late_finish', 'warning', 'Ngày kết thúc sau 21:30');
     }

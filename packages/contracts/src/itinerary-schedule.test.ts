@@ -57,4 +57,18 @@ describe('S15 schedule and publication diagnostics', () => {
     expect(codes(analyze([stop(0, { manualStart: '20:30', manualEnd: '21:35' })]))).toContain('late_finish');
     expect(codes(analyze())).not.toContain('missing_lunch');
   });
+
+  it.each([
+    ['10:30', '11:30', 'missing_lunch', false],
+    ['13:30', '14:30', 'missing_lunch', false],
+    ['11:29', '11:31', 'missing_lunch', true],
+    ['13:29', '13:31', 'missing_lunch', true],
+    ['17:00', '18:00', 'missing_dinner', false],
+    ['20:00', '21:00', 'missing_dinner', false],
+    ['17:59', '18:01', 'missing_dinner', true],
+    ['19:59', '20:01', 'missing_dinner', true],
+  ] as const)('checks the meal boundary for a visit %s–%s', (manualStart, manualEnd, code, missing) => {
+    expect(codes(analyze([stop(0, { manualStart, manualEnd })])).includes(code)).toBe(missing);
+    expect(codes(analyze([stop(0, { kind: 'meal', manualStart, manualEnd })]))).not.toContain(code);
+  });
 });
