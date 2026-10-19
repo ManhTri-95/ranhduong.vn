@@ -128,7 +128,7 @@ Các cột theo dõi (script bỏ qua): batch (1/2), last\_post\_date, status, c
 - Nghỉ: `T2 Đóng`. Cả ngày: `T2-CN 24h`.
 - Ví dụ đầy đủ: `T2-T6 07:00-22:00; T7-CN 06:30-23:00`.
 
-**Tab "Tags":** danh sách tags được phép dùng (ví dụ chill, view-doi, song-ao, gia-dinh, mao-hiem, an-sang, dac-san). Thêm tag mới thì thêm vào tab này trước.
+**Tab "Tags":** danh sách tags được phép dùng (ví dụ chill, view-doi, song-ao, gia-dinh, mao-hiem, an-sang, dac-san). Thêm tag mới thì thêm vào tab này trước. Các thẻ `chill`, `view-doi`, `song-ao`, `mao-hiem`, `an-sang`, `dac-san`, `gia-dinh` được bảng gu của lịch trình dùng (backlog lát 2 mục 2): không đổi tên hay xoá, nếu đổi thì sửa bảng gu trong `packages/contracts` cùng lúc. Lịch trình lát 2 cần thời lượng ghé và thời điểm đẹp của từng điểm.
 
 **Google Drive:** một thư mục riêng tư cho dự án; mỗi quán một thư mục con đặt theo id và tên (ví dụ `D012-ca-phe-may`), chứa ảnh quán gửi và ảnh chụp màn hình tin nhắn đồng ý. CSV không đọc ảnh hoặc thư mục Drive; sau khi tạo nháp, upload ảnh trong form địa điểm lên R2. Ảnh chụp tin nhắn giữ lại trên Drive làm bằng chứng.
 
