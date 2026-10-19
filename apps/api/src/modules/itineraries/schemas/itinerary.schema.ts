@@ -69,6 +69,8 @@ export const ItinerarySchema = new Schema(
     days: { type: [DaySchema], default: [] },
     narrative: { type: String },
     shareId: { type: String },
+    /** S30: khoá R2 `tickets/{hash}` của ảnh vé hiện tại, để xoá ảnh cũ khi nội dung đổi. Không trả ra API công khai. */
+    ticketKey: { type: String },
     visibility: { type: String, enum: ItineraryVisibility.options, default: 'public' },
     status: { type: String, enum: ItineraryStatus.options, default: 'draft' },
   },

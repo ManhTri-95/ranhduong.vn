@@ -90,11 +90,21 @@ export class ItinerariesRepository {
     return (await this.itineraries.exists({ kind: 'template', 'days.stops.placeId': new Types.ObjectId(id) })) !== null;
   }
 
-  async publishedTemplate(cityId: string, slug: string): Promise<ItineraryDoc | null> {
+  async publishedTemplate(cityId: string, slug: string): Promise<EditorRow | null> {
     return this.itineraries.findOne({
       cityId: new Types.ObjectId(cityId), slug, kind: 'template', status: 'published',
       visibility: { $ne: 'unlisted' },
-    }).lean<ItineraryDoc>();
+    }).lean<EditorRow>();
+  }
+
+  /** S30: đặt khoá ảnh vé mới, trả khoá cũ để xoá ảnh; không đổi updatedAt (sitemap lastmod, thứ tự soạn mẫu). */
+  async swapTicketKey(id: string, key: string): Promise<string | undefined> {
+    const before = await this.itineraries.findOneAndUpdate(
+      { _id: new Types.ObjectId(id), ticketKey: { $ne: key } },
+      { $set: { ticketKey: key } },
+      { returnDocument: 'before', projection: { ticketKey: 1 }, timestamps: false },
+    ).lean<{ ticketKey?: string | null }>();
+    return before?.ticketKey ?? undefined;
   }
 
   /** Lịch trình mẫu đã công khai, có slug, của thành phố; mới tạo trước. */

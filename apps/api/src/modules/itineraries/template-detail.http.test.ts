@@ -4,6 +4,7 @@ import { createTestApp, type TestApp } from '../../testing/app';
 import { FAKE_PHOTO, fakeCitySeed, fakePlaceDoc } from '../../testing/fixtures';
 import { CitiesService } from '../cities/cities.service';
 import { ItinerariesModule } from './itineraries.module';
+import { ItinerariesService } from './itineraries.service';
 
 describe('S16 public template detail HTTP', () => {
   let t: TestApp;
@@ -86,6 +87,20 @@ describe('S16 public template detail HTTP', () => {
   ])('returns 404 for malformed legacy structure: $label', async ({ stops }) => {
     await t.conn.collection('itineraries').insertOne(template({ days: [{ day: 1, stops }] }));
     expect(await get()).toMatchObject({ status: 404, body: { code: 'NOT_FOUND' } });
+  });
+  it('S30 templateTicketSource trả id và đúng detail công khai; ticketKey không lộ ra API', async () => {
+    const a = id();
+    await t.conn.collection('places').insertOne(fakePlaceDoc(cityId, { _id: a, slug: 'quan-gia-lap-a' }));
+    const inserted = await t.conn.collection('itineraries').insertOne(template({ ticketKey: `tickets/${'a'.repeat(32)}`, days: [{ day: 1, stops: [stop(a)] }] }));
+    const source = await t.app.get(ItinerariesService).templateTicketSource('thanh-pho-gia-lap', 'lich-trinh-gia-lap');
+    const body = await get();
+    expect(source.id).toBe(inserted.insertedId.toString());
+    expect(source.detail).toEqual(body.body);
+    expect(JSON.stringify(body.body)).not.toContain('ticketKey');
+  });
+  it('S30 templateTicketSource của mẫu nháp trả 404', async () => {
+    await t.conn.collection('itineraries').insertOne(template({ status: 'draft' }));
+    await expect(t.app.get(ItinerariesService).templateTicketSource('thanh-pho-gia-lap', 'lich-trinh-gia-lap')).rejects.toMatchObject({ status: 404 });
   });
   it('returns validated errors for missing city/template and invalid slug', async () => {
     expect((await get('missing')).status).toBe(404);

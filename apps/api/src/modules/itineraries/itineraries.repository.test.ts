@@ -84,4 +84,25 @@ describe('ItinerarySchema và ItinerariesRepository', () => {
     expect(list[0]).toMatchObject({ season: 'Mùa Giả Lập' });
     expect(await repo.listPublishedTemplates(cityId.toString(), 1)).toHaveLength(1);
   });
+
+  it('S30 swapTicketKey trả khoá cũ, không đổi updatedAt', async () => {
+    const oldKey = `tickets/${'a'.repeat(32)}`;
+    const newKey = `tickets/${'b'.repeat(32)}`;
+    const updatedAt = new Date('2026-10-01T00:00:00.000Z');
+    const doc = await insert(fakeItinerary({ slug: 'lich-trinh-gia-lap', ticketKey: oldKey }));
+    await model.collection.updateOne({ _id: doc._id }, { $set: { updatedAt } });
+    expect(await repo.swapTicketKey(doc._id.toString(), newKey)).toBe(oldKey);
+    const after = await model.findById(doc._id).lean();
+    expect(after?.ticketKey).toBe(newKey);
+    expect(after?.updatedAt).toEqual(updatedAt);
+    expect(await repo.swapTicketKey(doc._id.toString(), newKey)).toBeUndefined();
+  });
+
+  it('S30 swapTicketKey: mẫu chưa có khoá thì đặt khoá, trả undefined; không có bản ghi thì undefined', async () => {
+    const doc = await insert(fakeItinerary({ slug: 'lich-trinh-gia-lap-hai' }));
+    const key = `tickets/${'c'.repeat(32)}`;
+    expect(await repo.swapTicketKey(doc._id.toString(), key)).toBeUndefined();
+    expect((await model.findById(doc._id).lean())?.ticketKey).toBe(key);
+    expect(await repo.swapTicketKey(new Types.ObjectId().toString(), key)).toBeUndefined();
+  });
 });

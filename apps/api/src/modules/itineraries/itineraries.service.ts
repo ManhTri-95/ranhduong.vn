@@ -81,6 +81,19 @@ export class ItinerariesService {
   }
 
   async templateDetail(citySlug: string, slug: string): Promise<ItineraryTemplateDetail> {
+    return (await this.loadTemplate(citySlug, slug)).detail;
+  }
+
+  /** S30: dữ liệu công khai cho vé kèm id nội bộ (chỉ dùng cho job, không ra URL). */
+  templateTicketSource(citySlug: string, slug: string): Promise<{ id: string; detail: ItineraryTemplateDetail }> {
+    return this.loadTemplate(citySlug, slug);
+  }
+
+  swapTicketKey(id: string, key: string): Promise<string | undefined> {
+    return this.repo.swapTicketKey(id, key);
+  }
+
+  private async loadTemplate(citySlug: string, slug: string): Promise<{ id: string; detail: ItineraryTemplateDetail }> {
     const city = await this.cities.resolveCity(citySlug);
     const template = await this.repo.publishedTemplate(city.id, slug);
     const notFound = () => new ApiException('NOT_FOUND', HttpStatus.NOT_FOUND, 'Không tìm thấy lịch trình');
@@ -106,6 +119,6 @@ export class ItinerariesService {
       this.logger.warn(`Lịch trình mẫu ${slug}: lịch giờ không hợp lệ`);
       throw notFound();
     }
-    return result.data;
+    return { id: template._id.toString(), detail: result.data };
   }
 }
