@@ -170,18 +170,18 @@ Có ba cách, chọn theo mức độ ràng buộc: gọi service trực tiếp 
 | Cách | Dùng khi | Ví dụ |
 | --- | --- | --- |
 | Gọi service được export | Cần kết quả ngay, hoặc phải nằm chung một transaction | Duyệt đóng góp: `submissions` gọi `places.applyChange()` và `points.award()` trong cùng transaction |
-| Sự kiện nội bộ (`@nestjs/event-emitter`, cùng tiến trình) | Việc phụ, có thể làm sau, lỗi không được làm hỏng thao tác chính | Địa điểm đổi trạng thái → xoá cache lịch trình |
+| Sự kiện nội bộ (`@nestjs/event-emitter`, cùng tiến trình) | Việc phụ, có thể làm sau, lỗi không được làm hỏng thao tác chính | Địa điểm đổi → làm mới snapshot lịch trình |
 | Hàng đợi BullMQ (sang worker) | Việc chậm, gọi dịch vụ ngoài, cần retry | Viết mô tả lịch trình bằng LLM, sinh ảnh vé, xoá cache Cloudflare |
 
 **Danh sách sự kiện:**
 
 | Sự kiện | Phát từ | Ai nghe | Làm gì |
 | --- | --- | --- | --- |
-| `place.updated` | places | itineraries, metrics, jobs | Xoá cache lịch trình chứa điểm đó; đẩy job xoá cache Cloudflare |
-| `place.statusChanged` | places | itineraries, places (snapshot) | Làm mới snapshot địa điểm trong bộ nhớ; xoá cache lịch trình |
+| `place.updated` | places | itineraries, metrics, jobs | Làm mới snapshot địa điểm; đẩy job xoá cache Cloudflare |
+| `place.statusChanged` | places | itineraries, places (snapshot) | Làm mới snapshot địa điểm trong bộ nhớ |
 | `submission.approved` | submissions | metrics, users | Tăng `approvedCount`, xét nâng cấp uy tín |
 | `checkin.created` | points | rewards, metrics | Xét quà cột mốc; tăng `place_metrics.checkins` |
-| `itinerary.created` | itineraries | jobs, metrics | Đẩy job viết mô tả; tăng `inItineraries` cho các địa điểm |
+| `itinerary.created` | itineraries | jobs, metrics | Đẩy job viết mô tả khi cache mô tả chưa có (S43); tăng `inItineraries` cho các địa điểm |
 | `voucher.redeemed` | vouchers | metrics | Tăng `voucherUses` |
 | `user.loggedIn` | auth | users | Gộp ID khách tạm |
 
@@ -196,7 +196,7 @@ Có ba cách, chọn theo mức độ ràng buộc: gọi service trực tiếp 
 
 Bốn luồng quan trọng nhất của hệ thống; chi tiết từng bước và mã lỗi nằm ở thiết kế kỹ thuật mục 5–8.
 
-**Tạo lịch trình:** phần khách chờ chỉ gồm cache, thuật toán trong bộ nhớ và một lần ghi MongoDB; viết mô tả bằng LLM chạy sau trong worker.
+**Tạo lịch trình:** phần khách chờ chỉ gồm thuật toán trong bộ nhớ, một lần đọc Redis và một lần ghi MongoDB; kết quả thuật toán không cache (ADR 0014), viết mô tả bằng LLM chạy sau trong worker.
 
 *Khách nhận lịch trình ngay, mô tả LLM đến sau.*
 
@@ -208,23 +208,23 @@ sequenceDiagram
   participant M as MongoDB
   participant W as Worker
   participant L as LLM
-  B->>A: 1. POST /itineraries
-  A->>R: 2. tìm itin:hash
+  B->>A: 1. POST /cities/:city/itineraries
+  A->>A: 2. chọn mẫu, xếp tuyến trên snapshot
+  A->>R: 3. tìm itin-narr:{contentHash}
   R-->>A: chưa có
-  A->>A: 3. chọn mẫu, xếp tuyến
   A->>M: 4. lưu Itinerary
-  A->>R: 5. lưu cache, đẩy job
-  A-->>B: 6. lịch trình, mô tả mẫu
+  A->>R: 5. đẩy job mô tả
+  A-->>B: 6. lịch trình, mô tả mẫu, cookie gid
   Note over B,L: bất đồng bộ, sau khi khách đã thấy lịch trình
   R->>W: 7. job itinerary.narrative
   W->>L: 8. viết mô tả
   L-->>W: JSON
-  W->>M: 9. lưu mô tả
-  B->>A: 10. GET /narrative
+  W->>M: 9. lưu mô tả, ghi itin-narr vào Redis
+  B->>A: 10. GET /itineraries/:shareId/narrative
   A-->>B: 204 hoặc 200 kèm mô tả
 ```
 
-Khi cache có sẵn (bước 2 tìm thấy), API chỉ tạo bản `Itinerary` mới cho khách và trả về ngay. LLM lỗi hoặc quá 8 giây thì web giữ mô tả mẫu.
+Khi `itin-narr:{contentHash}` đã có (bước 3 tìm thấy), API lưu mô tả đó vào lịch trình, bỏ bước 5 và trả luôn: cùng nội dung thì dùng lại mô tả, không gọi LLM. LLM lỗi hoặc quá 8 giây thì web giữ mô tả mẫu.
 
 **Check-in:**
 
@@ -258,8 +258,7 @@ Cache có ba tầng: Cloudflare cho trang và ảnh, Redis cho dữ liệu dùng
 | --- | --- | --- | --- |
 | `sess:{sid}` | Phiên đăng nhập | 30 ngày, gia hạn khi dùng | Đăng xuất, xoá tài khoản, đổi vai trò |
 | `oauth:{state}` | `code_verifier`, `returnTo` | 10 phút | Dùng xong |
-| `itin:{paramsHash}` | Kết quả tạo lịch trình | 7 ngày | Sự kiện `place.updated` / `place.statusChanged` của một điểm trong đó |
-| `itin:byplace:{placeId}` | Tập `paramsHash` có chứa địa điểm | 7 ngày | Cùng lúc với `itin:*` tương ứng |
+| `itin-narr:{contentHash}` | Mô tả LLM đã validate (ADR 0014; `contentHash` băm `cityId` và `placeId`, `start`, `end` của mọi điểm) | 30 ngày | Hết hạn |
 | `city-season:{id}:{updatedAt}:{MM-DD}` | Mùa hiện tại; không chứa thời tiết/lịch trình đã cache | Tối đa 15 phút tới nửa đêm Việt Nam | Hết hạn; phiên bản mới khi admin sửa mùa |
 | `city-weather:v1:{id}:{lng},{lat}` | Quan sát WeatherAPI Free đã validate, không có key | Tối đa 15 phút, không vượt 30 phút tuổi quan sát | Hết hạn; tọa độ tâm đổi dùng khoá mới |
 | `lb:{city}:{month}` | Sorted set bảng xếp hạng | 60 ngày | Job dựng lại hằng đêm |
@@ -269,7 +268,7 @@ Cache có ba tầng: Cloudflare cho trang và ảnh, Redis cho dữ liệu dùng
 | `idem:{key}` | Kết quả request có `Idempotency-Key` | 24 giờ | Hết hạn |
 | `bull:*` | Hàng đợi BullMQ | Theo cấu hình job | BullMQ tự quản |
 
-**Bộ nhớ tiến trình (mỗi instance API):** snapshot địa điểm `active` và ma trận khoảng cách của từng thành phố, dùng cho thuật toán lịch trình. Làm mới mỗi 10 phút hoặc ngay khi nhận `place.statusChanged`. Với 200 địa điểm và 40.000 cạnh, snapshot chỉ vài MB.
+**Bộ nhớ tiến trình (mỗi instance API):** snapshot địa điểm `active` và ma trận khoảng cách (khi có S44) của từng thành phố, dùng cho thuật toán lịch trình. Làm mới mỗi 10 phút hoặc ngay khi có `place.updated`, `place.statusChanged`. Với 200 địa điểm và 40.000 cạnh, snapshot chỉ vài MB.
 
 **Cloudflare:** trang công khai theo `routeRules` (mục 11 thiết kế kỹ thuật); ảnh cache dài vì tên file có hash; xoá theo URL khi dữ liệu đổi (mục 3).
 
@@ -311,7 +310,7 @@ Mỗi bước nâng cấp chỉ làm khi gặp dấu hiệu cụ thể; nhờ AP
 
 - **Ma trận khoảng cách tăng theo bình phương số điểm.** 200 điểm là 40.000 cạnh; 2.000 điểm là 4 triệu cạnh. Khi vượt khoảng 1.000 điểm mỗi thành phố, chỉ lưu cạnh giữa các điểm trong cùng cụm và cụm kề, hoặc mỗi điểm chỉ giữ khoảng 50 điểm gần nhất.
 - **Snapshot trong bộ nhớ** nhân lên theo số instance và số thành phố; theo dõi RAM khi thêm thành phố.
-- **Sinh ảnh vé** tốn CPU; luôn chạy trong worker và cache trên R2, không sinh lại nếu lịch trình không đổi.
+- **Sinh ảnh vé** tốn CPU; luôn chạy trong worker, chỉ sinh khi có người cần, lưu R2 theo hash nội dung, không sinh lại khi nội dung vé không đổi.
 - **Gọi LLM** có độ trễ và giới hạn tốc độ của nhà cung cấp; giới hạn số job chạy song song trong hàng đợi.
 - **Một VPS là điểm lỗi duy nhất** ở MVP; chấp nhận được; bật tuỳ chọn phục vụ bản cache khi máy chủ lỗi của Cloudflare để trang công khai đã cache vẫn hiển thị trong lúc VPS gặp sự cố ngắn.
 
