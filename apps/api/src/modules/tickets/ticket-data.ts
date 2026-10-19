@@ -14,6 +14,17 @@ export const TICKET_STORY_ROWS = 10;
 
 export interface TicketContext { cityName: string; citySlug: string; accent: string; siteUrl: string }
 
+/** Cắt theo giới hạn của TicketData (đơn vị UTF-16 như Zod) mà không tách đôi emoji; dữ liệu cũ có thể dài hơn form hiện tại. */
+function clip(text: string, max: number): string {
+  if (text.length <= max) return text;
+  let out = '';
+  for (const char of text) {
+    if (out.length + char.length > max) break;
+    out += char;
+  }
+  return out;
+}
+
 /** Vé của lịch trình mẫu: chỉ điểm còn công khai, QR tới trang mẫu có utm_source=ticket. */
 export function templateTicketData(detail: ItineraryTemplateDetail, ctx: TicketContext): TicketData {
   const all: TicketStop[] = [];
@@ -22,7 +33,7 @@ export function templateTicketData(detail: ItineraryTemplateDetail, ctx: TicketC
     for (const stop of day.stops) {
       if (!stop.place) continue;
       number++;
-      all.push({ day: day.day, number, start: stop.start, name: stop.place.name });
+      all.push({ day: day.day, number, start: stop.start, name: clip(stop.place.name, 200) });
     }
   }
   const multiDay = detail.days.length > 1;
@@ -38,7 +49,7 @@ export function templateTicketData(detail: ItineraryTemplateDetail, ctx: TicketC
   const shortLink = `${url.host}${url.pathname}`;
   url.searchParams.set('utm_source', 'ticket');
   return TicketData.parse({
-    cityName: ctx.cityName, title: detail.title, days: detail.days.length, transport: detail.transport, season: detail.season,
+    cityName: ctx.cityName, title: clip(detail.title, 200), days: detail.days.length, transport: detail.transport, season: clip(detail.season, 100),
     accent: ctx.accent, stops, stopTotal: all.length, shortLink, qrUrl: url.toString(),
   });
 }

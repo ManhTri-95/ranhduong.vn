@@ -46,6 +46,14 @@ describe('S30 dữ liệu vé', () => {
     expect(ticketRows(data, 'og')).toMatchObject({ more: 0 });
     expect(ticketRows(data, 'og').stops).toHaveLength(2);
   });
+  it('tiêu đề, mùa, tên điểm cũ dài quá giới hạn bị cắt thay vì làm hỏng vé', () => {
+    const long = detail([[1]], { title: 'Đ'.repeat(198) + '🌼🌼', season: 'M'.repeat(150) });
+    long.days[0]!.stops[0]!.place!.name = 'Q'.repeat(250);
+    const data = templateTicketData(long, ctx);
+    expect(data.title).toBe('Đ'.repeat(198) + '🌼');
+    expect(data.season).toHaveLength(100);
+    expect(data.stops[0]!.name).toHaveLength(200);
+  });
   it('mẫu không còn điểm công khai vẫn có dữ liệu vé', () => {
     expect(templateTicketData(detail([[null]]), ctx)).toMatchObject({ stops: [], stopTotal: 0 });
   });
