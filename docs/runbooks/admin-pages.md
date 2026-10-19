@@ -7,8 +7,8 @@
 1. Tạo dự án Direct Upload, nhánh production tên `production`:
 
    ```bash
-   pnpm dlx wrangler@4.147.0 login
-   pnpm dlx wrangler@4.147.0 pages project create ranhduong-admin --production-branch=production
+   pnpm --filter @ranhduong/admin exec wrangler login
+   pnpm --filter @ranhduong/admin exec wrangler pages project create ranhduong-admin --production-branch=production
    ```
 
 2. Tạo API token: My Profile → API Tokens → Create Token → Custom, quyền *Account → Cloudflare Pages → Edit*, chỉ cho tài khoản của dự án. Lấy Account ID ở trang tổng quan Workers & Pages.

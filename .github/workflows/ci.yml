@@ -70,7 +70,8 @@ jobs:
           VITE_MEDIA_BASE: ${{ vars.VITE_MEDIA_BASE }}
           VITE_MAP_STYLE_URL: ${{ vars.VITE_MAP_STYLE_URL }}
           VITE_UPLOAD_ORIGIN: ${{ vars.VITE_UPLOAD_ORIGIN }}
-      - run: pnpm dlx wrangler@4.147.0 pages deploy apps/admin/dist --project-name="$ADMIN_PAGES_PROJECT" --branch="$PAGES_BRANCH" --commit-hash="$GITHUB_SHA"
+      # wrangler khoá trong lockfile (devDependency của admin), không tải bản ngoài khi đang giữ token.
+      - run: pnpm --filter @ranhduong/admin exec wrangler pages deploy dist --project-name="$ADMIN_PAGES_PROJECT" --branch="$PAGES_BRANCH" --commit-hash="$GITHUB_SHA"
         env:
           ADMIN_PAGES_PROJECT: ${{ vars.ADMIN_PAGES_PROJECT }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

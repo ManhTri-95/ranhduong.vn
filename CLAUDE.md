@@ -99,7 +99,7 @@ pnpm --filter @ranhduong/geo test        # test một package
 
 ## Trạng thái
 
-- S26 code xong trên `feat/S26-admin-pages`: `build:pages` bắt buộc biến `VITE_*` và sinh `_headers` (CSP theo origin, noindex) bằng `apps/admin/build/pages.ts`; bỏ `_redirects` (fallback SPA của Pages); router tải lại một lần khi chunk lỗi; CI `deploy-admin` qua wrangler 4.147.0, chưa đặt `ADMIN_PAGES_PROJECT` thì bỏ qua; API chặn `WEB_ORIGINS` sai. Đã thử `wrangler pages dev` và Chrome 390px/desktop, chưa thử upload. Runbook `docs/runbooks/admin-pages.md`; chờ dự án Pages/token/GitHub environments, S02, Access, staging, điện thoại thật và Sentry 24 giờ.
+- S26 code xong trên `feat/S26-admin-pages`: `build:pages` bắt buộc biến `VITE_*` và sinh `_headers` (CSP theo origin, noindex) bằng `apps/admin/build/pages.ts`; bỏ `_redirects` (fallback SPA của Pages); router tải lại một lần khi chunk lỗi; CI `deploy-admin` qua wrangler 4.148.0 đã khoá, chưa đặt `ADMIN_PAGES_PROJECT` thì bỏ qua; API chặn `WEB_ORIGINS` sai. Đã thử `wrangler pages dev` và Chrome 390px/desktop, chưa thử upload. Runbook `docs/runbooks/admin-pages.md`; chờ dự án Pages/token/GitHub environments, S02, Access, staging, điện thoại thật và Sentry 24 giờ.
 
 - S21 code xong: admin `/import` 3 bước, tải mẫu `apps/admin/public/samples/dia-diem-mau.csv`, parser CSV dùng schema form hiện tại/6 danh mục/website và indoor cũ; bảng lỗi có cách sửa/nghi trùng, tạo nháp và retry giữ file. API preview/commit riêng, kiểm lại trước ghi, unique khoá nguồn theo city chống CSV chạy đồng thời/nhập lại sau sửa. Runbook `docs/runbooks/csv-import.md`; chờ CI remote, staging, điện thoại thật và Sentry 24 giờ.
 
