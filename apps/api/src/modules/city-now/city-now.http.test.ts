@@ -14,15 +14,20 @@ describe('S24 /now HTTP weather isolation', () => {
     await t.app.get(CitiesService).applySeed(fakeCitySeed());
   });
   afterAll(async () => { if (t) await t.close(); });
-  afterEach(() => vi.restoreAllMocks());
-  it('returns fresh public weather and bounds HTTP TTL to its expiry without exposing context', async () => {
+  afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); });
+  it.each([
+    { now: '2026-10-19T05:00:00.000Z', ttl: 300, expiresAt: '2026-10-19T05:05:00.000Z' },
+    { now: '2026-10-19T16:59:00.000Z', ttl: 60, expiresAt: '2026-10-19T17:00:00.000Z' },
+  ])('returns fresh public weather with TTL $ttl at $now without exposing context', async ({ now, ttl, expiresAt }) => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(now));
     const weather = { state: 'rain' as const, temperatureC: 18, isDay: true, rainSoon: false, observedAt: new Date().toISOString(), expiresAt: new Date(Date.now() + 300_000).toISOString() };
     const source = vi.spyOn(t.app.get(WeatherService), 'current').mockResolvedValue(weather);
     const response = await fetch(`${t.url}${path}`);
     expect(response.status).toBe(200);
-    expect(response.headers.get('cache-control')).toMatch(/public, max-age=29[89], s-maxage=29[89]/);
+    expect(response.headers.get('cache-control')).toBe(`public, max-age=${ttl}, s-maxage=${ttl}`);
     const body: unknown = await response.json();
-    expect(CityNow.parse(body)).toMatchObject({ weather, expiresAt: weather.expiresAt });
+    expect(CityNow.parse(body)).toMatchObject({ weather, expiresAt });
     expect(body).not.toHaveProperty('id');
     expect(body).not.toHaveProperty('center');
     expect(source.mock.calls[0]?.[0].center).toEqual(fakeCitySeed().city.center);
