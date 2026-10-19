@@ -15,6 +15,7 @@ import { SeoModule } from './modules/seo/seo.module';
 import { MetricsModule } from './modules/metrics/metrics.module';
 import { MetricsCron } from './modules/metrics/metrics-cron';
 import { CityNowModule } from './modules/city-now/city-now.module';
+import { TicketsModule } from './modules/tickets/tickets.module';
 
 const env = loadEnv();
 
@@ -33,6 +34,7 @@ const env = loadEnv();
     SeoModule,
     MetricsModule,
     CityNowModule,
+    TicketsModule,
   ],
   controllers: [HealthController],
   providers: [MetricsCron],
