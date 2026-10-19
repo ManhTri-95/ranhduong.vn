@@ -12,9 +12,9 @@ Thiết kế cũ cũng trộn `:id` (ObjectId) với `:shareId` ở các endpoin
 
 ## Quyết định
 
-- Không cache kết quả thuật toán. Chỉ cache mô tả LLM đã validate, khoá `itin-narr:{contentHash}`, sống 30 ngày; `contentHash` băm `cityId` cùng `placeId`, `start`, `end` của mọi điểm theo thứ tự.
+- Không cache kết quả thuật toán. Chỉ cache mô tả LLM đã validate, khoá `itin-narr:{contentHash}`, sống 30 ngày; `contentHash` băm `cityId`, phiên bản prompt, số ngày và `placeId`, `start`, `end`, `updatedAt` của địa điểm cho mọi điểm theo thứ tự. Bản cache lưu theo vị trí (ngày, thứ tự điểm), không chứa `key`; khi dùng thì gắn lại vào `key` của lịch trình. Sửa lịch trình thì tính lại `contentHash`: có cache thì dùng, chưa có thì xoá mô tả và viết lại.
 - Lịch trình của khách được đọc, sửa và lấy ảnh vé qua `shareId` ngẫu nhiên (base62, unique), không bao giờ qua ObjectId. Lịch trình mẫu dùng slug.
-- `stayLocation` làm tròn mỗi trục tới 0,005° (khoảng 550 m ở Đà Lạt) trước khi lưu, chỉ dùng để xếp tuyến, không trả trong API, trang hay ảnh vé công khai.
+- `stayLocation` làm tròn mỗi trục tới 0,005° (khoảng 550 m ở Đà Lạt) trước khi lưu, chỉ dùng để xếp tuyến, không trả trong bất kỳ phản hồi API, trang hay ảnh vé công khai nào; bản chép ("Tạo bản của mình") không mang nơi ở của người chia sẻ.
 
 ## Hệ quả
 

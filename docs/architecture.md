@@ -224,7 +224,7 @@ sequenceDiagram
   A-->>B: 204 hoặc 200 kèm mô tả
 ```
 
-Khi `itin-narr:{contentHash}` đã có (bước 3 tìm thấy), API lưu mô tả đó vào lịch trình, bỏ bước 5 và trả luôn: cùng nội dung thì dùng lại mô tả, không gọi LLM. LLM lỗi hoặc quá 8 giây thì web giữ mô tả mẫu.
+Khi `itin-narr:{contentHash}` đã có (bước 3 tìm thấy), API gắn mô tả đó vào `key` của lịch trình theo vị trí, lưu, bỏ bước 5 và trả luôn: cùng nội dung thì dùng lại mô tả, không gọi LLM. LLM lỗi hoặc quá 8 giây thì web giữ mô tả mẫu.
 
 **Check-in:**
 
@@ -258,7 +258,7 @@ Cache có ba tầng: Cloudflare cho trang và ảnh, Redis cho dữ liệu dùng
 | --- | --- | --- | --- |
 | `sess:{sid}` | Phiên đăng nhập | 30 ngày, gia hạn khi dùng | Đăng xuất, xoá tài khoản, đổi vai trò |
 | `oauth:{state}` | `code_verifier`, `returnTo` | 10 phút | Dùng xong |
-| `itin-narr:{contentHash}` | Mô tả LLM đã validate (ADR 0014; `contentHash` băm `cityId` và `placeId`, `start`, `end` của mọi điểm) | 30 ngày | Hết hạn |
+| `itin-narr:{contentHash}` | Mô tả LLM đã validate, lưu theo vị trí (ngày, thứ tự điểm), không chứa `key` (ADR 0014; `contentHash` băm `cityId`, phiên bản prompt, số ngày và `placeId`, `start`, `end`, `updatedAt` của địa điểm cho mọi điểm) | 30 ngày | Hết hạn |
 | `city-season:{id}:{updatedAt}:{MM-DD}` | Mùa hiện tại; không chứa thời tiết/lịch trình đã cache | Tối đa 15 phút tới nửa đêm Việt Nam | Hết hạn; phiên bản mới khi admin sửa mùa |
 | `city-weather:v1:{id}:{lng},{lat}` | Quan sát WeatherAPI Free đã validate, không có key | Tối đa 15 phút, không vượt 30 phút tuổi quan sát | Hết hạn; tọa độ tâm đổi dùng khoá mới |
 | `lb:{city}:{month}` | Sorted set bảng xếp hạng | 60 ngày | Job dựng lại hằng đêm |
