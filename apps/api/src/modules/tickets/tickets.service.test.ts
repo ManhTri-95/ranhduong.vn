@@ -26,7 +26,7 @@ function setup() {
     write: vi.fn(async (k: string, body: Buffer) => { files.set(k, body); }),
     remove: vi.fn(async (keys: string[]) => { for (const k of keys) files.delete(k); }),
   };
-  const queue = { request: vi.fn(async (_job: TicketJob) => undefined) };
+  const queue = { request: vi.fn<(job: TicketJob) => Promise<void>>(async () => undefined) };
   const renderer = { render: vi.fn(async (_data: unknown, format: string) => Buffer.from(`png-${format}`)), defaultOg: vi.fn(() => Buffer.from('mac-dinh')) };
   const cities = { getPublic: vi.fn(async () => ({ name: 'Thành phố Giả Lập', accent: '#E9B824' })) };
   const itineraries = {
