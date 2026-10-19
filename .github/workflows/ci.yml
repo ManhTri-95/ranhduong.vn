@@ -3,6 +3,7 @@ on:
   pull_request:
   push:
     branches: [main]
+    tags: ['v*']
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -38,3 +39,39 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm turbo run lint typecheck test build
       - run: pnpm --filter @ranhduong/web test:ssr
+
+  # S26: admin lên Cloudflare Pages sau khi check xanh. main → admin staging (alias main.<project>.pages.dev),
+  # tag v* → production. Chưa đặt biến repo ADMIN_PAGES_PROJECT thì bỏ qua. Xem docs/runbooks/admin-pages.md.
+  deploy-admin:
+    needs: check
+    if: github.event_name == 'push' && vars.ADMIN_PAGES_PROJECT != ''
+    runs-on: ubuntu-latest
+    environment: ${{ startsWith(github.ref, 'refs/tags/v') && 'admin-production' || 'admin-staging' }}
+    concurrency:
+      group: admin-pages-${{ startsWith(github.ref, 'refs/tags/v') && 'production' || 'staging' }}
+      cancel-in-progress: false
+    env:
+      PAGES_BRANCH: ${{ startsWith(github.ref, 'refs/tags/v') && 'production' || 'main' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12.9.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm turbo run build --filter=@ranhduong/admin^...
+      - run: pnpm --filter @ranhduong/admin build:pages
+        env:
+          VITE_API_BASE: ${{ vars.VITE_API_BASE }}
+          VITE_WEB_BASE: ${{ vars.VITE_WEB_BASE }}
+          VITE_MEDIA_BASE: ${{ vars.VITE_MEDIA_BASE }}
+          VITE_MAP_STYLE_URL: ${{ vars.VITE_MAP_STYLE_URL }}
+          VITE_UPLOAD_ORIGIN: ${{ vars.VITE_UPLOAD_ORIGIN }}
+      - run: pnpm dlx wrangler@4.147.0 pages deploy apps/admin/dist --project-name="$ADMIN_PAGES_PROJECT" --branch="$PAGES_BRANCH" --commit-hash="$GITHUB_SHA"
+        env:
+          ADMIN_PAGES_PROJECT: ${{ vars.ADMIN_PAGES_PROJECT }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
