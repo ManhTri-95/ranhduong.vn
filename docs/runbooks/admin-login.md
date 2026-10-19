@@ -26,7 +26,7 @@ Làm ở Google Cloud Console → Google Auth Platform (tên mục có thể kh�
 | `ADMIN_EMAILS` | email của bạn | danh sách admin | danh sách admin |
 
 - Staging phải dùng tên cookie khác production: cookie `sid` của production đặt ở `.ranhduong.vn` nên cũng được gửi tới API staging.
-- Admin staging phải chạy trên một subdomain của `ranhduong.vn` (ví dụ `admin.staging.ranhduong.vn`, gắn vào nhánh `main` của dự án Pages), không dùng thẳng `*.pages.dev`. `pages.dev` là site khác `ranhduong.vn`, nên trình duyệt không gửi cookie `SameSite=Lax` tới API.
+- Admin staging phải chạy trên một subdomain của `ranhduong.vn` (ví dụ `admin.staging.ranhduong.vn`, gắn vào nhánh `main` của dự án Pages; cách gắn và deploy ở [admin-pages.md](admin-pages.md)), không dùng thẳng `*.pages.dev`. `pages.dev` là site khác `ranhduong.vn`, nên trình duyệt không gửi cookie `SameSite=Lax` tới API.
 - Nếu staging bật basic auth (technical-design mục 13), thì API staging và admin staging phải nằm ngoài basic auth; admin staging đã có Access chặn.
 
 ## 3. Cloudflare Access (lớp 1)
