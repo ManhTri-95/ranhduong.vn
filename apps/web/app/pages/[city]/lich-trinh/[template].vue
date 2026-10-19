@@ -3,7 +3,7 @@ import { Slug } from '@ranhduong/contracts';
 import { computed } from 'vue';
 import { useCity } from '~/entities/city/api/city';
 import { useTemplateDetail } from '~/entities/itinerary/api/itineraries';
-import { templateTicketUrl } from '~/entities/itinerary/lib/ticket-url';
+import { templateTicketUrl, ticketFileName } from '~/entities/itinerary/lib/ticket-url';
 import { markUnavailableOnServer, throwIfNotFound } from '~/shared/api/page-status';
 import { absoluteUrl } from '~/shared/lib/seo';
 import { usePageSeo } from '~/shared/lib/use-page-seo';
@@ -36,6 +36,7 @@ const title = computed(() => `${template.data.value?.seoTitle || template.data.v
 const description = computed(() => template.data.value?.seoDescription || template.data.value?.description || `Lịch trình gợi ý ở ${city.data.value?.name || 'Đà Lạt'}.`);
 // S30: ảnh xem trước là vé (API sinh khi được gọi lần đầu, chưa xong thì trả ảnh mặc định). URL công khai, không phải địa chỉ nội bộ SSR.
 const ogTicket = templateTicketUrl(seoConfig.apiBase, citySlug, slug, 'og');
+const ticket = { url: templateTicketUrl(seoConfig.apiBase, citySlug, slug, 'story'), fileName: ticketFileName(slug) };
 usePageSeo({ path, title, description, image: () => template.data.value && !failed.value ? ogTicket : undefined,
   breadcrumbs: () => [{ name: city.data.value?.name || 'Thành phố', path: `/${citySlug}` }, { name: template.data.value?.title || 'Lịch trình mẫu', path }],
   jsonLd: () => template.data.value && !failed.value ? [tripJsonLd(template.data.value, seoConfig.siteUrl, citySlug)] : [], noindex: failed,
@@ -48,7 +49,7 @@ usePageSeo({ path, title, description, image: () => template.data.value && !fail
     <main class="rd-itinerary-page">
       <nav aria-label="Đường dẫn trang"><NuxtLink class="rd-itinerary-page__back" :to="`/${citySlug}`">← {{ city.data.value?.name || 'Về trang thành phố' }}</NuxtLink></nav>
       <RdErrorBanner v-if="failed" message="Chưa tải được lịch trình, có thể mạng đang chập chờn." @retry="retry" />
-      <RdItineraryDetail v-if="template.data.value" :itinerary="template.data.value" :city="city.data.value ?? null" :city-slug="citySlug" :share-url="canonical" />
+      <RdItineraryDetail v-if="template.data.value" :itinerary="template.data.value" :city="city.data.value ?? null" :city-slug="citySlug" :share-url="canonical" :ticket="ticket" />
       <div v-else-if="!failed" class="rd-itinerary-page__loading" role="status" aria-label="Đang tải lịch trình" />
       <div v-else><h1 class="page-title">Lịch trình mẫu</h1><p class="empty-note">Bấm Thử lại để xem lịch trình nhé.</p></div>
     </main>

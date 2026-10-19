@@ -4,13 +4,16 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch,
 import { DESCRIPTION_PREVIEW_CHARS, daySpan, itinerarySummary, noteNeedsToggle, summaryLine } from '~/entities/itinerary/lib/itinerary-summary';
 import { directionHref } from '~/entities/place/lib/place-detail';
 import RdItineraryShare from '~/features/itinerary-share/ui/RdItineraryShare.vue';
+import RdTicketPreview from '~/features/itinerary-ticket/ui/RdTicketPreview.vue';
 import { observeTimelineMotion } from '~/shared/lib/scroll-motion';
 import { actionBarMode, activeStopKey, dayOfStop, findStop, firstLocatedKey } from '../lib/active-stop';
 import RdItineraryActionBar from './RdItineraryActionBar.vue';
 import RdItineraryDayBar from './RdItineraryDayBar.vue';
 import RdItineraryStopCarousel from './RdItineraryStopCarousel.vue';
 
-const props = defineProps<{ itinerary: ItineraryTemplateDetail; city: CityPublic | null; citySlug: string; shareUrl: string }>();
+/** ticket: ảnh vé story (S30) và tên file khi tải về; không có thì không hiện phần vé. */
+const props = defineProps<{ itinerary: ItineraryTemplateDetail; city: CityPublic | null; citySlug: string; shareUrl: string; ticket?: { url: string; fileName: string } }>();
+const ticketOpen = ref(false);
 const mapComponent: ShallowRef<Component | null> = shallowRef(null);
 const mapComponentFailed = ref(false);
 const selectedDay = ref(1);
@@ -254,12 +257,16 @@ onBeforeUnmount(() => { stopMotion(); window.removeEventListener('scroll', track
           <NuxtLink to="/ghi-nguon#ban-do">Style và giấy phép</NuxtLink>
         </nav>
         <noscript>Bật JavaScript để mở bản đồ. Lịch giờ và nút Chỉ đường vẫn dùng được.</noscript>
-        <RdItineraryActionBar v-if="mounted && wide" :stop="focusStop" :mode="barMode" :day="focusDay" :title="itinerary.title" :url="shareUrl" :fixed="false" @show-map="showDayMap" />
+        <RdItineraryActionBar v-if="mounted && wide" :stop="focusStop" :mode="barMode" :day="focusDay" :title="itinerary.title" :url="shareUrl" :fixed="false" :ticket="Boolean(ticket)" @show-map="showDayMap" @ticket="ticketOpen = true" />
       </aside>
     </div>
-    <RdItineraryShare :title="itinerary.title" :url="shareUrl" />
+    <RdItineraryShare :title="itinerary.title" :url="shareUrl">
+      <!-- Chưa có JavaScript: link mở thẳng ảnh vé story. -->
+      <a v-if="ticket" class="rd-btn rd-btn--dashed rd-itinerary-detail__ticket" :href="ticket.url" @click.prevent="ticketOpen = true">Tạo vé để chia sẻ</a>
+    </RdItineraryShare>
+    <RdTicketPreview v-if="ticket" v-model:open="ticketOpen" :url="ticket.url" :file-name="ticket.fileName" :title="itinerary.title" :share-url="shareUrl" />
     <NuxtLink class="rd-itinerary-detail__map-link" :to="`/${citySlug}/ban-do`">Chọn thêm chỗ trên bản đồ thành phố →</NuxtLink>
-    <RdItineraryActionBar v-if="mounted && !wide" :stop="focusStop" :mode="barMode" :day="focusDay" :title="itinerary.title" :url="shareUrl" fixed @show-map="showDayMap" />
+    <RdItineraryActionBar v-if="mounted && !wide" :stop="focusStop" :mode="barMode" :day="focusDay" :title="itinerary.title" :url="shareUrl" fixed :ticket="Boolean(ticket)" @show-map="showDayMap" @ticket="ticketOpen = true" />
   </article>
 </template>
 
@@ -318,6 +325,7 @@ button.rd-itinerary-stop__number { cursor: pointer; }
 .rd-itinerary-detail__map > p { margin: 0; font-size: 13px; line-height: 1.7; color: var(--ink-soft); }
 .rd-itinerary-detail__map-loading { height: var(--itinerary-map-h, 360px); background: var(--map-land); padding: var(--space-4); box-sizing: border-box; }
 .rd-itinerary-detail__attribution { font-size: 11px; line-height: 1.7; }
+.rd-itinerary-detail__ticket { justify-self: start; }
 .rd-itinerary-detail__map-link { justify-self: start; display: inline-flex; align-items: center; min-height: var(--tap-min); font-size: 13px; }
 @media (min-width: 1024px) {
   /* Thanh ngày chỉ phủ cột trái (rộng theo --itinerary-col-gap); phần thấy được cao 76px = đệm 12 + viên chip 56 + đệm 8. */

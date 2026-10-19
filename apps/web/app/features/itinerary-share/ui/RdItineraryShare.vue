@@ -37,6 +37,8 @@ async function share(channel: ShareChannel): Promise<void> {
       <button type="button" class="rd-btn rd-btn--outline" :disabled="busy" @click="share('messenger')">Messenger</button>
       <button type="button" class="rd-btn rd-btn--outline" :disabled="busy" @click="share('copy')">Copy link</button>
     </div>
+    <!-- S30: widget đặt nút "Tạo vé để chia sẻ" ở đây. -->
+    <slot />
     <p class="rd-itinerary-share__status" role="status" aria-live="polite">{{ status }}</p>
     <div v-if="fallback" class="rd-itinerary-share__fallback">
       <label for="itinerary-share-url">Link lịch trình</label>
