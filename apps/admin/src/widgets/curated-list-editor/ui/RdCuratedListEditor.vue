@@ -103,4 +103,5 @@ watch(errors, async (messages) => {
 .rd-curated-editor__actions .rd-btn { min-height: var(--tap-min); padding: 0 var(--space-3); }
 .rd-curated-editor__footer { display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-4) 0; }
 fieldset { min-width: 0; margin: 0; }
+@media (min-width: 1280px) { .rd-curated-editor { max-width: none; } }
 </style>

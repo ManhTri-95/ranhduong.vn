@@ -119,7 +119,8 @@ html { scroll-padding-bottom: var(--admin-bar-height, 0px); }
 .rd-admin-main:focus { outline: none; }
 @media (min-width: 768px) { .rd-admin-main { padding: var(--space-6) var(--space-6) var(--space-7); } }
 @media (min-width: 1280px) {
-  .rd-admin { display: grid; grid-template-columns: var(--admin-sidebar-w) minmax(0, 1fr); align-items: start; }
+  /* Desktop dùng hết bề ngang vùng nội dung; muốn chặn lại thì đặt trần ở hai token này. */
+  .rd-admin { --admin-content-max: none; --admin-editor-max: none; display: grid; grid-template-columns: var(--admin-sidebar-w) minmax(0, 1fr); align-items: start; }
   .rd-admin-topbar { display: none; }
   .rd-admin-side { display: flex; position: sticky; top: 0; height: 100vh; overflow-y: auto; background: var(--ink); }
   .rd-admin-main { padding: var(--space-7) 32px; }
@@ -241,6 +242,8 @@ html { scroll-padding-bottom: var(--admin-bar-height, 0px); }
   .rd-admin-editor__grid { grid-template-columns: minmax(0, 720px) 300px; }
   .rd-admin-editor__side { position: sticky; top: var(--space-6); max-height: calc(100vh - 2 * var(--space-6) - var(--admin-bar-height, 0px)); overflow-y: auto; }
 }
+/* Từ 1280px: form chiếm phần còn lại, cột phụ rộng dần theo màn. */
+@media (min-width: 1280px) { .rd-admin-editor__grid { grid-template-columns: minmax(0, 1fr) clamp(300px, 22vw, 400px); } }
 .rd-admin-card-title { margin: 0; font: 700 15px/1.3 var(--font-body); }
 .rd-admin-line { margin: 0; }
 .rd-admin-banner { display: flex; flex-direction: column; gap: var(--space-3); }

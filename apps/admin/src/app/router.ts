@@ -22,6 +22,7 @@ export const router = createRouter({
     { path: '/', redirect: '/dia-diem' },
     { path: '/dang-nhap', component: () => import('@/pages/LoginPage.vue'), meta: { public: true, title: 'Đăng nhập' } },
     { path: '/dia-diem', component: () => import('@/pages/PlacesPage.vue'), meta: { title: 'Địa điểm' } },
+    { path: '/import', component: () => import('@/pages/PlaceImportPage.vue'), meta: { title: 'Import CSV' } },
     { path: '/dia-diem/:id', component: () => import('@/pages/PlaceEditPage.vue'), meta: { title: 'Địa điểm' } },
     { path: '/danh-sach', component: () => import('@/pages/CuratedListsPage.vue'), meta: { title: 'Danh sách gợi ý' } },
     { path: '/danh-sach/:id', component: () => import('@/pages/CuratedListEditPage.vue'), meta: { title: 'Danh sách gợi ý' } },

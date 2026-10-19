@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import type { BBox, CityPublic, PlaceCard } from '@ranhduong/contracts';
-import type { GeoJSONSource, Map as MapLibreMap, Marker } from 'maplibre-gl';
+import type { GeoJSONSource, Map as MapLibreMap, Marker, Popup } from 'maplibre-gl';
 import mapWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue';
 import { intersectMapBounds } from '~/entities/place/lib/map-places';
 import { placePinSvg } from '~/entities/place/lib/map-pin';
+import RdPlaceCard from '~/entities/place/ui/RdPlaceCard.vue';
+import { useClientNow } from '~/shared/lib/use-client-now';
 import { resolveMapStyleSprites } from '~/shared/lib/map-style';
 import { MAP_MIN_ZOOM, needsPan, type MapInsets, type MapView } from '~/shared/lib/map-camera';
 import { addPlaceLayers, CLUSTERS, PLACE_SOURCE, POINTS, selectPlaceLayer, updatePlaceLayers } from '../lib/map-layers';
@@ -17,14 +19,87 @@ const container = ref<HTMLDivElement | null>(null);
 const failed = ref(false);
 const loading = ref(true);
 const assetsFailed = ref(false);
+const now = useClientNow();
+const previewSlug = ref<string | null>(null);
+const previewPlace = computed(() => props.places.find((place) => place.slug === previewSlug.value));
+const previewHost = shallowRef<HTMLDivElement | null>(null);
 let map: MapLibreMap | undefined;
 let maplibre: typeof import('maplibre-gl') | undefined;
 let selectedMarker: Marker | undefined;
+let previewPopup: Popup | undefined;
+let previewMedia: MediaQueryList | undefined;
+let hoveredSlug: string | null = null;
+let previewTimer: ReturnType<typeof setTimeout> | undefined;
+let closeTimer: ReturnType<typeof setTimeout> | undefined;
 let disposed = false;
 let generation = 0;
 let startupTimer: ReturnType<typeof setTimeout> | undefined;
 const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const padding = () => ({ top: props.insets?.top ?? 0, bottom: props.insets?.bottom ?? 0, left: 0, right: 0 });
+
+function closePreview(): void {
+  clearTimeout(previewTimer);
+  clearTimeout(closeTimer);
+  previewSlug.value = null;
+  previewHost.value = null;
+  previewPopup?.remove();
+  previewPopup = undefined;
+}
+
+function keepPreview(): void {
+  clearTimeout(previewTimer);
+  clearTimeout(closeTimer);
+}
+
+function schedulePreviewClose(): void {
+  clearTimeout(previewTimer);
+  // Cho phép đưa chuột từ ghim sang thẻ và đọc thẻ bằng bàn phím.
+  clearTimeout(closeTimer);
+  closeTimer = setTimeout(() => {
+    if (!previewPopup?.getElement()?.matches(':hover, :focus-within')) closePreview();
+  }, 220);
+}
+
+async function openPreview(slug: string): Promise<void> {
+  const place = props.places.find((item) => item.slug === slug);
+  if (!previewMedia?.matches || !map || !maplibre || map.isMoving() || !place?.location) return;
+  if (previewSlug.value === slug) { keepPreview(); return; }
+  closePreview();
+  const host = document.createElement('div');
+  previewHost.value = host;
+  previewSlug.value = slug;
+  const popup = new maplibre.Popup({
+    closeButton: false, closeOnClick: false, focusAfterOpen: false,
+    className: 'rd-map-preview', maxWidth: '320px', padding: { top: 12, bottom: 12, left: 12, right: 12 },
+    offset: {
+      center: [0, -24], top: [0, 8], 'top-left': [0, 8], 'top-right': [0, 8],
+      bottom: [0, -50], 'bottom-left': [0, -50], 'bottom-right': [0, -50],
+      left: [24, -24], right: [-24, -24],
+    },
+  }).setLngLat(place.location.coordinates).setDOMContent(host);
+  previewPopup = popup;
+  // Chờ Vue render nội dung để MapLibre chọn phía còn đủ chỗ sát mép bản đồ.
+  await nextTick();
+  if (disposed || previewPopup !== popup || !map) return;
+  popup.addTo(map);
+}
+
+function hoverPlace(slug: string | null): void {
+  if (!previewMedia?.matches) return;
+  if (slug === hoveredSlug) {
+    if (slug && previewSlug.value === slug) keepPreview();
+    return;
+  }
+  hoveredSlug = slug;
+  clearTimeout(previewTimer);
+  if (!slug) { schedulePreviewClose(); return; }
+  keepPreview();
+  previewTimer = setTimeout(() => { void openPreview(slug); }, 160);
+}
+
+function dismissPreview(event: KeyboardEvent): void {
+  if (event.key === 'Escape') closePreview();
+}
 
 function syncSelectedMarker(): void {
   if (!map?.getLayer(POINTS) || !maplibre) return;
@@ -44,7 +119,11 @@ function syncSelectedMarker(): void {
     const graphic = document.createElement('span');
     graphic.className = 'rd-map-pin__graphic';
     button.append(graphic);
-    button.addEventListener('click', (event) => { event.stopPropagation(); emit('select', place.slug); });
+    button.addEventListener('click', (event) => { event.stopPropagation(); closePreview(); emit('select', place.slug); });
+    button.addEventListener('mouseenter', () => hoverPlace(place.slug));
+    button.addEventListener('mouseleave', () => hoverPlace(null));
+    button.addEventListener('focus', () => { void openPreview(place.slug); });
+    button.addEventListener('blur', schedulePreviewClose);
     selectedMarker = new maplibre.Marker({ element: button, anchor: 'bottom', offset: [0, 2.5] }).setLngLat(place.location.coordinates).addTo(map);
   }
   const button = selectedMarker.getElement();
@@ -68,6 +147,8 @@ function emitViewport(): void {
 
 async function start(): Promise<void> {
   const currentGeneration = ++generation;
+  closePreview();
+  hoveredSlug = null;
   selectedMarker?.remove(); selectedMarker = undefined;
   map?.remove();
   map = undefined;
@@ -94,6 +175,7 @@ async function start(): Promise<void> {
     instance.addControl(new library.NavigationControl({ showCompass: false }), 'top-right');
     const reportError = () => {
       if (disposed || instance !== map) return;
+      closePreview();
       failed.value = true; loading.value = false; emit('error');
     };
     startupTimer = setTimeout(reportError, 15_000);
@@ -113,7 +195,10 @@ async function start(): Promise<void> {
       emitViewport();
     });
     instance.on('moveend', emitViewport);
+    instance.on('movestart', () => { closePreview(); hoveredSlug = null; });
+    instance.getCanvas().addEventListener('mouseleave', () => hoverPlace(null));
     instance.on('click', async (event) => {
+      closePreview();
       if (!instance.getLayer(POINTS)) return;
       // 44px quanh vị trí chạm, dễ chọn ghim nhỏ trên điện thoại.
       const hits = instance.queryRenderedFeatures([[event.point.x - 22, event.point.y - 22], [event.point.x + 22, event.point.y + 22]], { layers: [POINTS, CLUSTERS] });
@@ -133,7 +218,13 @@ async function start(): Promise<void> {
     });
     instance.on('mousemove', (event) => {
       if (!instance.getLayer(POINTS)) return;
-      instance.getCanvas().style.cursor = instance.queryRenderedFeatures(event.point, { layers: [POINTS, CLUSTERS] }).length ? 'pointer' : '';
+      // Ghim đang chọn là HTML, không còn trong layer POINTS để queryRenderedFeatures tìm thấy.
+      const marker = event.originalEvent.target instanceof Element ? event.originalEvent.target.closest<HTMLElement>('.rd-map-pin') : null;
+      if (marker) { hoverPlace(marker.dataset.slug ?? null); return; }
+      const hits = instance.queryRenderedFeatures(event.point, { layers: [POINTS, CLUSTERS] });
+      instance.getCanvas().style.cursor = hits.length ? 'pointer' : '';
+      const point = hits.find((hit) => typeof hit.properties.slug === 'string');
+      hoverPlace(point ? point.properties.slug as string : null);
     });
     instance.setStyle(styleUrl, { transformStyle: (_previous, next) => resolveMapStyleSprites(next, styleUrl, window.location.href) });
   } catch {
@@ -152,11 +243,17 @@ function retry(): void {
 }
 
 watch(() => props.places, (places) => {
+  // Một phản hồi mới vẫn chứa cùng ghim phải giữ cả thẻ đang mở lẫn hover đang chờ.
+  if ((previewSlug.value && !places.some((place) => place.slug === previewSlug.value))
+    || (hoveredSlug && !places.some((place) => place.slug === hoveredSlug))) {
+    closePreview(); hoveredSlug = null;
+  }
   if (!map?.getSource(PLACE_SOURCE)) return;
   updatePlaceLayers(map, places, props.selectedSlug);
   syncSelectedMarker();
 });
 watch(() => props.selectedSlug, (slug) => {
+  closePreview();
   if (!map?.getLayer(POINTS)) return;
   syncSelectedMarker();
   const place = props.places.find((item) => item.slug === slug);
@@ -168,13 +265,28 @@ watch(() => props.selectedSlug, (slug) => {
     map.easeTo({ center: place.location.coordinates, padding: padding(), duration: reducedMotion() ? 0 : 300 });
   }
 });
-onMounted(start);
-onBeforeUnmount(() => { disposed = true; generation++; clearTimeout(startupTimer); selectedMarker?.remove(); map?.remove(); });
+onMounted(() => {
+  previewMedia = window.matchMedia('(min-width: 1024px) and (hover: hover) and (pointer: fine)');
+  previewMedia.addEventListener('change', closePreview);
+  document.addEventListener('keydown', dismissPreview);
+  void start();
+});
+onBeforeUnmount(() => {
+  disposed = true; generation++; clearTimeout(startupTimer); closePreview();
+  previewMedia?.removeEventListener('change', closePreview);
+  document.removeEventListener('keydown', dismissPreview);
+  selectedMarker?.remove(); map?.remove();
+});
 </script>
 
 <template>
   <div class="rd-map-canvas">
     <div ref="container" class="rd-map-canvas__surface" role="region" :aria-label="`Bản đồ địa điểm ${city.name}`" />
+    <Teleport v-if="previewPlace && previewHost" :to="previewHost">
+      <div class="rd-map-preview__card" :aria-label="`Xem nhanh: ${previewPlace.name}`" @mouseenter="keepPreview" @mouseleave="schedulePreviewClose" @focusin="keepPreview" @focusout="schedulePreviewClose">
+        <RdPlaceCard :place="previewPlace" :href="`/${city.slug}/dia-diem/${previewPlace.slug}`" :now="now" compact />
+      </div>
+    </Teleport>
     <p v-if="loading" class="rd-map-canvas__notice" role="status">Đang mở bản đồ…</p>
     <div v-if="failed" class="rd-map-canvas__notice" role="status">
       <p>Chưa tải được bản đồ. Bạn vẫn xem được danh sách địa điểm bên dưới.</p>
@@ -189,6 +301,18 @@ onBeforeUnmount(() => { disposed = true; generation++; clearTimeout(startupTimer
 .rd-map-canvas__surface { background: var(--map-land); }
 .rd-map-canvas__notice { position: absolute; top: calc(var(--map-controls-top, 0px) + var(--space-3)); left: var(--space-3); right: calc(var(--tap-min) + var(--space-5)); padding: var(--space-3); background: var(--paper-raised); border: var(--border); border-radius: var(--radius-card); font-size: 14px; }
 .rd-map-canvas__notice p { margin-top: 0; }
+.rd-map-preview__card { width: 320px; font: 14px/1.5 var(--font-body); }
+.rd-map-preview__card :deep(.rd-place) { height: auto; border: var(--border-ink); }
+.rd-map-preview__card :deep(.rd-place__title) { overflow-wrap: anywhere; }
+.rd-map-canvas :deep(.rd-map-preview .maplibregl-popup-content) { padding: 0; background: var(--paper-raised); border-radius: var(--radius-card); box-shadow: var(--shadow-float); }
+.rd-map-canvas :deep(.rd-map-preview.maplibregl-popup-anchor-bottom .maplibregl-popup-tip),
+.rd-map-canvas :deep(.rd-map-preview.maplibregl-popup-anchor-bottom-left .maplibregl-popup-tip),
+.rd-map-canvas :deep(.rd-map-preview.maplibregl-popup-anchor-bottom-right .maplibregl-popup-tip) { border-top-color: var(--ink); }
+.rd-map-canvas :deep(.rd-map-preview.maplibregl-popup-anchor-top .maplibregl-popup-tip),
+.rd-map-canvas :deep(.rd-map-preview.maplibregl-popup-anchor-top-left .maplibregl-popup-tip),
+.rd-map-canvas :deep(.rd-map-preview.maplibregl-popup-anchor-top-right .maplibregl-popup-tip) { border-bottom-color: var(--ink); }
+.rd-map-canvas :deep(.rd-map-preview.maplibregl-popup-anchor-left .maplibregl-popup-tip) { border-right-color: var(--ink); }
+.rd-map-canvas :deep(.rd-map-preview.maplibregl-popup-anchor-right .maplibregl-popup-tip) { border-left-color: var(--ink); }
 /* Nút zoom nằm dưới header nổi của trang bản đồ (--map-controls-top do trang đặt). */
 .rd-map-canvas :deep(.maplibregl-ctrl-top-right) { top: var(--map-controls-top, 0px); }
 .rd-map-canvas :deep(.maplibregl-ctrl button) { width: var(--tap-min); height: var(--tap-min); }

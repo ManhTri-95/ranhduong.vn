@@ -1,0 +1,7 @@
+﻿id,name,aliases,category,also_category,zone,address,latlng,hours,visit_min,best_time,cover,price,tags,transport,notes,phone,fanpage,website,osm_id,status,imported
+MAU-GIA-001,CÀ PHÊ GIẢ - MẪU 01,,cafe,food;shop,,,,T2-T6 07:00-22:00; T7-CN 06:30-23:00,60,morning;sunset,partial,,,motorbike;car,"DỮ LIỆU GIẢ để thử import. Thay bằng thông tin đã thu thập; chưa có địa chỉ, toạ độ và số điện thoại.",,,,,Đã xác nhận,no
+MAU-GIA-002,QUÁN ĂN GIẢ - MẪU 02,,food,cafe,,,,"T2-CN 06:30-11:00,14:00-22:00",60,morning;evening,full,,,motorbike;car,"DỮ LIỆU GIẢ để thử import. Thay bằng thông tin đã thu thập; chưa có địa chỉ, toạ độ và số điện thoại.",,,,,Đã xác nhận,no
+MAU-GIA-003,ĐIỂM THAM QUAN GIẢ - MẪU 03,,attraction,,,,,T2-CN 07:00-17:00,60,sunrise;sunset,none,,,motorbike;car,"DỮ LIỆU GIẢ để thử import. Thay bằng thông tin đã thu thập; chưa có địa chỉ, toạ độ và số điện thoại.",,,,,Đăng chưa xác nhận,no
+MAU-GIA-004,HOẠT ĐỘNG GIẢ - MẪU 04,,activity,,,,,T2-CN 08:00-18:00,60,afternoon,partial,,,motorbike;car,"DỮ LIỆU GIẢ để thử import. Thay bằng thông tin đã thu thập; chưa có địa chỉ, toạ độ và số điện thoại.",,,,,Đã xác nhận,no
+MAU-GIA-005,LƯU TRÚ GIẢ - MẪU 05,,stay,food,,,,T2-CN 24h,60,evening,full,,,motorbike;car,"DỮ LIỆU GIẢ để thử import. Thay bằng thông tin đã thu thập; chưa có địa chỉ, toạ độ và số điện thoại.",,,,,Đã xác nhận,no
+MAU-GIA-006,CỬA HÀNG GIẢ - MẪU 06,,shop,,,,,T2-CN 08:00-21:00,60,morning;afternoon,full,,,motorbike;car,"DỮ LIỆU GIẢ để thử import. Thay bằng thông tin đã thu thập; chưa có địa chỉ, toạ độ và số điện thoại.",,,,,Đã xác nhận,no

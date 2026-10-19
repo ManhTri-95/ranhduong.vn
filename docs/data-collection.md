@@ -97,10 +97,10 @@ Tuần 1–2 dùng một Google Sheet; khi form nhập liệu trong admin xong (
 
 | Cột | Trường trên web | Định dạng, ví dụ |
 | --- | --- | --- |
-| id | (chỉ trong Sheet) | D001, D002… tăng dần, dùng làm tên thư mục Drive |
+| id | khoá nguồn import (nội bộ) | D001, D002… ổn định, không dùng lại cho địa điểm khác; dùng làm tên thư mục Drive và chống nhập trùng |
 | name | name | Cà phê Mây |
 | aliases | aliases | Phân cách bằng dấu ;, ví dụ May Coffee; Mây Café |
-| category | category | Dropdown: attraction, cafe, food, activity |
+| category | category | Dropdown hiện tại: attraction, cafe, food, activity, stay, shop |
 | also_category | alsoCategories | Danh mục phụ, tối đa 2, cách nhau ;, khác category |
 | zone | zoneId | Dropdown: trung-tam, phia-nam, phia-bac, phia-dong |
 | address | address | Địa chỉ đầy đủ |
@@ -115,7 +115,8 @@ Tuần 1–2 dùng một Google Sheet; khi form nhập liệu trong admin xong (
 | notes | practicalNotes | Ghi chú thực tế, tự viết |
 | phone | contact.phone | Dạng +84…, ví dụ +84912345678 |
 | fanpage | contact.fanpage | Link đầy đủ |
-| osm\_id | ids.osmId | Nếu dòng đến từ import OSM |
+| website | contact.website | Link đầy đủ http/https, chưa có thì để trống |
+| osm\_id | ids.osmId | Nếu dòng đến từ OSM: node/123, way/123 hoặc relation/123 |
 
 Các cột theo dõi (script bỏ qua): batch (1/2), last\_post\_date, status, channel (messenger, zalo, call), msg1\_date, remind\_date, result, photo\_status (none, owner, self, cc), drive\_folder, imported (yes/no).
 
@@ -129,9 +130,15 @@ Các cột theo dõi (script bỏ qua): batch (1/2), last\_post\_date, status, c
 
 **Tab "Tags":** danh sách tags được phép dùng (ví dụ chill, view-doi, song-ao, gia-dinh, mao-hiem, an-sang, dac-san). Thêm tag mới thì thêm vào tab này trước.
 
-**Google Drive:** một thư mục riêng tư cho dự án; mỗi quán một thư mục con đặt theo id và tên (ví dụ `D012-ca-phe-may`), chứa ảnh quán gửi và ảnh chụp màn hình tin nhắn đồng ý. Khi import, ảnh được upload lên R2; ảnh chụp tin nhắn giữ lại trên Drive làm bằng chứng.
+**Google Drive:** một thư mục riêng tư cho dự án; mỗi quán một thư mục con đặt theo id và tên (ví dụ `D012-ca-phe-may`), chứa ảnh quán gửi và ảnh chụp màn hình tin nhắn đồng ý. CSV không đọc ảnh hoặc thư mục Drive; sau khi tạo nháp, upload ảnh trong form địa điểm lên R2. Ảnh chụp tin nhắn giữ lại trên Drive làm bằng chứng.
 
-**Chuyển vào admin (story S21 trong backlog):** export tab "Địa điểm" ra CSV, chạy script import: chỉ lấy các dòng có status là "Đã xác nhận", "Sẵn sàng đăng" hoặc "Đăng chưa xác nhận" và imported khác yes; validate bằng schema Zod; tạo `Place` dạng nháp với `verifySource` là owner (quán đã xác nhận) hoặc admin (còn lại); in báo cáo các dòng lỗi định dạng. Sau đó bạn vào admin upload ảnh, kích hoạt, rồi đánh dấu imported = yes trong Sheet. Sheet cũ còn cột indoor thì yes thành cover full, no thành cover none.
+**Chuyển vào admin (S21):** vào mục **Import CSV** (`/import`), tải CSV xuất từ tab "Địa điểm"; kiểm tra bảng sẵn sàng, lỗi kèm cách sửa, nghi trùng và các dòng bị bỏ qua; chọn dòng rồi bấm **Tạo địa điểm nháp**. Chỉ lấy status "Đã xác nhận", "Sẵn sàng đăng" hoặc "Đăng chưa xác nhận" và imported khác yes. Hai trạng thái đầu đặt `verifySource=owner`, trạng thái cuối đặt `admin`. Mọi dòng đều validate bằng Zod theo schema form hiện tại và tạo nháp; chưa đặt ngày xác minh hay công khai. Sau đó bổ sung ảnh, kiểm tra/kích hoạt, và tự đánh dấu imported = yes trong Sheet.
+
+**File mẫu:** tải ngay trên trang import hoặc dùng [dia-diem-mau.csv](../apps/admin/public/samples/dia-diem-mau.csv). Sáu dòng mang tên **GIẢ** chỉ để thử, cần xoá/thay trước khi nhập dữ liệu thật. File UTF-8 (có BOM để Excel đọc tiếng Việt), tối đa **256 KiB / 500 dòng dữ liệu**. Tiêu đề tối thiểu `name,category,status`; nên luôn giữ `id` ổn định. Dùng dấu phẩy; ô có dấu phẩy, ngoặc kép hoặc xuống dòng phải được bao/escape đúng CSV (Google Sheets tự làm). Số dòng báo trong admin là dòng bắt đầu bản ghi trong file, nên ô nhiều dòng làm số này khác số hàng Sheet.
+
+**Cấu trúc mới ưu tiên:** `also_category` tối đa 2 danh mục phụ khác danh mục chính, `cover` là full/partial/none; website là link http/https. `cover` có giá trị thì ưu tiên, nếu trống mới đọc `indoor` cũ (yes → full, no → none). Tên tối đa 120 ký tự, địa chỉ 300, ghi chú 1000, thời lượng 5–720 phút, tối đa 20 thẻ và 10 tên khác. Danh mục/thẻ nhiều giá trị ngăn bằng `;`. Số điện thoại 0…/84…/+84… được chuẩn hoá sang +84. Toạ độ/giờ mở cửa chưa rõ có thể để trống rồi bổ sung ở nháp; nếu đã nhập thì phải đúng định dạng, không chồng ca. Cụm phải có trong thành phố; có thể để trống.
+
+**Chống trùng:** ID Sheet, ID OSM hoặc số điện thoại đã có trong cùng thành phố sẽ bị bỏ qua, kể cả địa điểm đã ẩn/đóng/gộp; không ghi đè dữ liệu đang có. Khoá nguồn được giữ khi sửa tên/số trong admin. Nếu không có cả ba định danh, chỉ chống nhập lại đúng nội dung đã nhập; nên thêm ID để việc sửa CSV vẫn nhận ra địa điểm cũ. Nghi trùng theo vị trí/tên/fanpage dùng quy tắc hiện tại; chọn **Bỏ qua dòng** hoặc **Vẫn tạo**. Lựa chọn Vẫn tạo không vượt qua định danh trùng chắc chắn. API kiểm lại lúc tạo, có thể trả thêm nghi trùng mới để xem lại. Chỉ mục MongoDB chặn hai lượt CSV đồng thời tạo cùng khoá nguồn. Khi mất mạng/hết phiên, giữ tab mở và thử lại; lần nhập lại sẽ bỏ qua các nháp đã tạo. Không tự sửa Google Sheet. Đã xoá hẳn nháp thì khoá nguồn của nháp đó cũng bị xoá.
 
 **Bảo mật:** Sheet và thư mục Drive chứa số điện thoại và tin nhắn với chủ quán, nên luôn để riêng tư, không chia sẻ bằng link công khai.
 

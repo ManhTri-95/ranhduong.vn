@@ -61,8 +61,9 @@ export function parseOpeningHours(input: string): OpeningSlot[] {
     if (/^đóng$/i.test(timePart)) continue;
     const ranges = /^24h$/i.test(timePart) ? ['00:00-24:00'] : timePart.split(',').map((r) => r.trim());
     for (const range of ranges) {
-      const [open, close] = range.split('-').map((t) => t.trim());
-      if (!open || !close) throw new OpeningHoursParseError(`Khoảng giờ không hợp lệ: ${range}`);
+      const times = range.split('-').map((t) => t.trim());
+      const [open, close] = times;
+      if (times.length !== 2 || !open || !close) throw new OpeningHoursParseError(`Khoảng giờ không hợp lệ: ${range}`);
       for (const day of days) slots.push({ day, open: checkTime(open, OPEN_TIME), close: checkTime(close, CLOSE_TIME) });
     }
   }

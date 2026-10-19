@@ -320,7 +320,10 @@ button.rd-itinerary-stop__number { cursor: pointer; }
 .rd-itinerary-detail__attribution { font-size: 11px; line-height: 1.7; }
 .rd-itinerary-detail__map-link { justify-self: start; display: inline-flex; align-items: center; min-height: var(--tap-min); font-size: 13px; }
 @media (min-width: 1024px) {
-  .rd-itinerary-detail__columns { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; gap: calc(var(--space-7) * 2); }
-  .rd-itinerary-detail__map { display: grid; position: sticky; top: calc(var(--itinerary-daybar-h, 64px) + var(--space-3)); }
+  /* Thanh ngày chỉ phủ cột trái (rộng theo --itinerary-col-gap); phần thấy được cao 76px = đệm 12 + viên chip 56 + đệm 8. */
+  .rd-itinerary-detail { --itinerary-col-gap: calc(var(--space-7) * 2); --itinerary-daybar-h: 76px; }
+  .rd-itinerary-detail__columns { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; gap: var(--itinerary-col-gap); }
+  /* Thẻ bản đồ dính cùng mép trên với viên chip ngày ở cột trái. */
+  .rd-itinerary-detail__map { display: grid; position: sticky; top: var(--space-3); }
 }
 </style>

@@ -5,6 +5,7 @@ import { createTestApp, type TestApp } from '../../testing/app';
 import { FAKE_PHOTO, fakeCitySeed, fakePlaceDoc } from '../../testing/fixtures';
 import { CitiesService } from '../cities/cities.service';
 import { PlacesModule } from './places.module';
+import { PLACE_MODEL } from './schemas/place.schema';
 
 describe('S11 public place detail HTTP', () => {
   let t: TestApp;
@@ -15,6 +16,8 @@ describe('S11 public place detail HTTP', () => {
 
   beforeAll(async () => {
     t = await createTestApp([PlacesModule]);
+    // autoIndex tạo nền; truy vấn $near cần chờ index 2dsphere, nhất là khi cả suite chạy cùng lúc.
+    await t.conn.model(PLACE_MODEL).init();
     const cities = t.app.get(CitiesService);
     cityId = (await cities.applySeed(fakeCitySeed())).cityId;
     otherCityId = (await cities.applySeed(fakeCitySeed({ slug: 'thanh-pho-khac' }))).cityId;

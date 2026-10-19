@@ -9,6 +9,7 @@ import { PLACE_MODEL, type PlaceModel } from './schemas/place.schema';
 import { atlasSearchStage } from './place-search';
 import { sitemapSources, type SitemapSource } from '@ranhduong/contracts';
 import { MetricPlaceRef } from '@ranhduong/contracts';
+import type { CsvImportCandidate } from './place-csv-import';
 
 /** Trường của thẻ địa điểm; ảnh chỉ lấy tấm đầu. */
 const CARD_FIELDS = {
@@ -134,6 +135,23 @@ export class PlacesRepository {
 
   async hasOsmId(cityId: string, osmId: string): Promise<boolean> {
     return (await this.places.exists({ cityId: new Types.ObjectId(cityId), 'ids.osmId': osmId })) !== null;
+  }
+
+  /** S21: cả địa điểm đã gộp vẫn giữ danh tính nguồn để không tạo lại khi nhập cùng file. */
+  async listForCsvImport(cityId: string): Promise<CsvImportCandidate[]> {
+    const rows = await this.places.find({ cityId: new Types.ObjectId(cityId) }, {
+      name: 1, aliases: 1, status: 1, location: 1, contact: 1, ids: 1, importKeys: 1,
+    }).lean();
+    return rows.map((row) => {
+      const [lng, lat] = row.location?.coordinates ?? [];
+      return {
+        id: row._id.toString(), name: row.name, aliases: row.aliases ?? [], status: row.status,
+        phone: row.contact?.phone ?? undefined, fanpage: row.contact?.fanpage ?? undefined,
+        osmId: row.ids?.osmId ?? undefined, googlePlaceId: row.ids?.googlePlaceId ?? undefined,
+        location: lng !== undefined && lat !== undefined ? { lng, lat } : undefined,
+        importKeys: row.importKeys ?? [],
+      };
+    });
   }
 
   /** Insert only: a retry must not change curated fields, status or updatedAt. */

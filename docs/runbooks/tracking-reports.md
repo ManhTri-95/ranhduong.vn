@@ -57,6 +57,7 @@ Tham khảo cấu hình và API chính thức: [Umami tracker configuration](htt
 - `GET /v1/admin/cities/:city/metrics?week=YYYY-MM-DD` chuẩn hoá ngày chọn về thứ Hai. Thiếu week lấy tuần hiện tại, tuần tương lai trả 400. API yêu cầu admin và trả `no-store`.
 - Báo cáo có đủ 7 ngày, tổng xem/chỉ đường/gọi/fanpage, địa điểm xếp theo lượt chỉ đường giảm dần. Dữ liệu đã gộp và Redis lấy giá trị lớn hơn cho từng chỉ số/ngày; số liệu cũ vẫn hiển thị khi Redis đã hết TTL. Địa điểm đã ẩn/đóng còn trong báo cáo; nháp không xuất hiện.
 - Admin có chọn ngày, tuần trước/sau, cập nhật, trạng thái chưa có số liệu và lỗi/thử lại/đăng nhập lại. Nút tiếp đến tuần tương lai bị khóa.
+- Từ 2026-10-15 (widget `apps/admin/src/widgets/metrics-report`): `?week=` sai hoặc tương lai thì mở tuần đang chạy; ô "Bấm chỉ đường" là số chính, mỗi ô kèm chênh lệch với tuần trước (tuần đang chạy so cùng kỳ thứ Hai → hôm nay, tuần đã trọn so cả tuần; admin gọi thêm báo cáo tuần trước, lỗi thì chỉ ẩn phần so sánh). Biểu đồ cột 7 ngày màu `--ink`, hôm nay sọc chéo, ngày chưa tới ghi "—", rê chuột hoặc focus hiện đủ 4 chỉ số, có bảng số theo ngày. Bảng theo địa điểm xếp mọi cột, tìm không dấu, chip trạng thái chỗ đã ẩn/đóng, chỗ 0 lượt gom cuối. "Cập nhật" lỗi mạng thì giữ số đang hiện.
 
 ## Kiểm chứng local
 

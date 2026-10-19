@@ -60,4 +60,17 @@ onBeforeUnmount(() => observer?.disconnect());
 .rd-itinerary-daybar__views button { min-height: 40px; min-width: var(--tap-min); padding: 0 var(--space-3); border: 0; border-radius: var(--radius-pill); background: transparent; color: var(--ink); font: 600 14px var(--font-body); cursor: pointer; transition: background-color var(--dur-standard) var(--ease-out), color var(--dur-standard) var(--ease-out); }
 .rd-itinerary-daybar__views button[aria-pressed='true'] { background: var(--ink); color: var(--paper-raised); }
 .rd-itinerary-daybar__views button:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+/*
+ * Desktop: thanh chỉ rộng bằng cột timeline, nền trùng màu trang; chip ngày gom thành một viên nổi cùng kiểu viền với thẻ bản đồ cột phải.
+ * Khi dính, lớp mờ dưới thanh để chữ cuộn lên không bị cắt cứng.
+ */
+@media (min-width: 1024px) {
+  .rd-itinerary-daybar, .rd-itinerary-daybar--stuck { width: calc((100% - var(--itinerary-col-gap, 0px)) / 2); margin: 0; padding: calc(var(--space-3) + 1px) 0 var(--space-2); background: var(--paper); border-bottom: 0; }
+  .rd-itinerary-daybar::after { content: ''; position: absolute; top: 100%; left: 0; right: 0; height: var(--space-3); background: linear-gradient(var(--paper), transparent); opacity: 0; pointer-events: none; transition: opacity var(--dur-standard) var(--ease-out); }
+  .rd-itinerary-daybar--stuck::after { opacity: 1; }
+  .rd-itinerary-daybar__days { flex: 0 1 auto; gap: var(--space-1); padding: var(--space-1); background: var(--paper-raised); border: var(--border); border-radius: var(--radius-pill); }
+  .rd-itinerary-daybar__days a:not([aria-current='true']) { border-color: transparent; }
+  /* Hàng chip cuộn ngang nên cắt phần tràn ở mép đệm: viền focus thu sát chip để nằm gọn trong đệm 4px. */
+  .rd-itinerary-daybar__days a:focus-visible { outline-offset: 1px; }
+}
 </style>

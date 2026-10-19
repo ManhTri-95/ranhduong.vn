@@ -276,4 +276,6 @@ details { display: flex; flex-direction: column; gap: var(--space-3); }
   .rd-template-editor__pane[data-desktop-hidden='true'] { display: none; }
   .rd-template-editor__side { position: sticky; top: var(--space-6); max-height: calc(100vh - 2 * var(--space-6) - var(--admin-bar-height, 0px)); overflow-y: auto; }
 }
+/* Màn lớn: kho địa điểm và xem trước rộng dần theo màn. */
+@media (min-width: 1280px) { .rd-template-editor__columns { grid-template-columns: minmax(0, 1fr) clamp(340px, 24vw, 440px); } }
 </style>

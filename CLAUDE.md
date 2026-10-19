@@ -99,6 +99,8 @@ pnpm --filter @ranhduong/geo test        # test một package
 
 ## Trạng thái
 
+- S21 code xong: admin `/import` 3 bước, tải mẫu `apps/admin/public/samples/dia-diem-mau.csv`, parser CSV dùng schema form hiện tại/6 danh mục/website và indoor cũ; bảng lỗi có cách sửa/nghi trùng, tạo nháp và retry giữ file. API preview/commit riêng, kiểm lại trước ghi, unique khoá nguồn theo city chống CSV chạy đồng thời/nhập lại sau sửa. Runbook `docs/runbooks/csv-import.md`; chờ CI remote, staging, điện thoại thật và Sentry 24 giờ.
+
 - S28 giai đoạn 1 code xong trên `feat/S28-admin-ux`: khung trang admin (thanh bên từ 1280px, ngăn trượt), component dùng chung `apps/admin/src/shared/ui` với luật lint chặn import tầng trên; danh sách địa điểm cột Còn thiếu/Cập nhật, ô Xếp, Xoá bộ lọc, thẻ điện thoại, nhớ bộ lọc và vị trí cuộn; form địa điểm hai cột, cột phụ xác minh/đổi trạng thái, Bỏ thay đổi, chặn rời trang; lịch trình hai cột, hàng điểm gọn, thanh lưu dính, hỏi lại khi công khai/chuyển nháp. Runbook `docs/runbooks/admin-ux.md`; chờ kiểm trình duyệt có phiên admin, CI remote, staging và điện thoại thật.
 
 - S25 code xong trên `feat/S25-ui-motion`: timeline cuộn tới một lần/mốc 400ms/nét nối 600ms/stagger 500ms/hàng đợi, hai bản đồ ghim rơi 700ms trên child, banner mùa 4s sau cuộn/pause ngoài viewport-tab ẩn, live reduced motion về trạng thái cuối. 20 task workspace, 107 test web, 75 SSR và Chrome 390px/desktop/focus/không JS/hai map đạt; review độc lập sạch. Runbook `docs/runbooks/ui-motion.md` ghi bản sửa fixture S24 SSR sát biên 1ms; chờ CI remote, staging, điện thoại thật và Sentry 24 giờ.

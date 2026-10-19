@@ -12,6 +12,7 @@ import { ItinerariesModule } from '../itineraries/itineraries.module';
 import { AdminTemplatesController } from './admin-templates.controller';
 import { AdminTemplateLock } from './admin-template-lock';
 import { AdminCitySeasonsService } from './admin-city-seasons.service';
+import { AdminPlaceImportController } from './admin-place-import.controller';
 
 /**
  * Route quản trị (tầng ngoài cùng, architecture mục 4): chỉ gọi service của cities và places; mọi route có AdminGuard.
@@ -19,7 +20,7 @@ import { AdminCitySeasonsService } from './admin-city-seasons.service';
  */
 @Module({
   imports: [CitiesModule, PlacesModule, MediaModule, CuratedListsModule, ItinerariesModule],
-  controllers: [AdminPlacesController, AdminCitiesController, AdminMediaController, AdminCuratedListsController, AdminTemplatesController],
+  controllers: [AdminPlacesController, AdminCitiesController, AdminMediaController, AdminCuratedListsController, AdminTemplatesController, AdminPlaceImportController],
   providers: [AdminMediaService, AdminTemplateLock, AdminCitySeasonsService],
 })
 export class AdminModule {}

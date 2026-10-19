@@ -138,7 +138,10 @@ watch(
 <template>
   <div class="rd-admin-page">
     <RdPageHeader title="Địa điểm">
-      <template #actions><RouterLink class="rd-btn rd-btn--primary" to="/dia-diem/moi">Thêm địa điểm</RouterLink></template>
+      <template #actions>
+        <RouterLink class="rd-btn rd-btn--secondary" to="/import">Import CSV</RouterLink>
+        <RouterLink class="rd-btn rd-btn--primary" to="/dia-diem/moi">Thêm địa điểm</RouterLink>
+      </template>
       <template v-if="load.kind === 'ready'" #meta>{{ rows.length }} địa điểm</template>
     </RdPageHeader>
 

@@ -19,12 +19,13 @@ export interface NavGroupView {
   items: NavLinkView[];
 }
 
-/** Menu theo tần suất dùng (spec S28 mục 5.1); Import CSV (S21) thêm vào "Nội dung" khi làm xong. */
+/** Menu theo tần suất dùng (spec S28 mục 5.1), gồm nhập CSV theo lô (S21). */
 export const NAV_GROUPS: readonly NavGroup[] = [
   {
     label: 'Nội dung',
     items: [
       { label: 'Địa điểm', path: '/dia-diem', list: 'places' },
+      { label: 'Import CSV', path: '/import' },
       { label: 'Lịch trình mẫu', path: '/lich-trinh', list: 'templates' },
       { label: 'Danh sách gợi ý', path: '/danh-sach' },
     ],

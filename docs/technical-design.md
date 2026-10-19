@@ -175,6 +175,7 @@ interface PlaceMetricDaily { placeId; dayKey: string; views: number; directionCl
 | --- | --- | --- |
 | places | `location` 2dsphere | Gần đây, chống trùng, check-in |
 | places | `{cityId, slug}` unique | URL trang địa điểm |
+| places | `{cityId, importKeys}` unique multikey, partial khi có string | S21: khoá nguồn Sheet/OSM/phone (hoặc hash nội dung khi thiếu ID), giữ qua sửa form, chống lặp CSV/chạy đồng thời; metadata nội bộ không trả công khai |
 | places | `{cityId, category, status}` | Danh sách theo danh mục |
 | places | Atlas Search trên `name`, `aliases`, `tags` (analyzer bỏ dấu) | Tìm kiếm không dấu |
 | submissions | `{cityId, status, createdAt}` | Hàng chờ duyệt |
@@ -320,6 +321,8 @@ REST JSON dưới `/v1`, thành phố nằm trong path (`/v1/cities/:city/…`);
 | GET/PUT | `/admin/places/:id` | Đọc, sửa toàn bộ trường form; địa điểm đã công khai phải giữ đủ điều kiện kích hoạt |
 | POST | `/admin/places/:id/activate` | Nháp sang active khi có toạ độ, giờ hợp lệ, nguồn xác nhận, mọi ảnh có nguồn |
 | POST | `/admin/cities/:city/places/duplicate-check` | Body `{ name, location?, phone?, fanpage?, excludeId? }`; chỗ nghi trùng (mục 9) |
+| POST | `/admin/cities/:city/places/import/preview` | S21: body `{ csv }`, kiểm CSV tối đa 256 KiB/500 dòng; trả từng dòng sẵn sàng/lỗi/nghi trùng/đã có/bỏ qua, chưa ghi DB |
+| POST | `/admin/cities/:city/places/import` | S21: body `{ csv, selections: [{ row, allowDuplicate }] }`; kiểm lại toàn bộ, chỉ tạo nháp, không ghi đè; trả dòng đã tạo/đã có/cần xem lại. Cả hai route dùng AdminGuard và OriginGuard |
 | GET | `/admin/cities/:city/zones/suggest?lng=&lat=` | Cụm gợi ý cho điểm ghim |
 | GET | `/admin/cities/:city/places` | Mọi địa điểm chưa gộp cho danh sách admin (S07), kèm mã điều kiện kích hoạt còn thiếu |
 | POST | `/admin/places/:id/verify` | Body `{ verifySource }`; đặt `lastVerifiedAt`; nháp, chỗ bị nghi ngờ thành active (S07) |

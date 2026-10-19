@@ -87,7 +87,7 @@ Nhóm "Nội dung": Địa điểm, Lịch trình mẫu, Danh sách gợi ý. Nh
 ### 5.4 Bố cục nội dung
 
 - Lề trang 32px từ 1280px, 24px ở 768–1279px, `--page-gutter` dưới 768px.
-- Căn trái, rộng tối đa `--admin-content-max` 1280px cho trang danh sách và `--admin-editor-max` 1200px cho trình soạn.
+- Căn trái. Dưới 1280px trang danh sách rộng tối đa `--admin-content-max` 1280px, trình soạn `--admin-editor-max` 1200px; từ 1280px hai token là `none`, mọi trang (kể cả form danh sách gợi ý) dùng hết bề ngang vùng nội dung (đổi 2026-10-15 theo yêu cầu chủ dự án dùng màn lớn).
 - Mọi trang dùng `RdPageHeader`; mỗi trang một nút chính. Breadcrumb dạng `Địa điểm / Quán Giả Lập`, link danh sách lấy query từ `listReturn`; mục thanh bên cũng vậy.
 
 ### 5.5 Truy cập khi đổi trang
@@ -133,7 +133,7 @@ Phân trang (API trả hết, lọc trong trình duyệt; xem lại khi quá kho
 ### 7.1 Bố cục (GĐ1)
 
 - Đầu trang: breadcrumb, H1 tên địa điểm hoặc "Thêm địa điểm", chip trạng thái, dòng đường dẫn công khai như hiện tại.
-- Từ 1024px: form `minmax(0, 720px)` và cột phụ 300px dính `top: 24px`. Dưới 1024px một cột: đầu trang, khung "Còn thiếu {n} điều kiện" có link tới mục, mục 1–7, các khung Xác minh, Trên web, Thông tin, thanh lưu.
+- Từ 1024px: form `minmax(0, 720px)` và cột phụ 300px dính `top: 24px`; từ 1280px form `minmax(0, 1fr)` và cột phụ `clamp(300px, 22vw, 400px)`. Dưới 1024px một cột: đầu trang, khung "Còn thiếu {n} điều kiện" có link tới mục, mục 1–7, các khung Xác minh, Trên web, Thông tin, thanh lưu.
 - Khung khôi phục bản trên máy và khung báo lỗi giữ vị trí đầu form như hiện tại.
 
 ### 7.2 Các mục
@@ -182,7 +182,7 @@ Phân trang (API trả hết, lọc trong trình duyệt; xem lại khi quá kho
 
 ### 8.2 Bố cục (GĐ1)
 
-- Từ 1024px: hai cột. Trái là lịch trình theo ngày (co giãn); phải là cột 340px dính với tab `rd-tabs` Kho địa điểm, Bản đồ (GĐ2), Xem trước. Bỏ bố cục ba cột từ 1200px.
+- Từ 1024px: hai cột. Trái là lịch trình theo ngày (co giãn); phải là cột 340px (từ 1280px `clamp(340px, 24vw, 440px)`) dính với tab `rd-tabs` Kho địa điểm, Bản đồ (GĐ2), Xem trước. Bỏ bố cục ba cột từ 1200px.
 - Dưới 1024px: một cột với tab Lịch trình, Kho, Bản đồ (GĐ2), Xem trước; trên điện thoại chỉ sửa nhanh (ui-spec §12).
 
 ### 8.3 Điểm dừng dạng hàng gọn (GĐ1)

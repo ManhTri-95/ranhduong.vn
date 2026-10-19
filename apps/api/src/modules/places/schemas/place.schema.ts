@@ -62,6 +62,8 @@ export const PlaceSchema = new Schema(
     practicalNotes: { type: String },
     contact: { phone: String, fanpage: String, website: String },
     ids: { googlePlaceId: String, osmId: String },
+    // Khoá nguồn của S21; độc lập với các trường được sửa trong form, không trả ra API công khai.
+    importKeys: { type: [String], default: undefined },
     photos: { type: [PhotoSchema], default: [] },
     status: { type: String, enum: PlaceStatus.options, required: true, default: 'draft' },
     mergedInto: { type: Schema.Types.ObjectId },
@@ -84,6 +86,7 @@ PlaceSchema.index({ cityId: 1, slug: 1 }, { unique: true });
 // Optional OSM IDs: form/CSV drafts without an ID remain valid; imported IDs are unique within a city.
 PlaceSchema.index({ cityId: 1, 'ids.osmId': 1 }, { unique: true, partialFilterExpression: { 'ids.osmId': { $type: 'string' } } });
 PlaceSchema.index({ cityId: 1, category: 1, status: 1 });
+PlaceSchema.index({ cityId: 1, importKeys: 1 }, { unique: true, partialFilterExpression: { importKeys: { $type: 'string' } } });
 
 export type PlaceDoc = InferSchemaType<typeof PlaceSchema>;
 export type PlaceModel = Model<PlaceDoc>;
