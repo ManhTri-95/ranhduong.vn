@@ -15,14 +15,14 @@ Sơ đồ triển khai, đường đi của request, phân lớp NestJS, giao ti
 | Bản đồ | MapLibre GL JS + tile của OpenFreeMap (bản public: miễn phí, không giới hạn, không API key) | URL style để trong cấu hình để có thể chuyển sang tự host PMTiles Việt Nam trên R2; khoá maxBounds và minZoom quanh thành phố; ghi nguồn OSM; không dùng Google Maps JS |
 | Backend | NestJS + Mongoose | Một API, chia module theo nghiệp vụ |
 | Database | MongoDB Atlas M0, lên Flex khi cần | Index 2dsphere, Atlas Search cho tìm không dấu |
-| Hàng đợi, cache | BullMQ + Redis chạy trên VPS | Job nền, rate limit, cache lịch trình |
+| Hàng đợi, cache | BullMQ + Redis chạy trên VPS | Job nền, rate limit, cache mô tả lịch trình |
 | Lưu ảnh | Cloudflare R2 | Upload qua presigned URL |
 | Đăng nhập | Google OAuth, Zalo Social API | OTP SMS để giai đoạn 2 |
-| Khoảng cách | OSRM chạy local một lần | Kết quả lưu vào `distance_matrix` |
+| Khoảng cách | OSRM chạy local một lần | Kết quả lưu vào `distance_matrix`; lát 2 dùng ước lượng chim bay tới S44 |
 | LLM | Một model giá rẻ qua API | Chỉ viết mô tả lịch trình |
 | Hosting | Một VPS chạy Docker Compose (Nuxt, API, worker, Redis), Cloudflare làm CDN |  |
 | Thời tiết | WeatherAPI Free gọi phía server bằng `WEATHERAPI_KEY`; chủ dự án chốt 12/10/2026 | Cache Redis tối đa 15 phút; mã WeatherAPI sang 4 trạng thái, quy tắc trong Spec UI mục 7 |
-| Ảnh vé chia sẻ, ảnh OG | Satori (HTML sang SVG) + resvg (SVG sang PNG) trong worker | Nhúng font có tiếng Việt; ảnh lưu R2; lát 2 |
+| Ảnh vé chia sẻ, ảnh OG | Satori (HTML sang SVG) + resvg (SVG sang PNG) trong worker | Nhúng font có tiếng Việt, file font trong repo, chỉ dùng cho vé; ảnh lưu R2; lát 2 |
 | UI | Token và component trong packages/ui theo Spec UI | Màu nhấn đổi theo thành phố và mùa qua CSS variable |
 
 **Nguyên tắc thiết kế:**
@@ -84,7 +84,9 @@ type GeoPoint = { type: 'Point'; coordinates: [lng: number, lat: number] };
 
 interface City { slug: string; name: string; center: GeoPoint; timezone: 'Asia/Ho_Chi_Minh'; active: boolean; accent: string; mapBounds: [number, number, number, number];
   seasons: { key: string; kind?: 'flower' | 'rain' | 'other'; from: string; to: string; accent: string; title: string; sub: string; illustration: string; featuredItineraryId?: ObjectId }[] }   // from/to dạng 'MM-DD'; mùa hoa ưu tiên, cùng nhóm theo thứ tự mảng
-interface Zone { cityId; slug: string; name: string; area: GeoJSON.Polygon }
+interface Zone { cityId; slug: string; name: string; area: GeoJSON.Polygon;
+  adjacentZones: string[] }   // slug cụm ghép được trong một ngày lịch trình: chung ranh giới, đã trừ cặp cấm; đối xứng.
+                              // Đà Lạt: trung-tam ↔ phia-nam, phia-bac, phia-dong; phia-nam ↔ phia-dong; cấm phia-bac + phia-dong
 
 type PlaceCategory = 'attraction' | 'cafe' | 'food' | 'activity' | 'stay' | 'shop';
 type PlaceStatus = 'draft' | 'active' | 'suspected' | 'hidden' | 'closed' | 'merged';
@@ -156,15 +158,32 @@ interface LeaderboardSnapshot { cityId; monthKey; top: { userId; points: number;
 **Lịch trình, khoảng cách, số liệu:**
 
 ```ts
+type TripWith = 'solo' | 'couple' | 'friends' | 'family';   // Một mình, Cặp đôi, Nhóm bạn, Gia đình; family cộng điểm thẻ gia-dinh
+type TripInterest = 'chill_cafe' | 'clouds_hills' | 'photo_spots' | 'nature_adventure' | 'breakfast_specialties';   // gu, bảng thẻ ở mục 7
+
 interface Itinerary {
   cityId; kind: 'template' | 'user'; slug?: string; title: string; ownerId?: ObjectId; guestId?: string;
-  params: { days: 1 | 2 | 3 | 4 | 5; startDate?: string; transport: 'motorbike' | 'car' | 'taxi'; with: string; tags: string[]; pace: 'relaxed' | 'packed'; stayLocation?: GeoPoint };
-  paramsHash: string; templateId?: ObjectId;
-  days: { day: number; zoneIds: ObjectId[]; stops: { placeId; start: string; end: string; travelMinFromPrev: number; locked: boolean; isVip: boolean; kind: 'visit' | 'meal' }[] }[];
-  narrative?: string; shareId: string; visibility: 'public' | 'unlisted';
+  description: string; season: string; style: string; seoTitle: string; seoDescription: string;   // mẫu (S15)
+  params: { days: 1 | 2 | 3 | 4 | 5; transport: 'motorbike' | 'car' | 'taxi'; pace: 'relaxed' | 'packed';
+    with?: TripWith; tags: TripInterest[];   // gu; mẫu gắn ở admin (S32)
+    startDate?: string;                      // 'YYYY-MM-DD' giờ Việt Nam, lịch trình của khách
+    startWeekday: 0 | 1 | 2 | 3 | 4 | 5 | 6; // mẫu: thứ của ngày 1; lịch trình của khách suy ra từ startDate
+    stayLocation?: GeoPoint };               // đã làm tròn mỗi trục 0,005°, không trả công khai (ADR 0014)
+  templateId?: ObjectId;
+  days: { day: number; startTime: string; zoneIds: ObjectId[];
+    stops: { key: string; placeId; kind: 'visit' | 'meal'; start: string; end: string; travelMinFromPrev: number;
+      durationMin?: number; manualStart?: string; manualEnd?: string; note: string; locked: boolean;
+      isVip: boolean }[];   // key: UUID của điểm; isVip luôn false tới giai đoạn 2
+    detours?: { afterKey: string; placeId; detourMin: number }[] }[];   // gợi ý tiện đường (mục 7 bước 10)
+  narrative?: ItineraryNarrative;
+  shareId?: string;   // chỉ lịch trình của khách: ngẫu nhiên base62, unique; mẫu dùng slug
+  version: number;    // bắt đầu 1, tăng mỗi lần ghi; sửa với version cũ trả CONFLICT
+  ticketKey?: string; // khoá R2 của ảnh vé hiện tại, để xoá ảnh cũ khi sinh ảnh mới
+  visibility: 'public' | 'unlisted';   // mẫu public; lịch trình của khách luôn unlisted (chỉ ai có link)
   status: 'draft' | 'published';   // web chỉ đọc lịch trình mẫu đã published
 }
-interface ItineraryEvent { itineraryId; placeId; action: 'swap_out' | 'swap_in' | 'skip' | 'keep' | 'lock'; at: Date }
+interface ItineraryNarrative { intro: string; days: { day: number; intro: string; stops: { key: string; note: string }[] }[] }
+interface ItineraryEvent { cityId; itineraryId; placeId; action: 'swap_out' | 'swap_in' | 'skip' | 'keep' | 'lock'; at: Date }   // server ghi khi PATCH
 interface DistanceEdge { cityId; from: ObjectId; to: ObjectId; mode: 'motorbike' | 'car'; minutes: number; meters: number }
 interface PlaceMetricDaily { placeId; dayKey: string; views: number; directionClicks: number; calls: number; checkins: number; inItineraries: number; voucherClaims: number; voucherUses: number }
 ```
@@ -183,7 +202,7 @@ interface PlaceMetricDaily { placeId; dayKey: string; views: number; directionCl
 | point\_txs | `{userId, monthKey}`, `{guestId}` | Tính điểm tháng, gộp ID tạm |
 | checkins | `{userId, placeId, dayKey}` unique (partial khi có userId) | 1 lần/quán/ngày |
 | voucher\_claims | `{voucherId, userId}` unique; `{code}` unique | Mỗi người một lượt; tra mã |
-| itineraries | `{cityId, kind, slug}`; `{paramsHash}`; `{shareId}` unique | Trang mẫu, cache, chia sẻ |
+| itineraries | `{cityId, kind, slug}` unique, partial khi có slug; `{shareId}` unique, partial khi có shareId | Trang mẫu, chia sẻ |
 | distance\_matrix | `{from, to, mode}` unique | Tra thời gian di chuyển |
 | place\_metrics | `{placeId, dayKey}` unique | Báo cáo chủ quán |
 
@@ -279,12 +298,13 @@ REST JSON dưới `/v1`, thành phố nằm trong path (`/v1/cities/:city/…`);
 | GET | `/cities/:city/places` | Công khai | Lọc `category` (khớp danh mục chính hoặc danh mục phụ), `tags` (cách nhau dấu phẩy; phải có đủ mọi thẻ), `zone` (slug cụm; không có thì 404), `q` (không dấu; không dùng cùng `cursor`), `limit`, `cursor`. Trả `items`, `nextCursor`, `tags` (số chỗ theo thẻ). `bbox`, `near=lat,lng&radius` thêm ở S12 |
 | GET | `/cities/:city/places/:slug` | Công khai | Chi tiết, ảnh, voucher đang chạy |
 | GET | `/cities/:city/itineraries/templates` | Công khai | S09: chỉ mẫu `published` có slug của thành phố active; `limit` tối đa 20. Lọc `days`, `style` thêm khi có trang cần |
-| GET | `/itineraries/:shareId` | Công khai | Lịch trình đã chia sẻ. Kèm GET /itineraries/:id/narrative: 204 khi chưa có mô tả, 200 kèm mô tả khi đã xong |
-| POST | `/cities/:city/itineraries` | Công khai, rate limit | Tạo theo yêu cầu từ `params`; trả về lịch trình |
-| PATCH | `/itineraries/:id` | Người tạo (user hoặc guest) | Đổi thứ tự, khoá điểm |
-| POST | `/itineraries/:id/swap` | Người tạo | Body `{ day, stopIndex }`; trả 3 gợi ý thay thế |
-| POST | `/itineraries/:id/optimize` | Người tạo | Tối ưu lại, giữ điểm đã khoá |
-| POST | `/itineraries/:id/events` | Công khai | Ghi sự kiện đổi, bỏ, giữ |
+| POST | `/cities/:city/itineraries` | Công khai, rate limit (mục 13) | Body `ItineraryRequest` (lát 2, contracts); tạo lịch trình của khách, đặt cookie `gid` lần đầu; trả lịch trình kèm `shareId`, hoặc `NOT_ENOUGH_PLACES` kèm gợi ý |
+| GET | `/itineraries/:shareId` | Công khai | Lịch trình của khách (ADR 0014): không trả `stayLocation`, `guestId`, `ownerId`; có `canEdit` khi cookie `gid` là của người tạo |
+| GET | `/itineraries/:shareId/narrative` | Công khai | 204 khi chưa có mô tả LLM, 200 kèm `ItineraryNarrative` khi đã xong (S43) |
+| PATCH | `/itineraries/:shareId` | Người tạo (user hoặc guest) | Body `{ version, days: [{ stops: [{ key, placeId, locked }] }] }`: đổi thứ tự, chuyển ngày, khoá, thay hoặc thêm điểm; server tính lại giờ, ghi `ItineraryEvent`; sai `version` trả `CONFLICT` |
+| GET | `/itineraries/:shareId/stops/:key/alternatives` | Người tạo | 3 điểm cùng loại, cùng cụm, mở đúng khung giờ, chưa có trong lịch trình, sắp theo điểm số; áp dụng bằng `PATCH` |
+| POST | `/itineraries/:shareId/optimize` | Người tạo | Body `{ version }`; tối ưu lại, giữ điểm đã khoá (S42) |
+| POST | `/itineraries/:shareId/copy` | Công khai, rate limit (mục 13) | "Tạo bản của mình": chép thành lịch trình mới của người gọi, đặt cookie `gid` lần đầu |
 | POST | `/places/:id/checkins` | Guest hoặc member | Body `{ lat, lng, accuracyM, photoKey?, qrToken? }` |
 | POST | `/cities/:city/submissions` | Guest hoặc member | `type` = new, edit, report\_closed, report\_wrong |
 | POST | `/submissions/duplicate-check` | Công khai | Body `{ name, lat, lng, phone? }`; trả ứng viên + điểm trùng |
@@ -297,7 +317,7 @@ REST JSON dưới `/v1`, thành phố nằm trong path (`/v1/cities/:city/…`);
 | GET | `/cities/:city/leaderboard?month=` | Công khai | Top 50, che bớt tên |
 | DELETE | `/me` | Member | Xoá tài khoản và dữ liệu cá nhân |
 | GET | /cities/:city/now | Công khai | Mùa, accent, featuredItinerary, weather nullable (state, temperatureC, isDay, rainSoon, observedAt, expiresAt); hết hạn sớm nhất mùa/thời tiết. Redis tối đa 15 phút; HTTP no-store khi thời tiết không có |
-| GET | /itineraries/:id/ticket.png | Công khai | ?format=story hoặc og; ảnh vé lịch trình từ R2, sinh lại khi lịch trình đổi (lát 2) |
+| GET | `/itineraries/:shareId/ticket.png`, `/cities/:city/itineraries/templates/:slug/ticket.png` | Công khai | `?format=story` (1080×1920) hoặc `og` (1200×630); ảnh vé từ R2, sinh khi chưa có ảnh cho nội dung hiện tại, chưa xong thì OG dùng ảnh mặc định (lát 2, S30) |
 
 **Chủ quán:**
 
@@ -336,43 +356,57 @@ REST JSON dưới `/v1`, thành phố nằm trong path (`/v1/cities/:city/…`);
 
 ## 7. Thuật toán lịch trình
 
-Thuật toán chạy hoàn toàn trong bộ nhớ của API (khoảng 200 địa điểm và 40.000 cạnh khoảng cách mỗi thành phố), mục tiêu dưới 300 ms mỗi lần tạo; LLM chỉ viết mô tả sau khi lịch trình đã chốt.
+Thuật toán chạy hoàn toàn trong bộ nhớ của API (khoảng 200 địa điểm và 40.000 cạnh khoảng cách mỗi thành phố), mục tiêu p95 dưới 500 ms mỗi lần tạo (ADR 0007, architecture mục 8); LLM chỉ viết mô tả sau khi lịch trình đã chốt.
 
-**Đầu vào:** `params` như trong `Itinerary` (mục 3). **Đầu ra:** `days[].stops[]` có giờ bắt đầu, kết thúc, thời gian di chuyển, cờ VIP, cộng danh sách điểm tiện đường tuỳ chọn.
+**Đầu vào:** `ItineraryRequest` (contracts, S31): số ngày 1–5, ngày đi (giờ Việt Nam, không trước hôm nay), phương tiện, đi cùng ai (`TripWith`), tối đa 3 gu (`TripInterest`), nhịp độ, nơi ở tuỳ chọn trong `City.mapBounds`. **Đầu ra:** `days[].stops[]` có `key`, giờ bắt đầu, kết thúc, thời gian di chuyển, cờ VIP (luôn false ở lát 2), cộng `days[].detours` là điểm tiện đường tuỳ chọn.
+
+**Gu và thẻ địa điểm:** gu chỉ cộng điểm, không loại điểm. Bảng gu → thẻ nằm trong contracts; các thẻ lấy từ tab "Tags" (data-collection mục 5).
+
+| `TripInterest` | Nhãn | Thẻ địa điểm |
+| --- | --- | --- |
+| `chill_cafe` | Cà phê chill | `chill` |
+| `clouds_hills` | Săn mây, view đồi | `view-doi`; cộng điểm cho điểm có `bestTime` chứa `sunrise` |
+| `photo_spots` | Sống ảo | `song-ao` |
+| `nature_adventure` | Thiên nhiên, mạo hiểm | `mao-hiem` |
+| `breakfast_specialties` | Ăn sáng, đặc sản | `an-sang`, `dac-san` |
+
+`TripWith` `family` (Gia đình) cộng điểm cho thẻ `gia-dinh`; các giá trị khác (Một mình, Cặp đôi, Nhóm bạn) chỉ dùng để chọn mẫu gần nhất.
+
+**Nơi ở:** khách ghim trên bản đồ hoặc chọn cụm (dùng tâm cụm), bỏ qua được. API làm tròn mỗi trục tới 0,005° (khoảng 550 m ở Đà Lạt) trước khi lưu; vị trí này chỉ dùng để xếp tuyến, không trả trong API, trang hay ảnh vé công khai (ADR 0014).
 
 **Mô hình thời gian:**
 
 | Tham số | Giá trị khởi đầu | Ghi chú |
 | --- | --- | --- |
-| Bắt đầu ngày | 07:00; 04:45 nếu chọn săn mây |  |
+| Bắt đầu ngày | 07:00; 04:45 khi ngày có điểm `sunrise` ghim đầu |  |
 | Kết thúc ngày | 21:30 |  |
 | Đệm mỗi lần di chuyển | 10 phút | Gửi xe, đi bộ |
 | Số điểm tham quan/ngày | Thong thả: 4; dày: 6 | Chưa tính 2 bữa ăn |
-| Bữa trưa / tối | 11:30–13:00 / 18:00–19:30 |  |
-| Chiều mùa mưa (tháng 5–11) | 13:00–17:00 ưu tiên `cover` full rồi partial |  |
-| Thời gian di chuyển | `distance_matrix` theo phương tiện; taxi dùng `car` | Thiếu cạnh: chim bay × 1,4 ÷ 25 km/h |
+| Bữa trưa / tối | 11:30–13:30 / 18:00–20:00 | Hằng số `MEAL_WINDOWS` trong contracts, dùng chung với kiểm tra lịch trình mẫu S15 |
+| Chiều mùa mưa (mùa `kind: 'rain'` trong `City.seasons`) | 13:00–17:00 ưu tiên `cover` full rồi partial | Thành phố không có mùa mưa trong dữ liệu thì không áp |
+| Thời gian di chuyển | `distance_matrix` theo phương tiện; taxi dùng `car` | Tới khi có ma trận (S44) và khi thiếu cạnh: chim bay × 1,4 ÷ 25 km/h, làm tròn 5 phút |
 
 **Các bước:**
 
-1. **Cache:** tính `paramsHash` từ params đã chuẩn hoá (tags sắp xếp, `stayLocation` làm tròn lưới khoảng 500m, thứ trong tuần và tháng của từng ngày). Có kết quả còn hạn (7 ngày, bị xoá khi một địa điểm trong đó đổi trạng thái) thì trả luôn.
-2. **Chọn mẫu gần nhất:** cùng số ngày, độ giống tags (Jaccard) cao nhất. Có mẫu thì lấy làm khung, chỉ thay các điểm không hợp gu, đóng cửa hoặc đang bị nghi ngờ.
-3. **Lọc ứng viên:** `status = active`, không `suspected`, `lastVerifiedAt` trong 90 ngày, mở cửa đúng thứ trong tuần.
-4. **Chấm điểm:** `score = 0,5 × khớp tags + 0,3 × độ phổ biến (place_metrics 30 ngày, chuẩn hoá) + 0,2 × ratingAvg trên nền tảng`. Trọng số là giá trị khởi đầu, chỉnh theo dữ liệu thật.
-5. **Gán cụm cho ngày:** mỗi ngày 1–2 zone kề nhau (bảng kề nhau định nghĩa tay), tối đa hoá tổng điểm của các ứng viên tốt nhất, không lặp zone; cặp cấm ghép: Phía Bắc + Phía Đông.
-6. **Chọn điểm trong ngày:** lấy top theo điểm trong zone đã gán, đủ số điểm theo nhịp độ; điểm `sunrise` ghim đầu ngày, điểm `evening` ghim cuối ngày.
-7. **Sắp thứ tự:** nearest neighbor từ nơi lưu trú, rồi 2-opt giảm tổng phút di chuyển; điểm ghim giữ nguyên vị trí.
+1. **Snapshot, không cache kết quả (ADR 0014):** đọc snapshot địa điểm `active` của thành phố trong bộ nhớ (làm mới mỗi 10 phút và khi có `place.updated`, `place.statusChanged`), chạy các bước dưới mỗi lần tạo.
+2. **Chọn mẫu gần nhất:** mẫu `published` cùng số ngày, độ giống gu (Jaccard trên `params.tags`) cao nhất, cộng thêm khi cùng `with`. Có mẫu thì lấy làm khung, chỉ thay các điểm không hợp gu, đóng cửa hoặc đang bị nghi ngờ.
+3. **Lọc ứng viên:** `status = active`, không `suspected`, `lastVerifiedAt` trong 90 ngày, có toạ độ, cụm và giờ mở cửa hợp lệ, mở cửa đúng thứ trong tuần, hợp phương tiện.
+4. **Chấm điểm:** `score = 0,5 × khớp gu (theo bảng gu → thẻ ở trên) + 0,3 × độ phổ biến (place_metrics 30 ngày, chuẩn hoá) + 0,2 × ratingAvg trên nền tảng`; `ratingAvg` bằng 0 cho tới khi có đánh giá (lát 3). Gu chỉ cộng điểm, không loại điểm. Trọng số là giá trị khởi đầu, chỉnh theo dữ liệu thật.
+5. **Gán cụm cho ngày:** mỗi ngày 1–2 cụm ghép được theo `Zone.adjacentZones` (chung ranh giới, đã trừ cặp cấm; Đà Lạt cấm Phía Bắc + Phía Đông), tối đa hoá tổng điểm của các ứng viên tốt nhất. Bốn ngày đầu không lặp cụm. Ngày thứ 5 đi nhịp thong thả (cà phê, chợ, đặc sản), được dùng lại cụm đã đi nhưng không lặp điểm.
+6. **Chọn điểm trong ngày:** lấy top theo điểm trong cụm đã gán, đủ số điểm theo nhịp độ; điểm `sunrise` ghim đầu ngày, điểm `evening` ghim cuối ngày.
+7. **Sắp thứ tự:** nearest neighbor từ nơi ở (không có nơi ở thì tuyến mở, bắt đầu từ điểm đầu ngày), rồi 2-opt giảm tổng phút di chuyển; điểm ghim giữ nguyên vị trí.
 8. **Xếp giờ:** đi tuần tự cộng thời gian di chuyển, đệm, thời gian tham quan; vi phạm giờ mở cửa thì thử đổi chỗ với điểm kề, vẫn vi phạm thì bỏ điểm có điểm số thấp nhất.
-9. **Chèn bữa ăn:** chọn quán phục vụ ăn uống (`servesCategory(p, 'food')`) có `detour = t(A,X) + t(X,B) − t(A,B)` nhỏ nhất giữa hai điểm quanh khung giờ ăn, đúng mức giá và gu.
-10. **Điểm tiện đường:** với mỗi cặp điểm liên tiếp, ứng viên chưa chọn có detour dưới 10 phút được gắn làm gợi ý tuỳ chọn.
-11. **VIP:** tối đa 2 điểm/ngày, chỉ khi điểm số nằm trong 30% cao nhất của slot đó; gắn `isVip` để hiển thị nhãn "Đối tác".
-12. **Kiểm tra cuối:** ngày nào dưới 3 điểm tham quan thì trả `NOT_ENOUGH_PLACES` kèm gợi ý giảm số ngày hoặc bỏ bớt tags.
-13. **Mô tả bằng LLM (bất đồng bộ):** gửi JSON gọn (tên, giờ, ghi chú thực tế), yêu cầu trả JSON `{ days: [{ day, intro, stops: [{ placeId, note }] }] }`, validate bằng Zod; lỗi hoặc quá 8 giây thì dùng mô tả mẫu. LLM không được thêm hoặc đổi địa điểm.
+9. **Chèn bữa ăn:** trong `MEAL_WINDOWS`, chọn quán phục vụ ăn uống (`servesCategory(p, 'food')`) có `detour = t(A,X) + t(X,B) − t(A,B)` nhỏ nhất giữa hai điểm quanh khung giờ ăn, đúng mức giá và gu.
+10. **Điểm tiện đường:** với mỗi cặp điểm liên tiếp, ứng viên chưa chọn có detour dưới 10 phút được gắn vào `days[].detours` làm gợi ý tuỳ chọn.
+11. **VIP (giai đoạn 2, chưa làm ở lát 2; `isVip` luôn false):** tối đa 2 điểm/ngày, chỉ khi điểm số nằm trong 30% cao nhất của slot đó; gắn `isVip` để hiển thị nhãn "Đối tác".
+12. **Kiểm tra cuối:** ngày nào dưới 3 điểm tham quan thì trả `NOT_ENOUGH_PLACES` kèm gợi ý giảm số ngày hoặc bỏ bớt gu.
+13. **Mô tả bằng LLM (bất đồng bộ, S43):** tính `contentHash` (băm `cityId` cùng `placeId`, `start`, `end` của mọi điểm theo thứ tự); có `itin-narr:{contentHash}` trong Redis thì dùng luôn, không gọi LLM. Chưa có thì gửi JSON gọn (tên, giờ, ghi chú thực tế), yêu cầu trả `ItineraryNarrative`, validate bằng Zod: chỉ nhận `key` có trong lịch trình; từ chối khi có giờ, giá, số điện thoại hay địa chỉ không có trong đầu vào. Hợp lệ thì lưu vào lịch trình và ghi cache 30 ngày; lỗi hoặc quá 8 giây thì dùng mô tả mẫu. LLM không được thêm hoặc đổi địa điểm.
 
-**Đổi điểm (`/swap`):** trả 3 ứng viên cùng loại, cùng zone, mở cửa đúng khung giờ, chưa có trong lịch trình, sắp theo điểm số. **Tối ưu lại (`/optimize`):** chạy lại bước 7–9 với các điểm đã khoá giữ nguyên thứ tự tương đối.
+**Sửa lịch trình (S40, S42):** web gửi cả bố cục ngày (`PATCH /itineraries/:shareId` với `version`, mục 6); server kiểm mọi `placeId` là ứng viên hợp lệ cùng thành phố, chạy lại bước 8–9 cho các ngày đổi, ghi `ItineraryEvent` (`swap_out`, `swap_in`, `lock`) rồi tăng `version`. **Đổi điểm:** `GET /itineraries/:shareId/stops/:key/alternatives` trả 3 ứng viên cùng loại, cùng cụm, mở cửa đúng khung giờ, chưa có trong lịch trình, sắp theo điểm số; khách chọn một rồi `PATCH`. **Tối ưu lại (`/optimize`):** chạy lại bước 7–9 với các điểm đã khoá giữ nguyên thứ tự tương đối.
 
-**Nhận lời mô tả (MVP: polling):** sau khi nhận lịch trình, web gọi `GET /v1/itineraries/:id/narrative` mỗi 2 giây, tối đa 5 lần. API trả `204` khi chưa xong (gần như không tốn băng thông), `200` kèm `narrative` khi đã xong thì web dừng; hết 5 lần thì giữ mô tả mẫu. **Tối ưu sau:** chuyển sang SSE (`@Sse()` của NestJS + Redis pub/sub kênh `itinerary:{id}` do worker publish), kiểm trạng thái trước khi chờ để tránh race condition, timeout 15 giây; phía web chỉ đổi cách lấy dữ liệu.
+**Nhận lời mô tả (MVP: polling):** sau khi nhận lịch trình, web gọi `GET /v1/itineraries/:shareId/narrative` mỗi 2 giây, tối đa 5 lần. API trả `204` khi chưa xong (gần như không tốn băng thông), `200` kèm `narrative` khi đã xong thì web dừng; hết 5 lần thì giữ mô tả mẫu. **Tối ưu sau:** chuyển sang SSE (`@Sse()` của NestJS + Redis pub/sub kênh `itinerary:{shareId}` do worker publish), kiểm trạng thái trước khi chờ để tránh race condition, timeout 15 giây; phía web chỉ đổi cách lấy dữ liệu.
 
-**Ma trận khoảng cách:** `tools/osrm` chạy OSRM với dữ liệu OSM Việt Nam, gọi Table service cho toàn bộ cặp điểm active, ghi `distance_matrix`. Chạy lại khi thêm địa điểm (job hằng đêm chỉ tính các cặp mới).
+**Ma trận khoảng cách (S44, P2):** `tools/osrm` chạy OSRM với dữ liệu OSM Việt Nam, gọi Table service cho toàn bộ cặp điểm active, ghi `distance_matrix`. Chạy lại khi thêm địa điểm (job hằng đêm chỉ tính các cặp mới). Tới khi có ma trận, thuật toán dùng ước lượng chim bay ở bảng trên.
 
 ## 8. Điểm, check-in và voucher
 
@@ -458,7 +492,7 @@ Job chạy ở entrypoint worker của `apps/api` qua BullMQ; job định kỳ d
 
 | Job | Lịch | Việc làm | Retry |
 | --- | --- | --- | --- |
-| `itinerary.narrative` | Khi tạo lịch trình | Gọi LLM viết mô tả, validate, lưu `narrative` | 2 lần, sau đó dùng mô tả mẫu |
+| `itinerary.narrative` | Khi tạo lịch trình mà cache mô tả chưa có (S43) | Gọi LLM viết mô tả, validate, lưu `narrative`, ghi `itin-narr:{contentHash}` | 2 lần, sau đó dùng mô tả mẫu |
 | `metrics.rollup` | 00:15 hằng ngày | Gộp sự kiện ngày trước vào `place_metrics` | 5 lần, backoff mũ |
 | `leaderboard.rebuild` | 00:30 hằng ngày | Dựng lại Redis sorted set tháng hiện tại từ `PointTx` | 3 lần |
 | `leaderboard.snapshot` | 00:05 ngày 1 hằng tháng | Lưu top 10 tháng trước vào `LeaderboardSnapshot`, báo admin duyệt | 3 lần |
@@ -466,10 +500,9 @@ Job chạy ở entrypoint worker của `apps/api` qua BullMQ; job định kỳ d
 | `vouchers.expire` | 01:10 hằng ngày | `VoucherClaim` quá hạn → `expired`; voucher hết hạn → `ended` | 3 lần |
 | `places.verifyReminder` | 08:00 thứ Hai | Tạo danh sách xác minh cho cộng tác viên: điểm hot quá 30 ngày, còn lại quá 90 ngày, điểm `suspected` | 3 lần |
 | `places.googleIdRefresh` | 03:00 ngày 1 hằng tháng | Làm mới `googlePlaceId` bằng Place Details IDs Only (miễn phí) | 3 lần |
-| `distance.incremental` | 02:00 hằng ngày | Tính cạnh khoảng cách cho địa điểm mới (gọi OSRM nếu đang chạy, nếu không đánh dấu chờ) | 1 lần |
-| `itinerary.cacheInvalidate` | Khi địa điểm đổi trạng thái | Xoá cache lịch trình có chứa địa điểm đó | 3 lần |
+| `distance.incremental` (S44) | 02:00 hằng ngày | Tính cạnh khoảng cách cho địa điểm mới (gọi OSRM nếu đang chạy, nếu không đánh dấu chờ) | 1 lần |
 | `media.scan` | Khi upload xong | Kiểm loại file, kích thước, xoá EXIF vị trí trước khi công khai | 2 lần |
-| itinerary.ticket | Khi tạo hoặc sửa lịch trình (lát 2) | Dựng ảnh vé story và OG bằng Satori + resvg, lưu R2 theo id + updatedAt | 2 lần |
+| `itinerary.ticket` | Khi bấm "Tạo vé để chia sẻ" hoặc ảnh OG được gọi lần đầu mà chưa có ảnh cho nội dung hiện tại (lát 2, S30) | Dựng ảnh vé story và OG bằng Satori + resvg, lưu R2 theo hash nội dung vé, xoá ảnh ở `ticketKey` cũ | 2 lần |
 
 Job thất bại hết lượt retry đi vào dead-letter queue; trang quản trị có màn hình xem và chạy lại.
 
@@ -487,7 +520,8 @@ Trang địa điểm, danh sách và lịch trình mẫu được render SSR và
 | Danh sách curate | `/da-lat/top/ca-phe-view-doi` | SWR 1 giờ | Có |
 | Địa điểm | `/da-lat/dia-diem/{slug}` | SWR 1 giờ, xoá cache khi sửa | Có |
 | Lịch trình mẫu | `/da-lat/lich-trinh/{slug}` (ví dụ `3-ngay-2-dem-cap-doi`) | SWR 1 ngày | Có |
-| Lịch trình cá nhân | `/l/{shareId}` | Không cache CDN | `noindex` |
+| Tạo lịch trình | `/da-lat/tao-lich-trinh` | SWR 1 giờ | Có |
+| Lịch trình cá nhân | `/l/{shareId}` | Không cache CDN; ảnh OG là ảnh vé (S39) | `noindex` |
 | Bảng xếp hạng | `/da-lat/bang-xep-hang` | SWR 10 phút | Có |
 | Tìm kiếm | `/da-lat/tim-kiem?q=` | Không cache (`no-store`) | `noindex, follow` |
 
@@ -501,12 +535,12 @@ Trang địa điểm, danh sách và lịch trình mẫu được render SSR và
 
 **Thẻ và dữ liệu có cấu trúc:**
 
-- Mỗi trang có `title`, `description`, `canonical`, Open Graph; ảnh OG sinh sẵn từ ảnh bìa (1200×630).
+- Mỗi trang có `title`, `description`, `canonical`, Open Graph; ảnh OG sinh sẵn từ ảnh bìa (1200×630); trang lịch trình dùng ảnh vé khi có (S30).
 - Địa điểm: JSON-LD `TouristAttraction`, `CafeOrCoffeeShop`, `Restaurant` hoặc `LodgingBusiness` với `name`, `address`, `geo`, `openingHoursSpecification`, `aggregateRating` (chỉ từ đánh giá trên nền tảng, chỉ khi có từ 3 đánh giá); địa điểm có danh mục phụ thì `@type` là mảng theo thứ tự danh mục chính rồi phụ.
 - Lịch trình mẫu: JSON-LD `TouristTrip` với `itinerary` là `ItemList` các địa điểm theo thứ tự.
 - Danh sách: JSON-LD `ItemList`; mọi trang có `BreadcrumbList`.
 
-**Sitemap:** `/sitemap.xml` là sitemap index, tách theo loại (`places`, `lists`, `itineraries`), `lastmod` lấy từ `updatedAt`; sinh động có cache 1 giờ. `robots.txt` chặn `/l/`, `/owner`, `/admin`, trang tìm kiếm có tham số.
+**Sitemap:** `/sitemap.xml` là sitemap index, tách theo loại (`places`, `lists`, `itineraries`; trang tĩnh, kể cả `/da-lat/tao-lich-trinh`, nằm trong sitemap pages), `lastmod` lấy từ `updatedAt`; sinh động có cache 1 giờ. `robots.txt` chặn `/l/`, `/owner`, `/admin`, trang tìm kiếm có tham số.
 
 **Chuyển hướng:** địa điểm `merged` trả 301 sang bản chính; đổi slug lưu `slugHistory` để trả 301 từ slug cũ; địa điểm `closed` vẫn giữ trang (trả 200, hiển thị "đã đóng cửa" và gợi ý quán tương tự) để không mất link cũ.
 
@@ -532,6 +566,7 @@ Số liệu cho chủ quán tự đếm trên hạ tầng của mình (Redis →
 | `itinerary_create` | days, tags, fromTemplate | KPI lịch trình |
 | `itinerary_share` | channel (zalo, messenger, copy) | KPI chia sẻ |
 | `itinerary_swap`, `itinerary_optimize` | placeId | Chất lượng gợi ý |
+| `ticket_create`, `ticket_share` | channel (nếu biết) | KPI vé lịch trình (ui-spec mục 9) |
 | `checkin_success`, `checkin_fail` | placeId, reason | Báo cáo chủ quán, chống gian lận |
 | `submission_create` | type | KPI đóng góp |
 | `login_success` | provider, trigger (points, reward, voucher) | Phễu đăng nhập |
@@ -539,7 +574,7 @@ Số liệu cho chủ quán tự đếm trên hạ tầng của mình (Redis →
 | `voucher_claim`, `voucher_redeem` | voucherId, placeId | Báo cáo chủ quán |
 | `reward_claim` | source | Theo dõi quà |
 
-**KPI ánh xạ:** lượt truy cập/tháng (analytics); lịch trình tạo và chia sẻ (`itinerary_create`, `itinerary_share`); đóng góp được duyệt (collection `submissions`); tài khoản đăng nhập (`users`); quán nhận quản lý (`place_claims`); lượt bấm chỉ đường mỗi quán (`place_metrics`); tỉ lệ dùng voucher (`voucher_redeem` ÷ `voucher_claim`).
+**KPI ánh xạ:** lượt truy cập/tháng (analytics); lịch trình tạo và chia sẻ (`itinerary_create`, `itinerary_share`, `ticket_*`, lượt vào có `utm_source=ticket`; lát 2 tự đếm trên hạ tầng của mình theo ADR 0012 (S41), không phụ thuộc analytics opt-in); đóng góp được duyệt (collection `submissions`); tài khoản đăng nhập (`users`); quán nhận quản lý (`place_claims`); lượt bấm chỉ đường mỗi quán (`place_metrics`); tỉ lệ dùng voucher (`voucher_redeem` ÷ `voucher_claim`).
 
 Banner cookie cho phép khách từ chối analytics; bộ đếm `place_metrics` không dùng cookie định danh nên vẫn chạy.
 
@@ -551,7 +586,7 @@ MVP chạy trên một VPS với Docker Compose, có staging riêng, backup tự
 
 | Endpoint | Giới hạn |
 | --- | --- |
-| `POST /cities/:city/itineraries` | 10/giờ mỗi IP; 30/giờ mỗi user |
+| `POST /cities/:city/itineraries`, `POST /itineraries/:shareId/copy` | 10/giờ mỗi `gid` (mỗi user khi có đăng nhập); 60/giờ mỗi IP (khách chung wifi, 4G chung IP không bị chặn nhầm) |
 | `POST /submissions/duplicate-check` | 60/giờ mỗi IP |
 | `POST /cities/:city/submissions` | 20/ngày mỗi user, 5/ngày với tài khoản dưới 7 ngày tuổi |
 | `POST /places/:id/checkins` | 30/ngày mỗi user hoặc guest |
@@ -593,10 +628,10 @@ Các giá trị dưới đây đã có số khởi đầu trong tài liệu; c�
 - [ ] Ngưỡng lên `trusted`: số đóng góp được duyệt và tỉ lệ bị từ chối tối đa
 - [ ] Trọng số chấm điểm lịch trình và trọng số chống trùng (mục 7, 9)
 - [ ] Quy tắc và số suất quà cột mốc mỗi tháng
-- [ ] Rate limit cụ thể (mục 13)
-- [ ] Bảng zone kề nhau và cặp cấm ghép cho Đà Lạt
+- [ ] Rate limit cụ thể (mục 13); tạo lịch trình đã chốt ở mục 13 (19/10/2026)
+- [x] Bảng zone kề nhau và cặp cấm ghép cho Đà Lạt: chung ranh giới, cấm Phía Bắc + Phía Đông (19/10/2026; `Zone.adjacentZones`, mục 3)
 - [x] Nhà cung cấp tile bản đồ: đã chốt OpenFreeMap (mục 1); cân nhắc API của Goong khi cần tìm địa chỉ hoặc tuyến đường theo dữ liệu Việt Nam
-- [ ] Chọn model LLM và viết prompt mô tả lịch trình
+- [ ] Chọn model LLM và viết prompt mô tả lịch trình (chốt khi làm S43)
 - [ ] PostHog hay Umami cho analytics
 - [ ] OSRM: dùng profile `car` có hệ số cho xe máy, hay tự cấu hình profile xe máy
 - [ ] Nút xem giờ mở cửa và đánh giá trực tiếp từ Google: có làm không; nếu làm, kiểm tra quy định hiển thị nội dung Places trên trang có bản đồ không phải Google
