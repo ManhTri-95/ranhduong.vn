@@ -292,26 +292,31 @@ Lịch trình mẫu do người curate là nền; lịch trình cá nhân đư�
 
 **Tạo theo yêu cầu: tối đa 5 ngày.** Ngày thứ 5 đặt nhịp thong thả (cà phê, chợ, mua đặc sản). Trên 5 ngày, gợi ý ghép lịch trình 4N3Đ với một ngày tự do kèm danh sách quán cà phê và điểm ít người biết để khách tự chọn.
 
-**Đầu vào (nút bấm, không gõ):** số ngày, ngày đi, phương tiện, đi cùng ai, gu, nhịp độ (thong thả / dày), nơi lưu trú làm điểm xuất phát.
+**Đầu vào (nút bấm, không gõ):**
+
+- Số ngày (1–5), ngày đi, phương tiện, nhịp độ (thong thả / dày).
+- Đi cùng ai (chọn một): Một mình, Cặp đôi, Nhóm bạn, Gia đình.
+- Gu (chọn tối đa 3): Cà phê chill, Săn mây, view đồi, Sống ảo, Thiên nhiên, mạo hiểm, Ăn sáng, đặc sản.
+- Nơi ở làm điểm xuất phát: ghim trên bản đồ hoặc chọn cụm, bỏ qua được; chỉ lưu vị trí đã làm tròn (khoảng 550 m) và không hiện ra ở đâu công khai.
 
 **Thuật toán:**
 
-1. Lọc ứng viên theo tag, gu, giờ mở cửa và trạng thái hoạt động.
-2. Gán 1–2 cụm khu vực gần nhau cho mỗi ngày; không ghép Langbiang với Cầu Đất.
-3. Sắp thứ tự trong ngày bằng nearest neighbor + 2-opt (TypeScript), xuất phát và kết thúc ở nơi lưu trú.
+1. Lọc ứng viên theo giờ mở cửa và trạng thái hoạt động. Gu và thẻ chỉ cộng điểm cho địa điểm hợp gu, không loại địa điểm nào.
+2. Gán 1–2 cụm khu vực chung ranh giới cho mỗi ngày; không ghép Phía Bắc (Langbiang) với Phía Đông (Cầu Đất); 4 ngày đầu không lặp cụm.
+3. Sắp thứ tự trong ngày bằng nearest neighbor + 2-opt (TypeScript), xuất phát và kết thúc ở nơi lưu trú; không có nơi ở thì bắt đầu từ điểm đầu tiên.
 4. Ràng buộc giờ: săn mây lúc 4–6h là điểm đầu, chợ đêm là điểm cuối, tôn trọng giờ mở cửa.
-5. Chèn bữa ăn 11h30–13h và 18h–19h30, chọn quán gần điểm trước và điểm sau.
+5. Chèn bữa ăn 11h30–13h30 và 18h–20h, chọn quán gần điểm trước và điểm sau.
 6. Gợi ý điểm tiện đường khi detour = d(A,X) + d(X,B) − d(A,B) dưới 10 phút.
-7. Ngày đi rơi vào mùa mưa (khoảng tháng 5–11): ưu tiên điểm trú mưa được (che hết, rồi một phần) buổi chiều.
-8. LLM model rẻ viết lời mô tả từ kết quả đã sắp xếp.
+7. Ngày đi rơi vào mùa mưa (theo mùa mưa admin đặt ở mục Mùa & giao diện): ưu tiên điểm trú mưa được (che hết, rồi một phần) buổi chiều.
+8. LLM model rẻ viết lời mô tả từ kết quả đã sắp xếp (P1; chưa có thì dùng mô tả mẫu).
 
 Khi cần ràng buộc khung giờ chặt hơn (VRPTW), chuyển sang Google OR-Tools chạy qua microservice Python.
 
-**Chỉnh sửa:** kéo thả đổi thứ tự (tính lại thời gian di chuyển), "Đổi điểm khác tương tự" (cùng loại, cùng cụm, đang mở), khoá điểm rồi "Tối ưu lại".
+**Chỉnh sửa:** kéo thả đổi thứ tự (tính lại thời gian di chuyển), "Đổi điểm khác tương tự" (cùng loại, cùng cụm, đang mở), khoá điểm rồi "Tối ưu lại". Chỉ người tạo sửa được (nhận ra bằng cookie khách tạm).
 
-**Địa điểm VIP trong lịch trình:** chỉ chèn khi đã khớp tiêu chí của khách, luôn có nhãn "Đối tác", tối đa 1–2 điểm mỗi ngày. Gắn voucher vào từng điểm khi quán có voucher.
+**Địa điểm VIP trong lịch trình (giai đoạn 2; lát 2 chưa chèn điểm VIP):** chỉ chèn khi đã khớp tiêu chí của khách, luôn có nhãn "Đối tác", tối đa 1–2 điểm mỗi ngày. Gắn voucher vào từng điểm khi quán có voucher.
 
-**Chia sẻ:** link công khai, nút chia sẻ qua Zalo và Messenger; vé lịch trình dạng ảnh dọc kiểu vé tàu, đồng thời là ảnh xem trước khi dán link (lát 2).
+**Chia sẻ:** link `/l/{shareId}`, chỉ ai có link mới xem, không được Google index và không hiện nơi ở; nút chia sẻ qua Zalo và Messenger; vé lịch trình dạng ảnh dọc kiểu vé tàu, đồng thời là ảnh xem trước khi dán link (lát 2). Người nhận bấm "Tạo bản của mình" để có bản riêng sửa được.
 
 **Vòng phản hồi:** ghi lại điểm bị đổi, bỏ qua, giữ lại; điểm hay bị đổi giảm thứ hạng. Hỏi nhanh sau chuyến đi.
 
