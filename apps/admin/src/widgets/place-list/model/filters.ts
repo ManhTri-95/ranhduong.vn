@@ -1,6 +1,7 @@
 import { PlaceCategory, servesCategory, Slug, verificationStale, type AdminPlaceSummary } from '@ranhduong/contracts';
 import { matchScore, searchKey } from '@ranhduong/geo';
 import { z } from 'zod';
+import { itineraryReminders, ItineraryReminder } from '@/entities/place/model/itinerary-reminders';
 import type { TableSort } from '@/shared/lib/table';
 
 /** Tab trạng thái (ui-spec mục 12) và tab "Ẩn hoặc đã đóng" thêm ở S07 để tìm lại chỗ đã ẩn, đã đóng. */
@@ -41,10 +42,11 @@ export interface ListFilters {
   zone: string;
   category: PlaceCategory | '';
   verify: VerifyFilter | '';
+  reminder: ItineraryReminder | '';
   sort: ListSort;
 }
 
-export const DEFAULT_FILTERS: ListFilters = { tab: 'all', q: '', zone: '', category: '', verify: '', sort: 'updated' };
+export const DEFAULT_FILTERS: ListFilters = { tab: 'all', q: '', zone: '', category: '', verify: '', reminder: '', sort: 'updated' };
 
 /** Giá trị đầu của một tham số query (vue-router trả chuỗi, null hoặc mảng). */
 function firstValue(value: unknown): string | undefined {
@@ -62,6 +64,7 @@ export function filtersFromQuery(query: Readonly<Record<string, unknown>>): List
     zone: zone === NO_ZONE || Slug.safeParse(zone).success ? zone : '',
     category: PlaceCategory.or(z.literal('')).catch('').parse(read('category')),
     verify: VerifyFilter.or(z.literal('')).catch('').parse(read('verify')),
+    reminder: ItineraryReminder.or(z.literal('')).catch('').parse(read('reminder')),
     sort: ListSort.catch(DEFAULT_FILTERS.sort).parse(read('sort')),
   };
 }
@@ -84,6 +87,7 @@ export function filtersToQuery(filters: ListFilters): Record<string, string> {
   if (filters.zone) query.zone = filters.zone;
   if (filters.category) query.category = filters.category;
   if (filters.verify) query.verify = filters.verify;
+  if (filters.reminder) query.reminder = filters.reminder;
   if (filters.sort !== DEFAULT_FILTERS.sort) query.sort = filters.sort;
   return query;
 }
@@ -117,13 +121,14 @@ function matchesVerify(row: AdminPlaceSummary, verify: VerifyFilter): boolean {
 
 /**
  * Các bộ lọc trừ tab: từ khoá (tên, tên khác, không dấu; chỉ có ký tự đặc biệt thì coi như không có), cụm,
- * danh mục (chính hoặc phụ), nguồn xác nhận.
+ * danh mục (chính hoặc phụ), nguồn xác nhận, nhắc dữ liệu lịch trình.
  */
-export function matchesFilters(row: AdminPlaceSummary, filters: ListFilters): boolean {
+export function matchesFilters(row: AdminPlaceSummary, filters: ListFilters, now: Date = new Date()): boolean {
   if (searchKey(filters.q) && matchScore(filters.q, row.name, row.aliases) === 0) return false;
   if (filters.zone === NO_ZONE ? row.zone !== undefined : filters.zone !== '' && row.zone !== filters.zone) return false;
   if (filters.category && !servesCategory(row, filters.category)) return false;
   if (filters.verify && !matchesVerify(row, filters.verify)) return false;
+  if (filters.reminder && !itineraryReminders(row, now).includes(filters.reminder)) return false;
   return true;
 }
 
@@ -131,7 +136,7 @@ export function matchesFilters(row: AdminPlaceSummary, filters: ListFilters): bo
 export function tabCounts(rows: readonly AdminPlaceSummary[], filters: ListFilters, now: Date): Record<ListTab, number> {
   const counts: Record<ListTab, number> = { all: 0, draft: 0, active: 0, suspected: 0, stale: 0, inactive: 0 };
   for (const row of rows) {
-    if (!matchesFilters(row, filters)) continue;
+    if (!matchesFilters(row, filters, now)) continue;
     for (const tab of ListTab.options) if (inTab(row, tab, now)) counts[tab]++;
   }
   return counts;
@@ -160,7 +165,7 @@ export function sortRows(rows: readonly AdminPlaceSummary[], sort: ListSort): Ad
 /** Các dòng hiện ra: thuộc tab, khớp bộ lọc, đã xếp. */
 export function visibleRows(rows: readonly AdminPlaceSummary[], filters: ListFilters, now: Date): AdminPlaceSummary[] {
   return sortRows(
-    rows.filter((row) => inTab(row, filters.tab, now) && matchesFilters(row, filters)),
+    rows.filter((row) => inTab(row, filters.tab, now) && matchesFilters(row, filters, now)),
     filters.sort,
   );
 }
@@ -197,10 +202,10 @@ export function tableToSort(table: TableSort | null): ListSort {
 
 /** Có lọc gì ngoài tab và cách xếp không (hiện nút "Xoá bộ lọc"). */
 export function hasActiveFilters(filters: ListFilters): boolean {
-  return filters.q.trim() !== '' || filters.zone !== '' || filters.category !== '' || filters.verify !== '';
+  return filters.q.trim() !== '' || filters.zone !== '' || filters.category !== '' || filters.verify !== '' || filters.reminder !== '';
 }
 
-/** "Xoá bộ lọc": bỏ từ khoá, cụm, danh mục, nguồn; giữ tab và cách xếp. */
+/** "Xoá bộ lọc": bỏ từ khoá, cụm, danh mục, nguồn và nhắc; giữ tab và cách xếp. */
 export function clearFilters(filters: ListFilters): ListFilters {
-  return { ...filters, q: '', zone: '', category: '', verify: '' };
+  return { ...filters, q: '', zone: '', category: '', verify: '', reminder: '' };
 }

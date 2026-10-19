@@ -118,6 +118,7 @@ describe('toAdminPlaceSummary', () => {
       category: 'cafe',
       alsoCategories: [],
       photoCount: 0,
+      bestTime: [],
       activationIssues: ['location_missing', 'hours_invalid', 'verify_source_missing'],
       updatedAt: base._id.getTimestamp().toISOString(),
     });
@@ -156,5 +157,15 @@ describe('toAdminPlaceSummary', () => {
     const summary = toAdminPlaceSummary({ ...base, lastVerifiedAt: '2026-10-01T03:00:00Z', updatedAt: 'khong-phai-ngay' }, new Map());
     expect(summary.lastVerifiedAt).toBe('2026-10-01T03:00:00.000Z');
     expect(summary.updatedAt).toBe(base._id.getTimestamp().toISOString());
+  });
+  it('trả dữ liệu lịch trình; dữ liệu cũ thiếu trường và cụm đã bỏ vẫn đọc được', () => {
+    expect(toAdminPlaceSummary({ ...base, visitDurationMin: 45, bestTime: ['sunrise', 'evening'] }, new Map())).toMatchObject({
+      visitDurationMin: 45,
+      bestTime: ['sunrise', 'evening'],
+    });
+    const legacy = toAdminPlaceSummary({ ...base, visitDurationMin: null, zoneId: new Types.ObjectId() }, new Map());
+    expect(legacy.visitDurationMin).toBeUndefined();
+    expect(legacy.bestTime).toEqual([]);
+    expect(legacy.zone).toBeUndefined();
   });
 });

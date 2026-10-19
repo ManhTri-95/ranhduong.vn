@@ -2,6 +2,7 @@
 import { CATEGORY_LABEL, PlaceCategory, type AdminPlaceSummary } from '@ranhduong/contracts';
 import { computed, nextTick, ref, watch } from 'vue';
 import { onBeforeRouteLeave, RouterLink, useRoute, useRouter } from 'vue-router';
+import { itineraryReminders, ItineraryReminder, ITINERARY_REMINDER_LABEL, VERIFY_REMINDER_DAYS } from '@/entities/place/model/itinerary-reminders';
 import { missingLabels } from '@/entities/place/model/missing';
 import { statusChip, verifySourceLabel } from '@/entities/place/model/status';
 import { primaryAction, stepFor, type DialogStep, type PlaceAction } from '@/features/place-status/model/actions';
@@ -80,6 +81,7 @@ const items = computed(() =>
     categories: [row.category, ...row.alsoCategories].map((c) => CATEGORY_LABEL[c]).join(', '),
     zone: row.zone ? (zoneNames.value.get(row.zone) ?? row.zone) : 'Chưa chọn cụm',
     missing: missingLabels(row.activationIssues),
+    reminders: itineraryReminders(row, now.value).map((code) => ITINERARY_REMINDER_LABEL[code]),
     verify: verifySourceLabel(row.category, row.verifySource),
     verified: row.lastVerifiedAt ? daysAgoText(row.lastVerifiedAt, now.value) : 'Chưa xác minh',
     updated: updatedAgoText(row.updatedAt, now.value),
@@ -185,12 +187,21 @@ watch(
         </select>
       </div>
       <div>
+        <label class="rd-sr-only" for="place-list-reminder">Nhắc dữ liệu lịch trình</label>
+        <select id="place-list-reminder" v-model="filters.reminder" class="rd-input">
+          <option value="">Mọi nhắc lịch trình</option>
+          <option v-for="reminder in ItineraryReminder.options" :key="reminder" :value="reminder">{{ ITINERARY_REMINDER_LABEL[reminder] }}</option>
+        </select>
+      </div>
+      <div>
         <label class="rd-sr-only" for="place-list-sort">Xếp</label>
         <select id="place-list-sort" v-model="filters.sort" class="rd-input">
           <option v-for="option in SORT_OPTIONS" :key="option.value" :value="option.value">Xếp: {{ option.label }}</option>
         </select>
       </div>
     </RdFilterBar>
+
+    <p class="rd-quiet">Nhắc lịch trình không chặn kích hoạt. “Sắp cần xác minh” xuất hiện trong {{ VERIFY_REMINDER_DAYS }} ngày trước mốc 90 ngày.</p>
 
     <p v-if="load.kind === 'ready' && rows.length > 0" class="rd-quiet" aria-live="polite">Đang hiện {{ items.length }} trong {{ rows.length }} địa điểm</p>
 
@@ -213,10 +224,11 @@ watch(
           <span class="rd-quiet rd-admin-truncate">{{ item.categories }} · {{ item.zone }}</span>
         </div>
         <span v-else-if="column.key === 'status'" :class="['rd-status', item.chip.className]">{{ item.chip.label }}</span>
-        <template v-else-if="column.key === 'missing'">
-          <span v-if="item.missing.length === 0" class="rd-status rd-status--ok">Đủ</span>
+        <div v-else-if="column.key === 'missing'" class="rd-admin-stack">
+          <span v-if="item.missing.length === 0" class="rd-status rd-status--ok">Đủ kích hoạt</span>
           <span v-else>{{ item.missing.join(', ') }}</span>
-        </template>
+          <span v-if="item.reminders.length" class="rd-quiet">Lịch trình: {{ item.reminders.join(', ') }}</span>
+        </div>
         <div v-else-if="column.key === 'verified'" class="rd-admin-stack">
           <span>{{ item.verify }}</span>
           <span class="rd-quiet">{{ item.verified }}</span>
@@ -232,6 +244,7 @@ watch(
         </div>
         <p class="rd-quiet">{{ item.categories }} · {{ item.zone }}</p>
         <p>{{ item.missing.length > 0 ? `Còn thiếu: ${item.missing.join(', ')}` : 'Đủ điều kiện kích hoạt' }}</p>
+        <p v-if="item.reminders.length" class="rd-quiet">Lịch trình: {{ item.reminders.join(', ') }}</p>
         <p class="rd-quiet">{{ item.verified }} · {{ item.row.photoCount }} ảnh</p>
         <RdPlaceRowActions :place="item.row" :primary="item.primary" @primary="onPrimary(item.row, $event)" @menu="openDialog(item.row, { kind: 'menu' })" />
       </template>

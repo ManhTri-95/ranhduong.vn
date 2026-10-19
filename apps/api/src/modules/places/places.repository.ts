@@ -63,6 +63,8 @@ const SUMMARY_FIELDS = {
   zoneId: 1,
   location: 1,
   openingHours: 1,
+  visitDurationMin: 1,
+  bestTime: 1,
   verifySource: 1,
   lastVerifiedAt: 1,
   photos: 1,

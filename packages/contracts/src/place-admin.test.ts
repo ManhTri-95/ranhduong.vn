@@ -198,4 +198,12 @@ describe('AdminPlaceSummary', () => {
     expect(AdminPlaceSummary.safeParse({ ...base, photoCount: -1 }).success).toBe(false);
     expect(AdminPlaceSummary.safeParse({ ...base, activationIssues: ['khong-co'] }).success).toBe(false);
   });
+  it('giữ dữ liệu lịch trình, vẫn đọc payload cũ thiếu các trường mới', () => {
+    expect(AdminPlaceSummary.parse({ ...base, visitDurationMin: 45, bestTime: ['sunrise', 'evening'] })).toMatchObject({
+      visitDurationMin: 45,
+      bestTime: ['sunrise', 'evening'],
+    });
+    expect(AdminPlaceSummary.safeParse(base).success).toBe(true);
+    expect(AdminPlaceSummary.safeParse({ ...base, bestTime: ['khong-co'] }).success).toBe(false);
+  });
 });

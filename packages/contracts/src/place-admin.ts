@@ -219,6 +219,9 @@ export const AdminPlaceSummary = z.object({
   alsoCategories: z.array(PlaceCategory),
   /** Slug cụm; không có khi chưa chọn cụm. */
   zone: Slug.optional(),
+  /** S33: chỉ dùng nhắc bổ sung dữ liệu lịch trình, không phải điều kiện kích hoạt. */
+  visitDurationMin: z.number().optional(),
+  bestTime: z.array(BestTime).optional(),
   verifySource: VerifySource.optional(),
   lastVerifiedAt: z.iso.datetime().optional(),
   photoCount: z.number().int().min(0),

@@ -99,6 +99,8 @@ pnpm --filter @ranhduong/geo test        # test một package
 
 ## Trạng thái
 
+- S33 code xong trên `feat/S33-itinerary-data-reminders`: danh sách admin nhắc thiếu thời lượng, thời điểm đẹp, cụm, quá hạn/chưa xác minh và sắp tới hạn (7 ngày trước mốc 90 ngày); lọc từng nhắc, giữ URL và số đếm tab, bảng/thẻ điện thoại, không chặn kích hoạt. Contracts/API truyền hai trường mới, dữ liệu cũ vẫn đọc được; 20 task workspace, 84 SSR, Chrome 390px/desktop và review độc lập đạt. Runbook `docs/runbooks/itinerary-data-reminders.md`; chờ CI remote, staging, điện thoại thật và Sentry 24 giờ.
+
 - S32 code xong trong workspace: admin lịch trình có chip Gu tối đa 3 và Đi cùng ai, contracts dùng enum S31, lưu riêng `params.tags`/`params.with` khỏi `style`; mở/lưu mẫu cũ và khôi phục nháp cũ/mới, bỏ chọn không suy lại từ phong cách; preview điện thoại/Google giữ nguyên. 20 task workspace, 84 SSR, Chrome 390px/desktop và review độc lập đạt. Runbook `docs/runbooks/template-trip-preferences.md`; chờ CI remote, staging, điện thoại thật và Sentry 24 giờ.
 
 - S31 code xong trong workspace: `TripWith`/`TripInterest`, bảng gu/thẻ/thời điểm đẹp, nhãn tiếng Việt, `MEAL_WINDOWS` dùng chung S15; `ItineraryRequest` kiểm ngày Việt Nam tại mỗi lần parse, factory `createItineraryRequestSchema(City.mapBounds)` kiểm nơi ở; `ItineraryNarrative` có cấu trúc và chống trùng ngày/key. Không thêm dependency; 591 test contracts, 20 task workspace và 84 SSR đạt; review độc lập không có lỗi cần sửa. Runbook `docs/runbooks/trip-contracts.md`; chờ CI remote và nghiệm thu triển khai.

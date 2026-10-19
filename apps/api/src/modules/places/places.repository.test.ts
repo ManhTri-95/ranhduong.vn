@@ -69,6 +69,14 @@ describe('PlaceSchema và PlacesRepository', () => {
     });
   });
 
+  it('danh sách admin đọc thời lượng ghé và thời điểm đẹp từ DB', async () => {
+    const cityId = new Types.ObjectId();
+    await insert(fakePlace({ cityId, visitDurationMin: 45, bestTime: ['sunrise', 'evening'] }));
+    const rows = await new PlacesRepository(places).listForAdmin(cityId.toString());
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ visitDurationMin: 45, bestTime: ['sunrise', 'evening'] });
+  });
+
   it('tìm theo khoảng cách nhờ index 2dsphere', async () => {
     const cityId = new Types.ObjectId();
     await insert(fakePlace({ cityId, slug: 'quan-gia-lap-gan', location: { type: 'Point', coordinates: [0.001, 0.001] } }));

@@ -47,7 +47,7 @@ describe('filtersFromQuery, filtersToQuery', () => {
     expect(filtersFromQuery({})).toEqual(DEFAULT_FILTERS);
     expect(
       filtersFromQuery({ status: 'stale', q: 'ca phe', zone: 'cum-gia-lap-a', category: 'food', verify: 'facebook', sort: '-name' }),
-    ).toEqual({ tab: 'stale', q: 'ca phe', zone: 'cum-gia-lap-a', category: 'food', verify: 'facebook', sort: '-name' });
+    ).toEqual({ tab: 'stale', q: 'ca phe', zone: 'cum-gia-lap-a', category: 'food', verify: 'facebook', reminder: '', sort: '-name' });
   });
   it('URL cũ hoặc bị sửa tay: giá trị lạ, null, tham số lặp thì lấy mặc định hoặc giá trị đầu', () => {
     expect(filtersFromQuery({ status: 'xoa', zone: 'Cụm A', category: 'bar', verify: 'ctv', sort: 'gia', q: null })).toEqual(DEFAULT_FILTERS);
@@ -199,5 +199,53 @@ describe('S28 xếp, xoá bộ lọc', () => {
     expect(hasActiveFilters(filters({ zone: NO_ZONE }))).toBe(true);
     const active = filters({ tab: 'draft', sort: 'name', q: 'giả', zone: NO_ZONE, category: 'cafe', verify: 'owner' });
     expect(clearFilters(active)).toEqual(filters({ tab: 'draft', sort: 'name' }));
+  });
+});
+
+describe('S33 lọc nhắc lịch trình', () => {
+  const complete = () => row({ zone: 'cum-gia-lap-a', visitDurationMin: 45, bestTime: ['morning'] });
+  const verifiedAgo = (days: number) => new Date(NOW.getTime() - days * 86_400_000).toISOString();
+
+  it.each(['duration_missing', 'best_time_missing', 'zone_missing', 'verification_stale', 'verification_due'] as const)(
+    'giữ nhắc %s qua URL, chọn giá trị đầu khi query lặp',
+    (reminder) => {
+      const chosen = filtersFromQuery({ reminder });
+      expect(chosen.reminder).toBe(reminder);
+      expect(filtersToQuery(chosen)).toEqual({ reminder });
+      expect(filtersFromQuery({ reminder: [reminder, 'khong-co'] })).toEqual(chosen);
+    },
+  );
+
+  it('query sai hoặc null bỏ lọc; xoá nhắc giữ tab và cách xếp', () => {
+    expect(filtersFromQuery({ reminder: 'khong-co' })).toEqual(DEFAULT_FILTERS);
+    expect(filtersFromQuery({ reminder: null })).toEqual(DEFAULT_FILTERS);
+    const chosen = filtersFromQuery({ status: 'active', sort: 'name', reminder: 'duration_missing' });
+    expect(hasActiveFilters(chosen)).toBe(true);
+    expect(clearFilters(chosen)).toEqual(filters({ tab: 'active', sort: 'name' }));
+  });
+
+  it.each([
+    ['duration_missing', { visitDurationMin: undefined }],
+    ['best_time_missing', { bestTime: [] }],
+    ['zone_missing', { zone: undefined }],
+    ['verification_stale', { lastVerifiedAt: verifiedAgo(91) }],
+    ['verification_stale', { lastVerifiedAt: undefined }],
+    ['verification_due', { lastVerifiedAt: verifiedAgo(83) }],
+  ] satisfies [ListFilters['reminder'], Partial<AdminPlaceSummary>][])('lọc đúng nhắc %s ở cả dòng và số đếm tab', (reminder, overrides) => {
+    const matching = { ...complete(), ...overrides };
+    const chosen = filtersFromQuery({ reminder });
+    const rows = [matching, complete()];
+    expect(visibleRows(rows, chosen, NOW)).toEqual([matching]);
+    expect(tabCounts(rows, chosen, NOW)).toMatchObject({ all: 1, active: 1 });
+  });
+
+  it('kết hợp nhắc với tìm, cụm, danh mục, nguồn, tab; nhắc không đổi điều kiện kích hoạt', () => {
+    const matching = { ...complete(), name: 'Quán Giả Lập Mây', alsoCategories: ['food' as const], visitDurationMin: undefined, verifySource: 'owner' as const };
+    const wrongZone = { ...matching, id: '0123456789abcdef01234568', zone: 'cum-gia-lap-b' };
+    const draft = { ...matching, id: '0123456789abcdef01234569', status: 'draft' as const };
+    const chosen = filtersFromQuery({ reminder: 'duration_missing', q: 'may', zone: 'cum-gia-lap-a', category: 'food', verify: 'owner', status: 'active' });
+    expect(visibleRows([matching, wrongZone, draft], chosen, NOW)).toEqual([matching]);
+    expect(tabCounts([matching, wrongZone, draft], chosen, NOW)).toMatchObject({ all: 2, active: 1, draft: 1 });
+    expect(matching.activationIssues).toEqual([]);
   });
 });

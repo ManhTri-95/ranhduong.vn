@@ -143,7 +143,7 @@ function toIso(value: unknown): string | undefined {
  */
 export type SummaryRow = Pick<
   EditRow,
-  '_id' | 'status' | 'slug' | 'name' | 'aliases' | 'category' | 'alsoCategories' | 'zoneId' | 'location' | 'openingHours' | 'verifySource' | 'photos'
+  '_id' | 'status' | 'slug' | 'name' | 'aliases' | 'category' | 'alsoCategories' | 'zoneId' | 'location' | 'openingHours' | 'visitDurationMin' | 'bestTime' | 'verifySource' | 'photos'
 > & { lastVerifiedAt?: unknown; updatedAt?: unknown };
 
 /** Document → một dòng danh sách admin: id cụm thành slug, số ảnh, mã điều kiện kích hoạt còn thiếu (mỗi mã một lần). */
@@ -163,6 +163,8 @@ export function toAdminPlaceSummary(row: SummaryRow, zoneSlugById: ReadonlyMap<s
     category: row.category,
     alsoCategories: row.alsoCategories ?? [],
     zone: row.zoneId ? zoneSlugById.get(row.zoneId.toString()) : undefined,
+    visitDurationMin: opt(row.visitDurationMin),
+    bestTime: row.bestTime ?? [],
     verifySource: opt(row.verifySource),
     lastVerifiedAt: toIso(row.lastVerifiedAt),
     photoCount: row.photos?.length ?? 0,

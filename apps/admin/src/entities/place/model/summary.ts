@@ -14,6 +14,8 @@ export function toPlaceSummary(place: AdminPlace): AdminPlaceSummary {
     category: place.category,
     alsoCategories: place.alsoCategories,
     zone: place.zone,
+    visitDurationMin: place.visitDurationMin,
+    bestTime: place.bestTime,
     verifySource: place.verifySource,
     lastVerifiedAt: place.lastVerifiedAt,
     photoCount: place.photos.length,

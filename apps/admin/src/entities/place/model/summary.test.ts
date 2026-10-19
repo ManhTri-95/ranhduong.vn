@@ -36,4 +36,10 @@ describe('toPlaceSummary', () => {
     };
     expect(toPlaceSummary(complete).activationIssues).toEqual([]);
   });
+  it('giữ thời lượng ghé và thời điểm đẹp khi chuyển từ form sang dòng danh sách', () => {
+    expect(toPlaceSummary({ ...base, visitDurationMin: 45, bestTime: ['evening'] })).toMatchObject({
+      visitDurationMin: 45,
+      bestTime: ['evening'],
+    });
+  });
 });
