@@ -1,6 +1,6 @@
 # ADR 0007: Lịch trình tính trong bộ nhớ bằng heuristic, LLM chỉ viết mô tả
 
-- Trạng thái: Đã chấp nhận
+- Trạng thái: Đã chấp nhận; phần cache theo `paramsHash` bị thay bởi [ADR 0014](0014-guest-itinerary-cache-and-share-ids.md)
 - Ngày: 2026-10-06
 - Nguồn: [technical-design.md](../technical-design.md) mục 1, 7; [architecture.md](../architecture.md) mục 6, 7, 9; [product-spec.md](../product-spec.md) mục 8
 

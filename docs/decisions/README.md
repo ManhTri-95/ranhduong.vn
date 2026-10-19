@@ -19,6 +19,7 @@ Quyết định nhỏ (thêm thư viện, đổi phiên bản, cấu hình) ghi 
 | [0011](0011-shared-zod-contracts.md) | Kiểu dữ liệu dùng chung định nghĩa bằng Zod trong `packages/contracts` |
 | [0012](0012-self-counted-place-metrics.md) | Tự đếm số liệu địa điểm qua Redis, không lưu sự kiện thô |
 | [0013](0013-self-curated-verified-data.md) | Dữ liệu tự curate, thu thập thủ công, luôn ghi nguồn xác minh |
+| [0014](0014-guest-itinerary-cache-and-share-ids.md) | Lịch trình của khách không cache kết quả, công khai qua shareId, không lộ nơi ở |
 
 Khuôn mẫu:
 
