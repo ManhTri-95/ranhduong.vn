@@ -317,7 +317,7 @@ REST JSON dưới `/v1`, thành phố nằm trong path (`/v1/cities/:city/…`);
 | GET | `/cities/:city/leaderboard?month=` | Công khai | Top 50, che bớt tên |
 | DELETE | `/me` | Member | Xoá tài khoản và dữ liệu cá nhân |
 | GET | /cities/:city/now | Công khai | Mùa, accent, featuredItinerary, weather nullable (state, temperatureC, isDay, rainSoon, observedAt, expiresAt); hết hạn sớm nhất mùa/thời tiết. Redis tối đa 15 phút; HTTP no-store khi thời tiết không có |
-| GET | `/itineraries/:shareId/ticket.png`, `/cities/:city/itineraries/templates/:slug/ticket.png` | Công khai | `?format=story` (1080×1920) hoặc `og` (1200×630); ảnh vé từ R2, sinh khi chưa có ảnh cho nội dung hiện tại, chưa xong thì OG dùng ảnh mặc định (lát 2, S30) |
+| GET | `/itineraries/:shareId/ticket.png`, `/cities/:city/itineraries/templates/:slug/ticket.png` | Công khai | `?format=story` (1080×1920) hoặc `og` (1200×630); ảnh vé từ R2, sinh khi chưa có ảnh cho nội dung hiện tại (API chờ worker tối đa 4 giây với OG, 8 giây với story), chưa xong thì OG dùng ảnh mặc định `no-store`, story trả 503 kèm `Retry-After: 3` (lát 2, S30; [runbook](runbooks/itinerary-ticket.md)) |
 
 **Chủ quán:**
 
