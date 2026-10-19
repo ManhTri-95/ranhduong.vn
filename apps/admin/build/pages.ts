@@ -50,6 +50,19 @@ export function parsePagesEnv(source: Record<string, string | undefined>): Pages
   };
 }
 
+/**
+ * Thay `import.meta.env.VITE_*` trong bundle bằng giá trị đã kiểm và chuẩn hoá, để app dùng đúng thứ CSP mở
+ * (ví dụ `VITE_API_BASE` có `/` cuối sẽ làm link đăng nhập thành `/v1//auth/...`).
+ */
+export function pagesDefine(env: PagesEnv): Record<string, string> {
+  return {
+    'import.meta.env.VITE_API_BASE': JSON.stringify(env.apiBase),
+    'import.meta.env.VITE_WEB_BASE': JSON.stringify(env.webBase),
+    'import.meta.env.VITE_MEDIA_BASE': JSON.stringify(env.mediaBase),
+    'import.meta.env.VITE_MAP_STYLE_URL': JSON.stringify(env.mapStyleUrl),
+  };
+}
+
 const sources = (...values: string[]) => [...new Set(values)].join(' ');
 
 /** Nội dung `_headers` cho mọi đường dẫn của admin; không đặt Cache-Control để giữ mặc định revalidate của Pages. */

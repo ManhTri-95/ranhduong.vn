@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_MAP_STYLE_URL } from '../src/shared/config/defaults';
-import { pagesHeaders, parsePagesEnv } from './pages';
+import { pagesDefine, pagesHeaders, parsePagesEnv } from './pages';
 
 const STAGING = {
   VITE_API_BASE: 'https://api.staging.ranhduong.vn/v1',
@@ -23,6 +23,18 @@ describe('parsePagesEnv', () => {
       mediaBase: 'https://media.staging.ranhduong.vn',
       mapStyleUrl: DEFAULT_MAP_STYLE_URL,
       uploadOrigin: 'https://*.r2.cloudflarestorage.com',
+    });
+  });
+});
+
+describe('pagesDefine', () => {
+  it('bundle nhận đúng giá trị đã chuẩn hoá: bỏ / cuối của API (link đăng nhập), style chỉ khoảng trắng thì dùng mặc định', () => {
+    const define = pagesDefine(parsePagesEnv({ ...STAGING, VITE_API_BASE: 'https://api.staging.ranhduong.vn/v1/', VITE_MAP_STYLE_URL: '  ' }));
+    expect(define).toEqual({
+      'import.meta.env.VITE_API_BASE': JSON.stringify('https://api.staging.ranhduong.vn/v1'),
+      'import.meta.env.VITE_WEB_BASE': JSON.stringify('https://staging.ranhduong.vn'),
+      'import.meta.env.VITE_MEDIA_BASE': JSON.stringify('https://media.staging.ranhduong.vn'),
+      'import.meta.env.VITE_MAP_STYLE_URL': JSON.stringify(DEFAULT_MAP_STYLE_URL),
     });
   });
 });
