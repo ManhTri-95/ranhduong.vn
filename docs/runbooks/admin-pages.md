@@ -86,5 +86,5 @@ Bản build `pages` với giá trị local chạy trên `wrangler pages dev` 4.1
 - Chưa có phiên: chuyển sang `/dang-nhap?returnTo=/dia-diem`. Preflight từ `http://localhost:8788` nhận `Access-Control-Allow-Origin` đúng nguồn và `Allow-Credentials: true`.
 - 1440px: `/dia-diem`, form địa điểm (bản đồ hiện, 7/7 request OpenFreeMap 200), `/lich-trinh/<id>`, `/bao-cao`, `/mua`, `/danh-sach`, `/import` mở được; thanh bên 232px; không tràn ngang; chỉ có báo cáo CSP `script-src eval` của Zod. 390px: thanh trên 56px, danh sách dạng thẻ, form có bản đồ, không tràn ngang.
 - Xoá chunk Báo cáo khi đang mở `/dia-diem` rồi bấm Báo cáo: trang tải lại đúng một lần tới `/bao-cao`, sau đó hiện thông báo; trả file lại và bấm Tải lại trang thì mở được.
-- `pnpm turbo run lint typecheck test build`: 20/20 task xanh (admin 214, API 412, contracts 436, geo 37, web 144 test); `pnpm --filter @ranhduong/web test:ssr`: 81 test xanh. Workflow kiểm bằng actionlint 1.7.7, 0 lỗi.
+- `pnpm turbo run lint typecheck test build`: 20/20 task xanh (admin 218, API 412, contracts 436, geo 37, web 144 test); `pnpm --filter @ranhduong/web test:ssr`: 81 test xanh. Workflow kiểm bằng actionlint 1.7.7, 0 lỗi.
 - Chưa thử upload ảnh: image `minio/minio` không còn pull được từ Docker Hub nên MinIO local không chạy. CSP đã mở origin upload (`VITE_UPLOAD_ORIGIN`); kiểm upload trên staging (mục 8).
