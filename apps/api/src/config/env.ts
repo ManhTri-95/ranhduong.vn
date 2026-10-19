@@ -40,6 +40,8 @@ const EnvSchema = z.object({
   API_PUBLIC_URL: httpUrl('http://localhost:3101'),
   /** URL app admin: nơi chuyển về sau khi đăng nhập. */
   ADMIN_URL: httpUrl('http://localhost:5174'),
+  /** URL web khách cho QR và đường dẫn trên vé (S30); production https://ranhduong.vn, staging https://staging.ranhduong.vn. */
+  SITE_URL: httpUrl('http://localhost:3100'),
   /** Domain cookie phiên: production `.ranhduong.vn`, staging `.staging.ranhduong.vn`, local để trống. */
   SESSION_COOKIE_DOMAIN: z.string().default('').transform((s) => s.trim() || undefined),
   /** Tên cookie phiên. Staging phải đặt khác production, vì cookie `.ranhduong.vn` cũng được gửi tới api.staging. */
