@@ -71,6 +71,8 @@ export const ItinerarySchema = new Schema(
     shareId: { type: String },
     /** S30: khoá R2 `tickets/{hash}` của ảnh vé hiện tại, để xoá ảnh cũ khi nội dung đổi. Không trả ra API công khai. */
     ticketKey: { type: String },
+    /** Khoá ảnh cũ chờ xoá, giữ lại qua lỗi R2 và lần retry của worker. */
+    ticketCleanupKeys: { type: [String], default: [] },
     visibility: { type: String, enum: ItineraryVisibility.options, default: 'public' },
     status: { type: String, enum: ItineraryStatus.options, default: 'draft' },
   },

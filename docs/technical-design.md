@@ -179,6 +179,7 @@ interface Itinerary {
   shareId?: string;   // chỉ lịch trình của khách: ngẫu nhiên base62, unique; mẫu dùng slug
   version: number;    // bắt đầu 1, tăng mỗi lần ghi; sửa với version cũ trả CONFLICT
   ticketKey?: string; // khoá R2 của ảnh vé hiện tại, để xoá ảnh cũ khi sinh ảnh mới
+  ticketCleanupKeys?: string[]; // nội bộ: khoá ảnh cũ chờ xoá, giữ qua lỗi R2 và retry, không trả ra DTO công khai
   visibility: 'public' | 'unlisted';   // mẫu public; lịch trình của khách luôn unlisted (chỉ ai có link)
   status: 'draft' | 'published';   // web chỉ đọc lịch trình mẫu đã published
 }

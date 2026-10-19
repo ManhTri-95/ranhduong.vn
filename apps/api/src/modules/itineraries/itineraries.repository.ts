@@ -97,14 +97,28 @@ export class ItinerariesRepository {
     }).lean<EditorRow>();
   }
 
-  /** S30: đặt khoá ảnh vé mới, trả khoá cũ để xoá ảnh; không đổi updatedAt (sitemap lastmod, thứ tự soạn mẫu). */
-  async swapTicketKey(id: string, key: string): Promise<string | undefined> {
-    const before = await this.itineraries.findOneAndUpdate(
-      { _id: new Types.ObjectId(id), ticketKey: { $ne: key } },
-      { $set: { ticketKey: key } },
-      { returnDocument: 'before', projection: { ticketKey: 1 }, timestamps: false },
-    ).lean<{ ticketKey?: string | null }>();
-    return before?.ticketKey ?? undefined;
+  /** S30: đổi khoá và giữ nguyên tử các khoá chờ xoá; retry vẫn đọc được, không đổi updatedAt. */
+  async swapTicketKey(id: string, key: string): Promise<string[]> {
+    const after = await this.itineraries.findOneAndUpdate(
+      { _id: new Types.ObjectId(id) },
+      [{ $set: {
+        ticketKey: key,
+        ticketCleanupKeys: { $setDifference: [
+          { $setUnion: [{ $ifNull: ['$ticketCleanupKeys', []] }, [{ $ifNull: ['$ticketKey', null] }]] },
+          [null, key],
+        ] },
+      } }],
+      { updatePipeline: true, returnDocument: 'after', projection: { ticketCleanupKeys: 1 }, timestamps: false },
+    ).lean<{ ticketCleanupKeys: string[] }>();
+    return after?.ticketCleanupKeys ?? [];
+  }
+
+  async completeTicketCleanup(id: string, keys: string[]): Promise<void> {
+    await this.itineraries.updateOne(
+      { _id: new Types.ObjectId(id) },
+      { $pull: { ticketCleanupKeys: { $in: keys } } },
+      { timestamps: false },
+    );
   }
 
   /** Lịch trình mẫu đã công khai, có slug, của thành phố; mới tạo trước. */

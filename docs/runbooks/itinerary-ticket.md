@@ -6,8 +6,8 @@ Nhánh `feat/S30-itinerary-ticket`. Mỗi lịch trình mẫu có một vé dạ
 
 1. Web gọi `GET /v1/cities/{city}/itineraries/templates/{slug}/ticket.png?format=story|og`. Crawler Zalo/Messenger gọi bản `og` qua thẻ `og:image`. Khách bấm "Tạo vé để chia sẻ" thì web gọi bản `story`.
 2. API dựng nội dung vé từ dữ liệu công khai của mẫu và thành phố: tên, số ngày, mùa, phương tiện, tối đa 8 điểm còn công khai, đường dẫn và QR. Nội dung được băm thành `hash` (32 ký tự hex), ảnh nằm ở `tickets/{hash}/{story|og}.png` trên bucket công khai `R2_BUCKET`. URL và khoá đều không chứa ObjectId.
-3. Có ảnh thì trả ngay. Chưa có thì xếp job `itinerary.ticket` (hàng đợi BullMQ `itinerary-ticket`, jobId `ticket-{hash}`, nhiều request cùng nội dung chỉ thành một job). Sau đó API đọc lại R2 mỗi 250 ms, tối đa 4 giây với OG và 8 giây với story.
-4. Worker dựng cả hai ảnh bằng Satori + resvg (khoảng 0,1–0,3 giây mỗi vé), ghi R2, đặt `Itinerary.ticketKey = tickets/{hash}` (không đổi `updatedAt`) và xoá hai ảnh của khoá cũ. Job thử tối đa 3 lần; job xong bị xoá khỏi hàng đợi, job hỏng giữ 7 ngày.
+3. Có ảnh thì trả ngay. Chưa có thì xếp job `itinerary.ticket` (hàng đợi BullMQ `itinerary-ticket`, jobId `ticket-{hash}`, nhiều request cùng nội dung chỉ thành một job). Sau đó API đọc lại R2 mỗi 250 ms. Toàn bộ bước đọc R2 lần đầu, xếp job và polling có chung hạn 4 giây với OG, 8 giây với story; hết hạn huỷ đọc R2 và dừng polling.
+4. Worker dựng cả hai ảnh bằng Satori + resvg (khoảng 0,1–0,3 giây mỗi vé), ghi R2, đặt `Itinerary.ticketKey = tickets/{hash}` đồng thời lưu khoá cũ vào `ticketCleanupKeys`, rồi xoá ảnh cũ. Chỉ bỏ khoá chờ dọn khi xoá thành công; lỗi R2 hoặc worker dừng giữa chừng thì lần retry vẫn đọc được. Các lần cập nhật khoá không đổi `updatedAt`. Job thử tối đa 3 lần; job xong bị xoá khỏi hàng đợi, job hỏng giữ 7 ngày.
 
 Vé chỉ sinh lại khi nội dung vé đổi: sửa mẫu, đổi tên điểm, ẩn điểm, đổi tên hay màu nhấn thành phố, đổi `SITE_URL`, hoặc tăng `TICKET_RENDER_VERSION`. Vé không có trường vị trí nên không bao giờ chứa nơi ở của khách.
 
@@ -71,7 +71,8 @@ Staging đặt basic auth (technical-design mục 13) nên crawler của Faceboo
 
 ## Kiểm tra đã chạy
 
-- `pnpm turbo run lint typecheck test build --force`: 20/20 task xanh. Vitest: API 458, contracts 442, admin 218, web 150, geo 37.
+- Review trước merge: test hồi quy thời hạn khi R2/Redis bị treo, huỷ đọc R2; test MongoDB thật giữ khoá chờ dọn qua retry và nhiều lần đổi vé; test worker thử lại sau lỗi xoá ảnh. Các test đã thấy đỏ trước khi sửa rồi xanh.
+- `pnpm turbo run lint typecheck test build --force`: 20/20 task xanh. Vitest: API 462, contracts 442, admin 218, web 150, geo 37.
 - `pnpm --filter @ranhduong/web test:ssr`: 84/84 xanh, gồm `og:image`/`twitter:image` là URL vé, ảnh mặc định khi trang lỗi, link "Tạo vé để chia sẻ" và mục font ở `/ghi-nguon`.
 - Chạy thật local (API, worker, MongoDB, Redis, RustFS S3, mẫu và địa điểm "Giả Lập" tạm, đã xoá sau khi kiểm):
   - Lần gọi OG đầu: 200 vé thật sau 0,3 giây; story đã có sẵn.

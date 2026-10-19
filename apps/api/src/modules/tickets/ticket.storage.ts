@@ -20,9 +20,9 @@ export class TicketStorage implements OnApplicationShutdown {
     this.client = createR2Client(env);
   }
 
-  async read(key: string): Promise<Buffer | null> {
+  async read(key: string, signal?: AbortSignal): Promise<Buffer | null> {
     try {
-      const object = await this.client.send(new GetObjectCommand({ Bucket: this.env.R2_BUCKET, Key: key }));
+      const object = await this.client.send(new GetObjectCommand({ Bucket: this.env.R2_BUCKET, Key: key }), { abortSignal: signal });
       if (!object.Body) return null;
       if ((object.ContentLength ?? 0) >= MAX_TICKET_BYTES) throw new Error('Ảnh vé quá lớn');
       const bytes = await object.Body.transformToByteArray();

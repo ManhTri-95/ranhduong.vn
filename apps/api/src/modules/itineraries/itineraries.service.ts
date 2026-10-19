@@ -89,8 +89,12 @@ export class ItinerariesService {
     return this.loadTemplate(citySlug, slug);
   }
 
-  swapTicketKey(id: string, key: string): Promise<string | undefined> {
+  swapTicketKey(id: string, key: string): Promise<string[]> {
     return this.repo.swapTicketKey(id, key);
+  }
+
+  completeTicketCleanup(id: string, keys: string[]): Promise<void> {
+    return this.repo.completeTicketCleanup(id, keys);
   }
 
   private async loadTemplate(citySlug: string, slug: string): Promise<{ id: string; detail: ItineraryTemplateDetail }> {

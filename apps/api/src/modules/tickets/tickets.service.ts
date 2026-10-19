@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
+import { setTimeout as delay } from 'node:timers/promises';
 import type { CityPublic, TicketData, TicketFormat, TicketJob } from '@ranhduong/contracts';
 import { ENV, type Env } from '../../config/env';
 import { CitiesService } from '../cities/cities.service';
@@ -18,7 +19,6 @@ const DEFAULT_WAIT: TicketWait = { og: 4000, story: 8000, pollMs: 250 };
 export class InvalidTicketJob extends Error {}
 
 const FORMATS: TicketFormat[] = ['story', 'og'];
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
  * Vé lịch trình (Spec UI mục 9): API đọc ảnh theo hash nội dung, thiếu thì xếp job và chờ một lúc;
@@ -30,7 +30,7 @@ export class TicketsService {
   constructor(
     @Inject(ENV) private readonly env: Env,
     @Inject(CitiesService) private readonly cities: { getPublic(slug: string): Promise<Pick<CityPublic, 'name' | 'accent'>> },
-    @Inject(ItinerariesService) private readonly itineraries: Pick<ItinerariesService, 'templateTicketSource' | 'swapTicketKey'>,
+    @Inject(ItinerariesService) private readonly itineraries: Pick<ItinerariesService, 'templateTicketSource' | 'swapTicketKey' | 'completeTicketCleanup'>,
     @Inject(TicketStorage) private readonly storage: Pick<TicketStorage, 'read' | 'write' | 'remove'>,
     @Inject(TicketQueue) private readonly queue: Pick<TicketQueue, 'request'>,
     @Inject(TicketRenderer) private readonly renderer: Pick<TicketRenderer, 'render' | 'defaultOg'>,
@@ -48,19 +48,34 @@ export class TicketsService {
   async ensure(itineraryId: string, data: TicketData, format: TicketFormat): Promise<TicketImage> {
     const hash = ticketHash(data);
     const key = ticketObjectKey(hash, format);
+    const controller = new AbortController();
+    let timer: ReturnType<typeof setTimeout> | undefined;
     try {
-      let body = await this.storage.read(key);
-      if (!body) {
-        await this.queue.request({ itineraryId, hash, data });
-        const deadline = Date.now() + this.wait[format];
-        while (!body && Date.now() < deadline) {
-          await delay(this.wait.pollMs);
-          body = await this.storage.read(key);
+      const timeout = new Promise<never>((_resolve, reject) => {
+        timer = setTimeout(() => {
+          reject(new Error('Hết thời gian chờ vé'));
+          controller.abort();
+        }, this.wait[format]);
+      });
+      const read = async (): Promise<Buffer> => {
+        let body = await this.storage.read(key, controller.signal);
+        if (!body) {
+          controller.signal.throwIfAborted();
+          await this.queue.request({ itineraryId, hash, data });
+          while (!body) {
+            controller.signal.throwIfAborted();
+            await delay(this.wait.pollMs, undefined, { signal: controller.signal });
+            body = await this.storage.read(key, controller.signal);
+          }
         }
-      }
-      if (body) return { status: 'ready', body };
+        return body;
+      };
+      return { status: 'ready', body: await Promise.race([read(), timeout]) };
     } catch (error) {
       this.logger.warn(`Chưa lấy được vé ${hash}: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      clearTimeout(timer);
+      controller.abort();
     }
     return format === 'og' ? { status: 'fallback', body: this.renderer.defaultOg() } : { status: 'pending' };
   }
@@ -73,7 +88,10 @@ export class TicketsService {
       for (const format of FORMATS) await this.storage.write(ticketObjectKey(job.hash, format), await this.renderer.render(job.data, format));
     }
     const next = ticketPrefix(job.hash);
-    const previous = await this.itineraries.swapTicketKey(job.itineraryId, next);
-    if (previous && previous !== next) await this.storage.remove(FORMATS.map((format) => `${previous}/${format}.png`));
+    const pending = await this.itineraries.swapTicketKey(job.itineraryId, next);
+    if (pending.length) {
+      await this.storage.remove(pending.flatMap((prefix) => FORMATS.map((format) => `${prefix}/${format}.png`)));
+      await this.itineraries.completeTicketCleanup(job.itineraryId, pending);
+    }
   }
 }

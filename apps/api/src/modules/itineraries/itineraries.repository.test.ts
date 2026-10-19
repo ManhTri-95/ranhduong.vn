@@ -85,24 +85,41 @@ describe('ItinerarySchema và ItinerariesRepository', () => {
     expect(await repo.listPublishedTemplates(cityId.toString(), 1)).toHaveLength(1);
   });
 
-  it('S30 swapTicketKey trả khoá cũ, không đổi updatedAt', async () => {
+  it('S30 swapTicketKey lưu khoá chờ dọn qua lần retry, không đổi updatedAt', async () => {
     const oldKey = `tickets/${'a'.repeat(32)}`;
     const newKey = `tickets/${'b'.repeat(32)}`;
     const updatedAt = new Date('2026-10-01T00:00:00.000Z');
     const doc = await insert(fakeItinerary({ slug: 'lich-trinh-gia-lap', ticketKey: oldKey }));
     await model.collection.updateOne({ _id: doc._id }, { $set: { updatedAt } });
-    expect(await repo.swapTicketKey(doc._id.toString(), newKey)).toBe(oldKey);
+    expect(await repo.swapTicketKey(doc._id.toString(), newKey)).toEqual([oldKey]);
     const after = await model.findById(doc._id).lean();
     expect(after?.ticketKey).toBe(newKey);
     expect(after?.updatedAt).toEqual(updatedAt);
-    expect(await repo.swapTicketKey(doc._id.toString(), newKey)).toBeUndefined();
+    expect(await repo.swapTicketKey(doc._id.toString(), newKey)).toEqual([oldKey]);
+    expect((await model.findById(doc._id).lean())?.ticketCleanupKeys).toEqual([oldKey]);
+    await repo.completeTicketCleanup(doc._id.toString(), [oldKey]);
+    expect(await repo.swapTicketKey(doc._id.toString(), newKey)).toEqual([]);
+    expect((await model.findById(doc._id).lean())?.updatedAt).toEqual(updatedAt);
   });
 
-  it('S30 swapTicketKey: mẫu chưa có khoá thì đặt khoá, trả undefined; không có bản ghi thì undefined', async () => {
+  it('S30 swapTicketKey: mẫu chưa có khoá và bản ghi không tồn tại không có ảnh chờ dọn', async () => {
     const doc = await insert(fakeItinerary({ slug: 'lich-trinh-gia-lap-hai' }));
     const key = `tickets/${'c'.repeat(32)}`;
-    expect(await repo.swapTicketKey(doc._id.toString(), key)).toBeUndefined();
+    expect(await repo.swapTicketKey(doc._id.toString(), key)).toEqual([]);
     expect((await model.findById(doc._id).lean())?.ticketKey).toBe(key);
-    expect(await repo.swapTicketKey(new Types.ObjectId().toString(), key)).toBeUndefined();
+    expect(await repo.swapTicketKey(new Types.ObjectId().toString(), key)).toEqual([]);
+  });
+  it('S30 giữ các khoá chưa dọn khi đổi vé tiếp, loại khoá đang dùng nếu quay lại nội dung cũ', async () => {
+    const a = `tickets/${'a'.repeat(32)}`;
+    const b = `tickets/${'b'.repeat(32)}`;
+    const c = `tickets/${'c'.repeat(32)}`;
+    const doc = await insert(fakeItinerary({ ticketKey: a }));
+    // Bản ghi trước khi thêm trường chờ dọn cũng phải được đọc đúng.
+    await model.collection.updateOne({ _id: doc._id }, { $unset: { ticketCleanupKeys: 1 } });
+    expect(await repo.swapTicketKey(doc.id, b)).toEqual([a]);
+    expect((await repo.swapTicketKey(doc.id, c)).sort()).toEqual([a, b]);
+    await repo.completeTicketCleanup(doc.id, [a]);
+    expect(await repo.swapTicketKey(doc.id, c)).toEqual([b]);
+    expect(await repo.swapTicketKey(doc.id, b)).toEqual([c]);
   });
 });

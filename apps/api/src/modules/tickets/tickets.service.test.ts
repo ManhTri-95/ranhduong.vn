@@ -22,7 +22,7 @@ const key = (format: string, h = hash) => `tickets/${h}/${format}.png`;
 function setup() {
   const files = new Map<string, Buffer>();
   const storage = {
-    read: vi.fn(async (k: string) => files.get(k) ?? null),
+    read: vi.fn<(key: string, signal?: AbortSignal) => Promise<Buffer | null>>(async (k) => files.get(k) ?? null),
     write: vi.fn(async (k: string, body: Buffer) => { files.set(k, body); }),
     remove: vi.fn(async (keys: string[]) => { for (const k of keys) files.delete(k); }),
   };
@@ -31,7 +31,8 @@ function setup() {
   const cities = { getPublic: vi.fn(async () => ({ name: 'Thành phố Giả Lập', accent: '#E9B824' })) };
   const itineraries = {
     templateTicketSource: vi.fn(async () => ({ id: ID, detail })),
-    swapTicketKey: vi.fn(async (): Promise<string | undefined> => undefined),
+    swapTicketKey: vi.fn(async (): Promise<string[]> => []),
+    completeTicketCleanup: vi.fn<(id: string, keys: string[]) => Promise<void>>(async () => undefined),
   };
   const service = new TicketsService(testEnv({ SITE_URL: 'https://ranhduong.vn' }), cities, itineraries, storage, queue, renderer, { og: 40, story: 40, pollMs: 5 });
   return { files, storage, queue, renderer, itineraries, service };
@@ -56,6 +57,26 @@ describe('S30 TicketsService phục vụ ảnh vé', () => {
     expect(await t.service.templateTicket('da-lat', 'lich-trinh-gia-lap', 'og')).toEqual({ status: 'fallback', body: Buffer.from('mac-dinh') });
     expect(await t.service.templateTicket('da-lat', 'lich-trinh-gia-lap', 'story')).toEqual({ status: 'pending' });
   });
+  it.each(['og', 'story'] as const)('giữ thời hạn %s khi R2 đọc lần đầu, Redis hoặc R2 đọc lại bị treo', async (format) => {
+    vi.useFakeTimers();
+    try {
+      for (const stage of ['initial', 'queue', 'poll']) {
+        const t = setup();
+        const stalled = () => new Promise<never>(() => undefined);
+        if (stage === 'initial') t.storage.read.mockImplementation(stalled);
+        if (stage === 'queue') t.queue.request.mockImplementation(stalled);
+        if (stage === 'poll') t.storage.read.mockResolvedValueOnce(null).mockImplementation(stalled);
+        let status: string | undefined;
+        const response = t.service.ensure(ID, data, format).then((result) => { status = result.status; });
+        await vi.advanceTimersByTimeAsync(39);
+        expect(status).toBeUndefined();
+        await vi.advanceTimersByTimeAsync(1);
+        expect(status).toBe(format === 'og' ? 'fallback' : 'pending');
+        expect(t.storage.read.mock.calls[0]?.[1]?.aborted).toBe(true);
+        await response;
+      }
+    } finally { vi.useRealTimers(); }
+  });
   it('Redis hoặc R2 lỗi: og dùng ảnh mặc định, story pending, không ném', async () => {
     const t = setup();
     t.queue.request.mockRejectedValue(new Error('Redis giả lập dừng'));
@@ -78,13 +99,14 @@ describe('S30 TicketsService sinh vé (worker)', () => {
   it('dựng story và og, ghi đúng khoá, đổi ticketKey và xoá hai ảnh cũ', async () => {
     const t = setup();
     t.files.set(`${OLD}/story.png`, Buffer.from('cu')).set(`${OLD}/og.png`, Buffer.from('cu'));
-    t.itineraries.swapTicketKey.mockResolvedValue(OLD);
+    t.itineraries.swapTicketKey.mockResolvedValue([OLD]);
     await t.service.generate(job);
     expect(t.renderer.render.mock.calls.map((call) => call[1]).sort()).toEqual(['og', 'story']);
     expect(t.files.get(key('story'))).toEqual(Buffer.from('png-story'));
     expect(t.files.get(key('og'))).toEqual(Buffer.from('png-og'));
     expect(t.itineraries.swapTicketKey).toHaveBeenCalledWith(ID, `tickets/${hash}`);
     expect(t.storage.remove).toHaveBeenCalledWith([`${OLD}/story.png`, `${OLD}/og.png`]);
+    expect(t.itineraries.completeTicketCleanup).toHaveBeenCalledWith(ID, [OLD]);
     expect([...t.files.keys()].sort()).toEqual([key('og'), key('story')]);
     for (const [written] of t.storage.write.mock.calls) {
       expect(written).toMatch(/^tickets\/[0-9a-f]{32}\/(story|og)\.png$/);
@@ -98,13 +120,25 @@ describe('S30 TicketsService sinh vé (worker)', () => {
     expect(t.renderer.render).not.toHaveBeenCalled();
     expect(t.itineraries.swapTicketKey).toHaveBeenCalledWith(ID, `tickets/${hash}`);
   });
-  it('không xoá khi chưa có khoá cũ hoặc khoá cũ trùng khoá mới', async () => {
+  it('không xoá khi không có khoá chờ dọn', async () => {
     const t = setup();
     await t.service.generate(job);
-    t.itineraries.swapTicketKey.mockResolvedValue(`tickets/${hash}`);
     await t.service.generate(job);
     expect(t.storage.remove).not.toHaveBeenCalled();
     expect(t.files.has(key('og'))).toBe(true);
+  });
+  it('retry sau lỗi xoá vẫn dọn ảnh cũ, chỉ xác nhận dọn sau khi xoá thành công', async () => {
+    const t = setup();
+    t.files.set(`${OLD}/story.png`, Buffer.from('cu')).set(`${OLD}/og.png`, Buffer.from('cu'));
+    t.itineraries.swapTicketKey.mockResolvedValue([OLD]);
+    t.storage.remove.mockRejectedValueOnce(new Error('R2 giả lập xoá lỗi'));
+    await expect(t.service.generate(job)).rejects.toThrow('R2 giả lập xoá lỗi');
+    expect(t.itineraries.completeTicketCleanup).not.toHaveBeenCalled();
+    await t.service.generate(job);
+    expect(t.storage.remove).toHaveBeenCalledTimes(2);
+    expect(t.itineraries.completeTicketCleanup).toHaveBeenCalledWith(ID, [OLD]);
+    expect(t.files.has(`${OLD}/story.png`)).toBe(false);
+    expect(t.files.has(`${OLD}/og.png`)).toBe(false);
   });
   it('từ chối job sai hash bằng InvalidTicketJob', async () => {
     const t = setup();
