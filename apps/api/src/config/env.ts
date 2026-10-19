@@ -4,6 +4,15 @@ import { isIP } from 'node:net';
 const csv = (s: string) => s.split(',').map((v) => v.trim()).filter(Boolean);
 const httpUrl = (fallback: string) =>
   z.url({ protocol: /^https?$/ }).default(fallback).transform((s) => s.replace(/\/+$/, ''));
+/** Trình duyệt gửi Origin dạng `https://host[:port]`, chữ thường, không có `/` cuối; so sánh chính xác nên phải chuẩn hoá trước (S26). */
+const webOrigin = z.string().transform((value, ctx) => {
+  const url = URL.canParse(value) ? new URL(value) : null;
+  if (url && (url.protocol === 'http:' || url.protocol === 'https:') && url.pathname === '/' && !url.search && !url.hash && !url.username && !url.password) {
+    return url.origin;
+  }
+  ctx.addIssue({ code: 'custom', message: 'Mỗi nguồn phải là origin http(s), ví dụ https://admin.ranhduong.vn' });
+  return z.NEVER;
+});
 
 const EnvSchema = z.object({
   API_PORT: z.coerce.number().int().default(3101),
@@ -19,7 +28,8 @@ const EnvSchema = z.object({
     return version > 0 && extra === undefined && (bits === undefined || /^\d+$/.test(bits) && Number(bits) <= (version === 4 ? 32 : 128));
   }, 'Proxy phải là IP hoặc CIDR hợp lệ'))),
   /** Các nguồn được gọi API kèm cookie: web khách và admin, cách nhau bằng dấu phẩy. */
-  WEB_ORIGINS: z.string().default('http://localhost:3100,http://localhost:5174').transform(csv),
+  WEB_ORIGINS: z.string().default('http://localhost:3100,http://localhost:5174').transform(csv)
+    .pipe(z.array(webOrigin).min(1, 'Cần ít nhất một nguồn')),
   /** Email được vào admin (S04), cách nhau bằng dấu phẩy, không phân biệt hoa thường. Để trống thì không ai vào được. */
   ADMIN_EMAILS: z.string().default('').transform((s) => csv(s).map((e) => e.toLowerCase())),
   GOOGLE_CLIENT_ID: z.string().min(1),

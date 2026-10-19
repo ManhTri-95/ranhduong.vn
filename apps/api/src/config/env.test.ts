@@ -64,6 +64,14 @@ describe('loadEnv', () => {
     expect(loadEnv({ ...REQUIRED, SESSION_COOKIE_DOMAIN: '.ranhduong.vn' }).SESSION_COOKIE_DOMAIN).toBe('.ranhduong.vn');
   });
 
+  it('S26 WEB_ORIGINS chỉ nhận origin http(s), bỏ dấu / cuối và chữ hoa', () => {
+    expect(loadEnv({ ...REQUIRED, WEB_ORIGINS: 'https://ranhduong.vn/, https://Admin.ranhduong.vn' }).WEB_ORIGINS)
+      .toEqual(['https://ranhduong.vn', 'https://admin.ranhduong.vn']);
+    for (const bad of ['https://admin.ranhduong.vn/dang-nhap', '*', 'admin.ranhduong.vn', 'ftp://ranhduong.vn', 'https://ranhduong.vn?x=1', ' , ']) {
+      expect(() => loadEnv({ ...REQUIRED, WEB_ORIGINS: bad }), bad).toThrow(/WEB_ORIGINS/);
+    }
+  });
+
   it('thiếu thông tin Google thì dừng với lỗi nêu đúng tên biến', () => {
     expect(() => loadEnv({ MONGODB_URI: REQUIRED.MONGODB_URI })).toThrow(/GOOGLE_CLIENT_ID/);
   });
