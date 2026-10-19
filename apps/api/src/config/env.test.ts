@@ -67,7 +67,7 @@ describe('loadEnv', () => {
   it('S26 WEB_ORIGINS chỉ nhận origin http(s), bỏ dấu / cuối và chữ hoa', () => {
     expect(loadEnv({ ...REQUIRED, WEB_ORIGINS: 'https://ranhduong.vn/, https://Admin.ranhduong.vn' }).WEB_ORIGINS)
       .toEqual(['https://ranhduong.vn', 'https://admin.ranhduong.vn']);
-    for (const bad of ['https://admin.ranhduong.vn/dang-nhap', '*', 'admin.ranhduong.vn', 'ftp://ranhduong.vn', 'https://ranhduong.vn?x=1', ' , ']) {
+    for (const bad of ['https://admin.ranhduong.vn/dang-nhap', '*', 'https://*.ranhduong.vn', 'admin.ranhduong.vn', 'ftp://ranhduong.vn', 'https://ranhduong.vn?x=1', ' , ']) {
       expect(() => loadEnv({ ...REQUIRED, WEB_ORIGINS: bad }), bad).toThrow(/WEB_ORIGINS/);
     }
   });

@@ -7,10 +7,12 @@ const httpUrl = (fallback: string) =>
 /** Trình duyệt gửi Origin dạng `https://host[:port]`, chữ thường, không có `/` cuối; so sánh chính xác nên phải chuẩn hoá trước (S26). */
 const webOrigin = z.string().transform((value, ctx) => {
   const url = URL.canParse(value) ? new URL(value) : null;
-  if (url && (url.protocol === 'http:' || url.protocol === 'https:') && url.pathname === '/' && !url.search && !url.hash && !url.username && !url.password) {
+  // URL chấp nhận host có `*`, nhưng CORS/OriginGuard so sánh chính xác nên wildcard không bao giờ khớp.
+  if (url && (url.protocol === 'http:' || url.protocol === 'https:') && url.pathname === '/' && !url.search && !url.hash
+    && !url.username && !url.password && !url.hostname.includes('*')) {
     return url.origin;
   }
-  ctx.addIssue({ code: 'custom', message: 'Mỗi nguồn phải là origin http(s), ví dụ https://admin.ranhduong.vn' });
+  ctx.addIssue({ code: 'custom', message: `"${value}" không phải origin http(s) cụ thể, ví dụ https://admin.ranhduong.vn` });
   return z.NEVER;
 });
 
