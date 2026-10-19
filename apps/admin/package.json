@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite --port 5174",
     "build": "vite build",
+    "build:pages": "vite build --mode pages",
     "preview": "vite preview --port 5174",
     "lint": "eslint . --max-warnings 0",
     "test": "vitest run",

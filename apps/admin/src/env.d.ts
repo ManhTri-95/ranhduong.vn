@@ -11,5 +11,7 @@ interface ImportMetaEnv {
   readonly VITE_MAP_STYLE_URL?: string;
   /** Web khách (link "Xem trên web"); mặc định http://localhost:3100. */
   readonly VITE_WEB_BASE?: string;
+  /** Chỉ dùng lúc build `pages` để mở CSP cho URL upload presigned; mặc định https://*.r2.cloudflarestorage.com. */
+  readonly VITE_UPLOAD_ORIGIN?: string;
 }
 interface ImportMeta { readonly env: ImportMetaEnv }
