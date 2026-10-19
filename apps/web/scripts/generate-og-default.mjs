@@ -1,4 +1,4 @@
-import { readFile, mkdir } from 'node:fs/promises';
+import { readFile, mkdir, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 
@@ -15,5 +15,9 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" v
 <text x="90" y="330" font-size="44">Ghi chép của người rành đường</text>
 <text x="90" y="530" font-size="32">ranhduong.vn</text>
 </g></svg>`;
-await mkdir(new URL('../public/', import.meta.url), { recursive: true });
-await sharp(Buffer.from(svg)).png().toFile(fileURLToPath(new URL('../public/og-default.png', import.meta.url)));
+const png = await sharp(Buffer.from(svg)).png().toBuffer();
+// S30: API trả cùng ảnh này làm OG khi vé lịch trình chưa sinh xong.
+for (const dir of ['../public/', '../../api/assets/ticket/']) {
+  await mkdir(new URL(dir, import.meta.url), { recursive: true });
+  await writeFile(fileURLToPath(new URL(`${dir}og-default.png`, import.meta.url)), png);
+}
