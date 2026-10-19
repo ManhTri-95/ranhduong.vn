@@ -46,7 +46,7 @@ MVP chạy không cần hợp tác với quán; voucher, QR tại quầy và gó
 **MVP ra mắt theo 4 lát, mỗi lát dùng được ngay:**
 
 1. Lát 1: bản đồ, trang địa điểm, danh sách curate, 5 lịch trình mẫu tĩnh, SEO, công cụ nhập liệu, bản đồ phong cách sổ tay, giao diện theo mùa và thời tiết. Ra mắt trước 15/11/2026 để đón mùa dã quỳ và cao điểm cuối năm. Chi tiết: [Backlog lát 1: Cẩm nang số Đà Lạt](backlog.md).
-2. Lát 2: tạo lịch trình theo yêu cầu, đổi điểm, chia sẻ, vé lịch trình dạng ảnh để gửi Zalo và đăng story.
+2. Lát 2: tạo lịch trình theo yêu cầu, đổi điểm, chia sẻ, vé lịch trình dạng ảnh để gửi Zalo và đăng story. Chi tiết: [Backlog lát 2](backlog-slice-2.md).
 3. Lát 3: đăng nhập cho khách, đóng góp, hàng chờ duyệt.
 4. Lát 4: check-in, tích điểm, quà, sổ tem.
 

@@ -24,7 +24,7 @@ Lát 1 chỉ gồm phần đọc cho khách và công cụ nhập liệu cho b�
 
 | Trong lát 1 | Để lát sau |
 | --- | --- |
-| Bản đồ, trang chủ thành phố, danh mục, khu vực, trang địa điểm | Tạo lịch trình theo yêu cầu, đổi điểm, tối ưu lại, vé chia sẻ lịch trình (lát 2) |
+| Bản đồ, trang chủ thành phố, danh mục, khu vực, trang địa điểm | Tạo lịch trình theo yêu cầu, đổi điểm, tối ưu lại, vé chia sẻ lịch trình (lát 2, [backlog lát 2](backlog-slice-2.md)) |
 | Tìm kiếm không dấu | Đăng nhập cho khách, đóng góp, hàng chờ duyệt (lát 3) |
 | Danh sách curate, 5 lịch trình mẫu tĩnh | Check-in, điểm, quà, voucher, sổ tem (lát 4) |
 | Công cụ nhập liệu cho admin | Trang chủ quán, nhận quản lý địa điểm |
