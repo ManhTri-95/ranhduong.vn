@@ -3,7 +3,8 @@ import { UploadId } from '@ranhduong/contracts';
 import { UnrecoverableError, Worker } from 'bullmq';
 import { ENV, type Env } from '../../config/env';
 import { InvalidPhoto } from './media-image';
-import { MEDIA_QUEUE, MEDIA_QUEUE_PREFIX, mediaRedisOptions } from './media.queue';
+import { queueRedisOptions } from '../../shared/redis/queue-connection';
+import { MEDIA_QUEUE, MEDIA_QUEUE_PREFIX } from './media.queue';
 import { MediaService } from './media.service';
 
 @Injectable()
@@ -22,7 +23,7 @@ export class MediaProcessor implements OnModuleInit, OnApplicationShutdown {
         if (err instanceof InvalidPhoto) throw new UnrecoverableError(err.message);
         throw err;
       }
-    }, { prefix: this.prefix, connection: { ...mediaRedisOptions(this.env.REDIS_URL), maxRetriesPerRequest: null }, concurrency: 1 });
+    }, { prefix: this.prefix, connection: { ...queueRedisOptions(this.env.REDIS_URL), maxRetriesPerRequest: null }, concurrency: 1 });
     this.worker.on('error', () => this.logger.error('Worker ảnh chưa kết nối được Redis.'));
     this.worker.on('failed', (job, err) => {
       if (job?.name === 'media.delete') return;

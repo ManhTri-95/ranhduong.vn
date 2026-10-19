@@ -1,21 +1,17 @@
 import { Readable } from 'node:stream';
-import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, type S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Inject, Injectable, type OnApplicationShutdown } from '@nestjs/common';
 import { MAX_PHOTO_BYTES, PHOTO_WIDTHS, UPLOAD_URL_TTL_S, photoVariantKey } from '@ranhduong/contracts';
 import { ENV, type Env } from '../../config/env';
+import { createR2Client } from '../../shared/storage/r2-client';
 import { InvalidPhoto } from './media-image';
 
 @Injectable()
 export class MediaStorage implements OnApplicationShutdown {
   private readonly client: S3Client;
   constructor(@Inject(ENV) private readonly env: Env) {
-    this.client = new S3Client({
-      region: 'auto', endpoint: env.R2_ENDPOINT, forcePathStyle: true,
-      credentials: { accessKeyId: env.R2_ACCESS_KEY_ID, secretAccessKey: env.R2_SECRET_ACCESS_KEY },
-      requestChecksumCalculation: 'WHEN_REQUIRED', responseChecksumValidation: 'WHEN_REQUIRED',
-      requestHandler: { connectionTimeout: 5000, requestTimeout: 30_000 },
-    });
+    this.client = createR2Client(env);
   }
   presign(key: string, contentType: string, size: number): Promise<string> {
     return getSignedUrl(this.client, new PutObjectCommand({ Bucket: this.env.R2_UPLOAD_BUCKET, Key: key, ContentType: contentType, ContentLength: size }), {

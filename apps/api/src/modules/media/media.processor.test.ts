@@ -5,7 +5,8 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { testEnv } from '../../testing/env';
 import { connectTestDb, dropTestDb } from '../../testing/mongo';
 import { MediaProcessor } from './media.processor';
-import { MEDIA_QUEUE, MediaQueue, mediaRedisOptions } from './media.queue';
+import { queueRedisOptions } from '../../shared/redis/queue-connection';
+import { MEDIA_QUEUE, MediaQueue } from './media.queue';
 import { MediaRepository } from './media.repository';
 import { MediaService } from './media.service';
 import { MEDIA_UPLOAD_MODEL, MediaUploadSchema } from './schemas/media-upload.schema';
@@ -25,7 +26,7 @@ describe('S06 worker với Mongo/Redis thật, storage giả', () => {
     db = await connectTestDb();
     bytes = await sharp({ create: { width: 1200, height: 600, channels: 3, background: '#123456' } }).png().toBuffer();
     queue = new MediaQueue(env, prefix);
-    inspect = new Queue(MEDIA_QUEUE, { prefix, connection: mediaRedisOptions(env.REDIS_URL) });
+    inspect = new Queue(MEDIA_QUEUE, { prefix, connection: queueRedisOptions(env.REDIS_URL) });
     service = new MediaService(new MediaRepository(db.model(MEDIA_UPLOAD_MODEL, MediaUploadSchema)), {
       presign: async () => 'http://r2.gia-lap.example/upload',
       read: async () => { reads++; if (transientFailures-- > 0) throw new Error('R2 gián đoạn giả lập'); return bytes; },

@@ -1,26 +1,17 @@
 import { Inject, Injectable, Logger, Optional, type OnApplicationShutdown } from '@nestjs/common';
 import { Queue } from 'bullmq';
 import { ENV, type Env } from '../../config/env';
+import { queueRedisOptions } from '../../shared/redis/queue-connection';
 
 export const MEDIA_QUEUE = 'media-scan';
 export const MEDIA_QUEUE_PREFIX = Symbol('MEDIA_QUEUE_PREFIX');
-export function mediaRedisOptions(url: string) {
-  const parsed = new URL(url);
-  return {
-    host: parsed.hostname, port: Number(parsed.port || 6379),
-    username: parsed.username ? decodeURIComponent(parsed.username) : undefined,
-    password: parsed.password ? decodeURIComponent(parsed.password) : undefined,
-    db: Number(parsed.pathname.slice(1) || 0),
-    ...(parsed.protocol === 'rediss:' ? { tls: {} } : {}),
-  };
-}
 
 @Injectable()
 export class MediaQueue implements OnApplicationShutdown {
   private readonly logger = new Logger(MediaQueue.name);
   private readonly queue: Queue;
   constructor(@Inject(ENV) env: Env, @Optional() @Inject(MEDIA_QUEUE_PREFIX) prefix = 'bull') {
-    this.queue = new Queue(MEDIA_QUEUE, { prefix, connection: { ...mediaRedisOptions(env.REDIS_URL), maxRetriesPerRequest: 3 } });
+    this.queue = new Queue(MEDIA_QUEUE, { prefix, connection: { ...queueRedisOptions(env.REDIS_URL), maxRetriesPerRequest: 3 } });
     this.queue.on('error', () => this.logger.error('Hàng đợi ảnh chưa kết nối được Redis.'));
   }
   async enqueue(uploadId: string): Promise<void> {
