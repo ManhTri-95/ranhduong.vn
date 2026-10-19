@@ -42,7 +42,8 @@ export const TicketData = z.object({
   stops: z.array(TicketStop).max(TICKET_MAX_STOPS),
   stopTotal: z.number().int().nonnegative(),
   shortLink: z.string().min(1),
-  qrUrl: z.httpUrl(),
+  // z.httpUrl() bắt hostname có đuôi tên miền, chặn mất web local và staging theo IP; chỉ cần đúng giao thức http(s).
+  qrUrl: z.url({ protocol: /^https?$/ }),
 }).refine((data) => data.stopTotal >= data.stops.length, { path: ['stopTotal'], message: 'stopTotal nhỏ hơn số điểm hiện trên vé' });
 export type TicketData = z.infer<typeof TicketData>;
 

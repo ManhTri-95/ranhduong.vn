@@ -27,6 +27,11 @@ describe('S30 ticket contracts', () => {
     expect(TicketData.safeParse({ ...data, stopTotal: 1 }).success).toBe(false);
     expect(TicketData.safeParse({ ...data, qrUrl: 'javascript:alert(1)' }).success).toBe(false);
   });
+  it('QR nhận web local và staging theo IP, không chỉ tên miền có đuôi', () => {
+    for (const qrUrl of ['http://localhost:3100/da-lat/lich-trinh/gia-lap?utm_source=ticket', 'http://127.0.0.1:3100/da-lat/lich-trinh/gia-lap?utm_source=ticket']) {
+      expect(TicketData.safeParse({ ...data, qrUrl }).success, qrUrl).toBe(true);
+    }
+  });
   it('TicketJob cần itineraryId dạng ObjectId và hash hợp lệ', () => {
     expect(TicketJob.safeParse({ itineraryId: '0123456789abcdef01234567', hash: 'b'.repeat(32), data }).success).toBe(true);
     expect(TicketJob.safeParse({ itineraryId: 'lich-trinh-gia-lap', hash: 'b'.repeat(32), data }).success).toBe(false);
