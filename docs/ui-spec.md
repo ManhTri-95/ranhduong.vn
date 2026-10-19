@@ -96,6 +96,8 @@ Viết như một người bạn rành Đà Lạt nhắn tin chỉ chỗ: ngắn
 | Thời tiết | Chiều nay mưa, ghé quán trong nhà cho ấm. | Cảnh báo: có mưa. |
 | Xác minh | Đã hỏi lại ngày 12/10/2026 | Verified |
 | Vé chia sẻ | Mình đi theo lịch này nè, bạn đi chung không? | Chia sẻ lịch trình của bạn |
+| Thiếu điểm khi tạo lịch trình | Khu này mình chưa ghi đủ chỗ cho 3 ngày. Thử 2 ngày, hoặc bỏ bớt một gu nhé? | Không đủ dữ liệu (NOT_ENOUGH_PLACES) |
+| Chọn nơi ở | Bạn ở khu nào? Chưa đặt chỗ thì bỏ qua cũng được. | Nhập địa chỉ lưu trú |
 
 Ghi chú địa phương lưu trong `practicalNotes` của địa điểm, do bạn tự viết từ thông tin thu thập; không chép nguyên văn review của người khác.
 
@@ -157,9 +159,10 @@ Sáu màn hình trong bản mẫu; URL theo mục 11 tài liệu thiết kế k�
 | --- | --- | --- | --- |
 | Trang chủ thành phố | `/da-lat` | Header (logo, chọn thành phố) · tiêu đề "Đà Lạt hôm nay ghé đâu?" và một dòng giới thiệu · tìm kiếm · chip danh mục một hàng cuộn ngang · Đà Lạt lúc này · Đi theo lịch có sẵn (banner theo mùa đứng đầu, thẻ vé) · Chỗ dân ở đây hay ngồi (4 quán trên điện thoại, 6 trên desktop, "Xem tất cả trên bản đồ") · Theo khu vực · Gợi ý theo chủ đề · nút nổi "Xem bản đồ". Desktop: phần đầu hai cột (tiêu đề, tìm kiếm, chip / Đà Lạt lúc này) khi có thời tiết | 1 |
 | Bản đồ | `/da-lat/ban-do` | Bản đồ phong cách sổ tay toàn màn hình · header nổi: nút quay lại, tiêu đề, một hàng chip cuộn ngang ("Trú mưa được" đứng đầu, rồi danh mục) · nút zoom dưới header · ghim · bottom sheet danh sách/thẻ địa điểm. Chọn ghim hoặc nút ghim trên thẻ thì sheet về mức nửa và hiện thẻ; bản đồ chỉ dịch khi ghim bị header, sheet hoặc mép màn hình che. Bấm Back từ trang địa điểm thì giữ khung nhìn, ghim đang chọn, mức sheet và vị trí cuộn danh sách (trạng thái trong phiên, không ghi vào URL để không làm phình cache SWR) | 1 |
-| Lịch trình | `/da-lat/lich-trinh/{slug}`, `/l/{shareId}` | Eyebrow "Lịch trình · số ngày", tiêu đề, chip phương tiện, nhịp độ, mùa, phong cách · dòng tổng quan "{n} điểm · {m} bữa ăn · khu vực" · mô tả 3 dòng + "Đọc thêm" · thanh ngày dính + Lịch, Bản đồ · mốc theo giờ nối nét đứt · ghi chú · nhãn Đối tác, Tiện đường · Rủ bạn đi cùng · thanh hành động: Chia sẻ + Chỉ đường điểm đang xem (lát 2: Tạo vé để chia sẻ) | 1 (mẫu), 2 (tạo theo yêu cầu, vé) |
+| Lịch trình | `/da-lat/lich-trinh/{slug}`, `/l/{shareId}` | Eyebrow "Lịch trình · số ngày", tiêu đề, chip phương tiện, nhịp độ, mùa, phong cách · dòng tổng quan "{n} điểm · {m} bữa ăn · khu vực" · mô tả 3 dòng + "Đọc thêm" · thanh ngày dính + Lịch, Bản đồ · mốc theo giờ nối nét đứt · ghi chú · nhãn Đối tác, Tiện đường · Rủ bạn đi cùng · thanh hành động: Chia sẻ + Chỉ đường điểm đang xem (lát 2: Tạo vé để chia sẻ). Riêng `/l/{shareId}` (lát 2): không hiện nơi ở; người tạo có nút Sửa mở chế độ sửa (kéo thả và nút lên/xuống, chuyển ngày, khoá, Đổi điểm khác tương tự với 3 gợi ý, Tối ưu lại, thêm điểm Tiện đường; báo khi bản đã cũ và tải lại bản mới); người xem có nút Tạo bản của mình | 1 (mẫu), 2 (tạo theo yêu cầu, vé) |
+| Tạo lịch trình | `/da-lat/tao-lich-trinh` | Tiêu đề và một dòng giới thiệu · các bước bằng chip/nút: số ngày (1–5), ngày đi, phương tiện, đi cùng ai, gu (tối đa 3), nhịp độ, nơi ở (ghim trên bản đồ hoặc chọn cụm, "Bỏ qua") · nút chính "Lên lịch giúp mình" · trạng thái đang tạo (khung xương timeline), thiếu điểm (câu ở mục 3 + nút áp dụng gợi ý), lỗi mạng (giữ lựa chọn, nút Thử lại) | 2 |
 | Địa điểm | `/da-lat/dia-diem/{slug}` | Ảnh bìa (ảnh còn lại một hàng cuộn ngang) + tem góc phải · danh mục, khu vực · tên · địa chỉ · trạng thái mở cửa, lời nhắc chưa xác nhận, ngày xác minh · chip thuộc tính · Người địa phương nói · thẻ giờ mở cửa (hôm nay + "Giờ từng ngày" thu gọn, tô dòng hôm nay) · Liên hệ · Tiện đường ghé thêm (3 thẻ gọn + "Xem thêm gần đây") · lời mời check-in lấy tem · bản đồ nhỏ · nguồn ảnh · thanh Chỉ đường + Gọi ("Lưu" chờ có đăng nhập cho khách) | 1 (tem trang trí: khi có minh hoạ) |
-| Vé lịch trình | Ảnh tạo từ `/l/{shareId}` | Xem mục 9 | 2 |
+| Vé lịch trình | Ảnh tạo từ trang lịch trình mẫu và `/l/{shareId}` | Xem mục 9 | 2 |
 | Sổ tem | `/da-lat/so-tem` (cần đăng nhập) | Tiêu đề, tiến độ "Đã có x/y tem" · lưới tem 3 cột · ghi chú | 4 |
 
 **Trạng thái cần thiết kế:**
@@ -261,12 +264,12 @@ Mỗi lịch trình sinh được một ảnh kiểu vé tàu để khách lưu,
 
 **Kích thước:** story 1080×1920 (tỉ lệ 9:16); ảnh xem trước 1200×630 (bản rút gọn: tên lịch trình, 3 điểm đầu, logo).
 
-**Nội dung (từ trên xuống):** logo Rành Đường và tên thành phố trên nền `--ink` · thẻ vé nền `--paper-raised`: dòng nhỏ "VÉ LỊCH TRÌNH · số ngày", tên lịch trình (Lora), chip mùa và phương tiện · danh sách điểm theo giờ nối nét đứt, điểm cuối màu `--accent` (tối đa 8 điểm, nhiều hơn thì ghi "+ x điểm") · đường răng cưa có hai khuyết tròn hai bên · cuống vé: câu viết tay "Mình đi theo lịch này nè, bạn đi chung không?", đường dẫn rút gọn, mã QR trỏ tới `/l/{shareId}`.
+**Nội dung (từ trên xuống):** logo Rành Đường và tên thành phố trên nền `--ink` · thẻ vé nền `--paper-raised`: dòng nhỏ "VÉ LỊCH TRÌNH · số ngày", tên lịch trình (Lora), chip mùa và phương tiện · danh sách điểm theo giờ nối nét đứt, điểm cuối màu `--accent` (tối đa 8 điểm, nhiều hơn thì ghi "+ x điểm") · đường răng cưa có hai khuyết tròn hai bên · cuống vé: câu viết tay "Mình đi theo lịch này nè, bạn đi chung không?", đường dẫn rút gọn, mã QR trỏ tới `/l/{shareId}` (lịch trình của khách) hoặc trang lịch trình mẫu. Vé không bao giờ chứa nơi ở của khách.
 
 **Cách sinh ảnh:**
 
-- Server dựng mẫu bằng Satori (HTML/JSX sang SVG) rồi chuyển sang PNG bằng resvg, chạy trong worker; nhúng sẵn file font Lora, Be Vietnam Pro, Patrick Hand có bộ ký tự tiếng Việt.
-- Endpoint `GET /v1/itineraries/:id/ticket.png?format=story|og`; ảnh lưu trên R2 theo khoá `id + updatedAt`, chỉ sinh lại khi lịch trình thay đổi.
+- Server dựng mẫu bằng Satori (HTML/JSX sang SVG) rồi chuyển sang PNG bằng resvg, chạy trong worker; nhúng sẵn file font Lora, Be Vietnam Pro, Patrick Hand có bộ ký tự tiếng Việt. File font nằm trong repo và chỉ dùng cho vé (web vẫn tải Google Fonts); giấy phép từng font ghi ở trang `/ghi-nguon`.
+- Endpoint `GET /v1/itineraries/:shareId/ticket.png?format=story|og` (lịch trình của khách) và `GET /v1/cities/:city/itineraries/templates/:slug/ticket.png?format=story|og` (lịch trình mẫu). Ảnh lưu trên R2 theo hash nội dung vé, chỉ sinh khi bấm "Tạo vé để chia sẻ" hoặc khi ảnh OG được gọi lần đầu; chưa có ảnh thì OG dùng ảnh mặc định. Nội dung vé không đổi thì không sinh lại.
 - QR trỏ tới link có `utm_source=ticket` để đo lượt quay lại từ vé.
 
 **Chia sẻ trên web:** nút "Tạo vé để chia sẻ" mở màn xem trước vé; trên điện thoại dùng Web Share API gửi kèm file ảnh (chọn được Zalo, Messenger, Instagram trong bảng chia sẻ của máy); trình duyệt không hỗ trợ thì hiện nút "Lưu ảnh" và "Sao chép link".
@@ -323,7 +326,7 @@ Quản trị dùng cùng token với web khách nhưng dày thông tin hơn: ch�
 | Danh sách địa điểm | `admin.ranhduong.vn/dia-diem` | Desktop | Tab trạng thái có số đếm (Tất cả, Nháp, Đang hiển thị, Bị nghi ngờ, Cần xác minh lại, Ẩn hoặc đã đóng); tìm theo tên và tên khác, không dấu; lọc cụm (cả "Chưa chọn cụm"), danh mục (tính cả danh mục phụ), nguồn xác nhận; bảng tên, danh mục, cụm, trạng thái, xác nhận, xác minh lần cuối, số ảnh, bấm Tên hoặc Xác minh lần cuối để xếp; nút chính theo trạng thái (Sửa, Hoàn thiện, Xác minh, Hiện lại, Mở lại; Xem báo cáo ở lát 3) và hộp thoại Thao tác khác (Xác minh, Ẩn khỏi web, Đã đóng cửa, Xoá nháp); cột Còn thiếu (điều kiện kích hoạt) và Cập nhật, ô Xếp, Xoá bộ lọc; dưới 768px mỗi dòng là một thẻ; quay lại từ form giữ bộ lọc và vị trí cuộn | S07, S28 |
 | Form địa điểm | `admin.ranhduong.vn/dia-diem/{id}` | Điện thoại trước | Thông tin cơ bản, cảnh báo nghi trùng ngay dưới ô tên; ghim vị trí bằng cách kéo bản đồ; ô dán giờ mở cửa theo mẫu Google Sheet kèm bảng từng ngày (Đóng, Mở cả ngày, thêm ca); tags, mức giá, thời gian tham quan, danh mục phụ (Cũng phục vụ), mái che (che hết, một phần, không), ghi chú thực tế; ảnh bắt buộc chọn nguồn; xác nhận (quán, Facebook, điểm công cộng); thanh dưới dính: Bỏ thay đổi, Lưu nháp, Kích hoạt; tự lưu nháp; từ 1024px hai cột, cột phụ gồm điều kiện kích hoạt (link tới mục), Xác minh (nguồn, ngày xác minh, Đánh dấu đã xác minh), Trên web (Ẩn, Đã đóng cửa, Hiện lại, Mở lại, Xoá nháp; khoá khi còn thay đổi chưa lưu) | S05, S06, S28 |
 | Import CSV | `admin.ranhduong.vn/import` | Desktop | 3 bước (Tải file, Kiểm tra, Tạo nháp); tóm tắt sẵn sàng, lỗi, nghi trùng; bảng lỗi kèm cách sửa; bảng nghi trùng với Bỏ qua dòng hoặc Vẫn tạo | S21 |
-| Soạn lịch trình mẫu | `admin.ranhduong.vn/lich-trinh/{id}` | Desktop | Đầu trang: tên lịch trình, trạng thái, tóm tắt, số lỗi và nhắc nhở (bấm để tới vấn đề đầu tiên); khung Thông tin lịch trình gập được (mùa, phong cách, phương tiện, nhịp độ, slug, Google); từ 1024px hai cột: lịch trình theo ngày (mỗi điểm một hàng gọn, mở từng điểm để sửa) và cột phải có tab Kho địa điểm kéo thả, Xem trước điện thoại và Google; thanh lưu dính; hỏi lại khi công khai lần đầu và khi chuyển về nháp | S15, S28 |
+| Soạn lịch trình mẫu | `admin.ranhduong.vn/lich-trinh/{id}` | Desktop | Đầu trang: tên lịch trình, trạng thái, tóm tắt, số lỗi và nhắc nhở (bấm để tới vấn đề đầu tiên); khung Thông tin lịch trình gập được (mùa, phong cách, phương tiện, nhịp độ, gu (tối đa 3), đi cùng ai (S32), slug, Google); từ 1024px hai cột: lịch trình theo ngày (mỗi điểm một hàng gọn, mở từng điểm để sửa) và cột phải có tab Kho địa điểm kéo thả, Xem trước điện thoại và Google; thanh lưu dính; hỏi lại khi công khai lần đầu và khi chuyển về nháp | S15, S28 |
 
 **Khung quản trị (S28, S21):** từ 1280px thanh bên 232px dính, chia nhóm Nội dung (Địa điểm, Import CSV, Lịch trình mẫu, Danh sách gợi ý) và Vận hành (Báo cáo, Mùa & giao diện); dưới 1280px thanh trên 56px và ngăn trượt. Mọi nút trong admin cao 44px (khác nút 52px của web khách ở mục 4). Hỏi lại bằng hộp thoại của admin, không dùng `window.confirm`; thông báo thành công hiện ở đáy màn hình. Component dùng chung ở `apps/admin/src/shared/ui`, class `rd-admin-…` trong `packages/ui/src/admin.css`.
 
@@ -371,14 +374,15 @@ Toàn bộ UI trong tài liệu được làm, nhưng chia theo lát để lát 
 | Ô thời tiết và chế độ mưa | 1 (P1) | S24 | 4 giờ |
 | Chuyển động | 1 (P1) | S25 | 3 giờ |
 | Tem trang trí trên trang địa điểm | 1 nếu kịp có hình vẽ, nếu không thì lát 2 | — | Phụ thuộc hình vẽ |
-| Vé lịch trình để chia sẻ | 2 | Backlog lát 2 | Khoảng 8 giờ |
+| Vé lịch trình để chia sẻ | 2 | S30 | Khoảng 10 giờ |
+| Màn tạo và sửa lịch trình | 2 | S38, S40, S42 | Khoảng 22 giờ |
 | Sổ tem, hiệu ứng đóng dấu | 4 | Backlog lát 4 | — |
 
 **Câu hỏi mở:**
 
 - [x] WeatherAPI Free cho S24 (chủ dự án chốt 12/10/2026); cần cấu hình key trước khi bật dữ liệu thật
 - [ ] Ai vẽ tem: tự vẽ hay thuê hoạ sĩ; ngân sách cho 10–15 tem đầu
-- [ ] Tự host font hay dùng Google Fonts
+- [x] Font: web giữ Google Fonts; vé dùng file font trong repo (19/10/2026)
 - [ ] Toạ độ khung nhìn bản đồ cho Đà Lạt
 - [ ] Ngày bắt đầu và kết thúc từng mùa cho năm 2026–2027
 - [x] Tên miền chính thức: đã chốt ranhduong.vn
