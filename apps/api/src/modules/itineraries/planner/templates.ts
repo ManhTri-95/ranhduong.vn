@@ -52,7 +52,11 @@ export function planFromTemplate(template: PlanTemplate, ctx: PlanContext): { ok
       ...kept.filter((s) => !fixed.includes(s)),
       ...day.visits.filter((v) => !keptIds.has(v.place.id) && v.place.zoneId !== undefined && dayZones.includes(v.place.zoneId)),
     ];
-    const picks = pickVisits([...[...fixed].sort(byScore), ...rest.sort(byScore)], day.target, used);
+    // Bằng điểm thì điểm của mẫu đứng trước: lúc chưa có số liệu phổ biến, điểm số hay hoà và không được thay điểm đã curate bằng id nhỏ hơn.
+    const keptFirst = (a: ScoredPlace, b: ScoredPlace) => (Math.abs(a.score - b.score) > EPS
+      ? b.score - a.score
+      : Number(keptIds.has(b.place.id)) - Number(keptIds.has(a.place.id)) || byScore(a, b));
+    const picks = pickVisits([...[...fixed].sort(byScore), ...rest.sort(keptFirst)], day.target, used);
     if (picks.length < MIN_VISITS_PER_DAY) return { ok: false };
     picks.forEach((pick) => used.add(pick.place.id));
     days.push({ zoneIds: dayZones.filter((zoneId) => picks.some((pick) => pick.place.zoneId === zoneId)), picks });

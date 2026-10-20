@@ -41,6 +41,15 @@ describe('planFromTemplate', () => {
     const r = planFromTemplate(fakeTemplate('t', ['chill_cafe'], [fitting.map((p) => p.id)]), prepare(input));
     expect(r.ok && r.days[0]?.picks.map((p) => p.place.id).sort()).toEqual(fitting.map((p) => p.id).sort());
   });
+  it('chưa có số liệu phổ biến: điểm của mẫu không hợp gu vẫn thắng điểm mới cùng điểm số', () => {
+    const curated = placesIn(0, 4, 10);
+    const places = [...placesIn(0, 4, 1), ...curated];
+    const expected = curated.map((p) => p.name).sort();
+    const withGu = planFromTemplate(fakeTemplate('t', ['photo_spots'], [curated.map((p) => p.id)]), prepare(planInput({ request: fakeRequest({ tags: ['photo_spots'] }), places })));
+    expect(names(withGu)).toEqual(expected);
+    const family = planFromTemplate(fakeTemplate('t', [], [curated.map((p) => p.id)], 'family'), prepare(planInput({ request: fakeRequest({ with: 'family' }), places })));
+    expect(names(family)).toEqual(expected);
+  });
   it('bỏ điểm bữa ăn, điểm không còn trong snapshot và điểm đã có ở ngày trước', () => {
     const base = fakeTemplate('t', [], [ids(1, 2, 3, 4), ids(1, 6, 7, 8)]);
     const template: PlanTemplate = {

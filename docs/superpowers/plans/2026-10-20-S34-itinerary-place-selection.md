@@ -58,11 +58,11 @@ Tài liệu chưa chốt các điểm dưới; plan chọn giá trị khởi đ�
 **Interfaces:**
 - Produces: `ZoneInput.adjacentZones: string[]` (`z.array(Slug).default([])`); `ItineraryZone = ZoneRef.extend({ adjacentZones: z.array(Slug) })`; `CitiesService.itineraryZones(cityId: string): Promise<ItineraryZone[]>` theo thứ tự seed (`_id` tăng), document cũ thiếu trường trả `[]`.
 
-- [ ] **Step 1: Tạo nhánh**
+- [x] **Step 1: Tạo nhánh**
 
 Run: `git switch -c feat/S34-itinerary-place-selection`
 
-- [ ] **Step 2: Viết test đỏ cho `CitySeed`** (`city.test.ts`, dùng `SEED`/`issuePaths` sẵn có)
+- [x] **Step 2: Viết test đỏ cho `CitySeed`** (`city.test.ts`, dùng `SEED`/`issuePaths` sẵn có)
 
 ```ts
 it('adjacentZones mặc định rỗng', () => expect(CitySeed.parse(SEED).zones[0]?.adjacentZones).toEqual([]));
@@ -81,7 +81,7 @@ it.each([
 });
 ```
 
-- [ ] **Step 3: Viết test đỏ cho seed** (`da-lat.test.ts`)
+- [x] **Step 3: Viết test đỏ cho seed** (`da-lat.test.ts`)
 
 ```ts
 it('bảng kề đúng quyết định 19/10/2026, không ghép Bắc–Đông', () => {
@@ -99,18 +99,18 @@ it('itineraryZones đọc lại bảng kề theo thứ tự seed; seed lại th�
 });
 ```
 
-- [ ] **Step 4: Chạy test, thấy đỏ**
+- [x] **Step 4: Chạy test, thấy đỏ**
 
 Run: `pnpm --filter @ranhduong/contracts test -- city.test.ts` và `pnpm infra:up; pnpm --filter @ranhduong/api test -- da-lat.test.ts`
 Expected: FAIL (thiếu `adjacentZones`, thiếu `itineraryZones`).
 
-- [ ] **Step 5: Triển khai**
+- [x] **Step 5: Triển khai**
 
 `ZoneInput` thêm `adjacentZones`; `CitySeed.superRefine` kiểm từng cụm (path `['zones', i, 'adjacentZones']`, thông điệp tiếng Việt): slug có trong seed, khác chính nó, không lặp, cụm kia kề lại. Export `ItineraryZone`. `ZoneSchema` thêm `adjacentZones: { type: [String], default: [] }`; `upsertZone` `$set` cả `adjacentZones` (seed là nguồn); repository `listItineraryZones(cityId)` chiếu `slug, name, adjacentZones`, sort `_id`; service `itineraryZones` trả `ItineraryZone[]`. Seed `ZONES` thêm `adjacentZones: DalatZone[]` theo Global Constraints, comment ghi nguồn quyết định 2 và "ranh giới đổi thì sửa bảng kề".
 
-- [ ] **Step 6: Chạy lại test, thấy xanh** — cùng lệnh Step 4, Expected: PASS, các test seed cũ vẫn xanh.
+- [x] **Step 6: Chạy lại test, thấy xanh** — cùng lệnh Step 4, Expected: PASS, các test seed cũ vẫn xanh.
 
-- [ ] **Step 7: Commit** — `git commit -m "feat: S34 store zone adjacency in city data"`
+- [x] **Step 7: Commit** — `git commit -m "feat: S34 store zone adjacency in city data"`
 
 ### Task 2: Contracts cho mùa mưa và dữ liệu planner
 
@@ -127,7 +127,7 @@ Expected: FAIL (thiếu `adjacentZones`, thiếu `itineraryZones`).
   - `PlanShortage = { day: int 1–5, zoneSlugs: Slug[] (có thể rỗng: không còn cụm), available: int ≥ 0 }`.
   - `NotEnoughPlacesDetails = { shortages: PlanShortage[] (min 1), suggestions: PlanSuggestion[] }`.
 
-- [ ] **Step 1: Viết test đỏ**
+- [x] **Step 1: Viết test đỏ**
 
 ```ts
 // city-season.test.ts
@@ -152,13 +152,13 @@ it('chỉ mùa mưa mới tính; mùa cũ key mua-mua không có kind vẫn là 
 
 (`SEASON_FIXTURE`: dùng fixture mùa giả có sẵn trong file test, hoặc khai báo một mùa "Giả Lập" đủ trường `CitySeason`.)
 
-- [ ] **Step 2: Chạy test, thấy đỏ** — `pnpm --filter @ranhduong/contracts test -- city-season itinerary-plan`, Expected: FAIL (chưa export).
+- [x] **Step 2: Chạy test, thấy đỏ** — `pnpm --filter @ranhduong/contracts test -- city-season itinerary-plan`, Expected: FAIL (chưa export).
 
-- [ ] **Step 3: Triển khai** theo Interfaces; `itinerary-plan.ts` import `TemplatePlace` từ `itinerary-admin.js`.
+- [x] **Step 3: Triển khai** theo Interfaces; `itinerary-plan.ts` import `TemplatePlace` từ `itinerary-admin.js`.
 
-- [ ] **Step 4: Chạy lại test** — Expected: PASS, test `selectCitySeason` cũ vẫn xanh.
+- [x] **Step 4: Chạy lại test** — Expected: PASS, test `selectCitySeason` cũ vẫn xanh.
 
-- [ ] **Step 5: Commit** — `git commit -m "feat: S34 add rain season helper and planner contracts"`
+- [x] **Step 5: Commit** — `git commit -m "feat: S34 add rain season helper and planner contracts"`
 
 ### Task 3: Lịch chuyến và lọc ứng viên
 
@@ -176,7 +176,7 @@ it('chỉ mùa mưa mới tính; mùa cũ key mua-mua không có kind vẫn là 
   - `LEISURE_CATEGORIES = ['cafe', 'shop']`, `LEISURE_TAGS = ['dac-san']`; `isLeisurePlace(place)`.
   - Fixture: `NOW = new Date('2026-11-20T03:00:00Z')`; `ZONES: ItineraryZone[]` bốn cụm "Cụm … Giả Lập" theo đồ thị Đà Lạt (thứ tự trung tâm, nam, bắc, đông); `fakePlace(n, overrides?)` (id 24 hex từ `n`, tên `Điểm Giả Lập n`, `attraction`, `active`, cụm 0, mở 0–6 07:00–22:00, xác minh `NOW − 10 ngày`, mảng rỗng); `placesIn(zoneIndex, count, firstN, overrides?)`; `fakeRequest(overrides?)` (`days: 1`, `startDate: '2026-11-23'` Thứ Hai, `motorbike`, `friends`, `tags: []`, `relaxed`).
 
-- [ ] **Step 1: Viết test đỏ**
+- [x] **Step 1: Viết test đỏ**
 
 ```ts
 it('tripCalendar qua cuối năm', () => {
@@ -211,13 +211,13 @@ it('isVisitPlace/isLeisurePlace theo danh mục và thẻ', () => {
 });
 ```
 
-- [ ] **Step 2: Chạy test, thấy đỏ** — `pnpm --filter @ranhduong/api test -- planner/calendar planner/candidates`, Expected: FAIL (module chưa có).
+- [x] **Step 2: Chạy test, thấy đỏ** — `pnpm --filter @ranhduong/api test -- planner/calendar planner/candidates`, Expected: FAIL (module chưa có).
 
-- [ ] **Step 3: Triển khai** theo Interfaces (dùng `verificationStale`, `openingHoursIssues`, `servesCategory` từ contracts).
+- [x] **Step 3: Triển khai** theo Interfaces (dùng `verificationStale`, `openingHoursIssues`, `servesCategory` từ contracts).
 
-- [ ] **Step 4: Chạy lại test** — Expected: PASS.
+- [x] **Step 4: Chạy lại test** — Expected: PASS.
 
-- [ ] **Step 5: Commit** — `git commit -m "feat: S34 filter itinerary candidates per trip day"`
+- [x] **Step 5: Commit** — `git commit -m "feat: S34 filter itinerary candidates per trip day"`
 
 ### Task 4: Chấm điểm và chọn điểm trong một danh sách
 
@@ -235,7 +235,7 @@ it('isVisitPlace/isLeisurePlace theo danh mục và thẻ', () => {
   - `interface ScoredPlace { place: ItineraryPlace; score: number; match: number }` (`match` = `interestMatch`, Task 6 dùng); `byScore(a, b)`: điểm giảm dần (chênh ≤ `EPS` coi như bằng), rồi `place.id` tăng dần.
   - `pickVisits(ranked: readonly ScoredPlace[], target: number, used: ReadonlySet<string>): ScoredPlace[]` — đi theo thứ tự đã cho, bỏ id đã dùng/đã chọn, bỏ điểm `pin` thứ hai cùng loại, dừng ở `target`.
 
-- [ ] **Step 1: Viết test đỏ**
+- [x] **Step 1: Viết test đỏ**
 
 ```ts
 const req = (tags: TripInterest[], w: TripWith = 'friends') => ({ tags, with: w });
@@ -272,13 +272,13 @@ it('pickVisits bỏ điểm đã dùng và ghim trùng loại, dừng ở target
 it('byScore hoà thì id nhỏ trước', () => { /* hai ScoredPlace cùng score, id 2 và 1 → sort ra 1, 2 */ });
 ```
 
-- [ ] **Step 2: Chạy test, thấy đỏ** — `pnpm --filter @ranhduong/api test -- planner/scoring`, Expected: FAIL.
+- [x] **Step 2: Chạy test, thấy đỏ** — `pnpm --filter @ranhduong/api test -- planner/scoring`, Expected: FAIL.
 
-- [ ] **Step 3: Triển khai** theo Interfaces.
+- [x] **Step 3: Triển khai** theo Interfaces.
 
-- [ ] **Step 4: Chạy lại test** — Expected: PASS.
+- [x] **Step 4: Chạy lại test** — Expected: PASS.
 
-- [ ] **Step 5: Commit** — `git commit -m "feat: S34 score itinerary candidates"`
+- [x] **Step 5: Commit** — `git commit -m "feat: S34 score itinerary candidates"`
 
 ### Task 5: Ngữ cảnh chuyến và gán cụm khi tạo từ đầu
 
@@ -300,7 +300,7 @@ it('byScore hoà thì id nhỏ trước', () => { /* hai ScoredPlace cùng score
   - `interface DayPick { zoneIds: string[]; picks: ScoredPlace[] }`; `type DraftPlan = { ok: true; days: DayPick[] } | { ok: false; shortages: PlanShortage[] }`.
   - `planFromScratch(ctx: PlanContext): DraftPlan` — DFS theo ngày: ngày 1–4 chỉ dùng lựa chọn không chạm cụm đã dùng ở ngày 1–4, không còn lựa chọn thì ngày đó rỗng (`zoneIds: []`); ngày 5 dùng mọi lựa chọn; mỗi ngày `pickVisits(visits ∩ cụm của lựa chọn, target, điểm đã chọn ở các ngày trước)`. Giữ lá tốt nhất theo quyết định 10 (so điểm số bằng `EPS`, chỉ thay khi tốt hơn hẳn). Lá tốt nhất có ngày dưới `MIN_VISITS_PER_DAY` → `shortages` của các ngày đó (`available` = số điểm chọn được).
 
-- [ ] **Step 1: Viết test đỏ**
+- [x] **Step 1: Viết test đỏ**
 
 `plan-context.test.ts`: chuyến 5 ngày `packed` → `days.map((d) => [d.pace, d.target])` là bốn `['packed', 6]` rồi `['relaxed', 4]`; `visits` ngày 5 chỉ có điểm leisure, ngày 1 không có quán `food`; mùa mưa `11-01`→`11-30`, `startDate: '2026-11-29'`, 3 ngày → `rainy` `[true, true, false]`; đổi thứ tự `places` → `prepare` cho cùng `visits`.
 
@@ -354,13 +354,13 @@ it('thiếu điểm: báo cụm và số điểm; thiếu cụm cho ngày 4 thì
 
 (`SEASON_GIA_LAP`: mùa giả đủ trường `CitySeason`, khai báo trong fixture. Ngày `2026-12-07` là Thứ Hai.)
 
-- [ ] **Step 2: Chạy test, thấy đỏ** — `pnpm --filter @ranhduong/api test -- planner/plan-context planner/zones`, Expected: FAIL.
+- [x] **Step 2: Chạy test, thấy đỏ** — `pnpm --filter @ranhduong/api test -- planner/plan-context planner/zones`, Expected: FAIL.
 
-- [ ] **Step 3: Triển khai** theo Interfaces. Thêm vào runbook nháp (Task 8) độ phức tạp: Đà Lạt tối đa vài nghìn lá, mỗi lá một lần `pickVisits`.
+- [x] **Step 3: Triển khai** theo Interfaces. Thêm vào runbook nháp (Task 8) độ phức tạp: Đà Lạt tối đa vài nghìn lá, mỗi lá một lần `pickVisits`.
 
-- [ ] **Step 4: Chạy lại test** — Expected: PASS.
+- [x] **Step 4: Chạy lại test** — Expected: PASS.
 
-- [ ] **Step 5: Commit** — `git commit -m "feat: S34 assign adjacent zones to trip days"`
+- [x] **Step 5: Commit** — `git commit -m "feat: S34 assign adjacent zones to trip days"`
 
 ### Task 6: Mẫu gần nhất và thay điểm không hợp
 
@@ -374,7 +374,7 @@ it('thiếu điểm: báo cụm và số điểm; thiếu cụm cho ngày 4 thì
   - `WITH_MATCH_BONUS = 0.25`; `nearestTemplate(templates: readonly PlanTemplate[], request: Pick<ItineraryRequest, 'days' | 'tags' | 'with'>): PlanTemplate | undefined` (quyết định 6).
   - `planFromTemplate(template: PlanTemplate, ctx: PlanContext): { ok: true; days: DayPick[] } | { ok: false }` — mỗi ngày `i`: điểm `visit` của mẫu có trong `ctx.places`; cụm của ngày = các `zoneId` của chúng theo thứ tự xuất hiện; `kept` = điểm có trong `ctx.days[i].scored` và chưa dùng; `fixed` = `kept` có `match > 0` (hoặc tất cả khi khách không có tiêu chí); `ranked = [...fixed sắp byScore, ...(kept còn lại ∪ visits trong cụm của ngày, chưa nằm trong kept) sắp byScore]`; `picks = pickVisits(ranked, target, used)`; dưới `MIN_VISITS_PER_DAY` → `{ ok: false }`. `zoneIds` = cụm của `picks` theo thứ tự cụm của ngày.
 
-- [ ] **Step 1: Viết test đỏ**
+- [x] **Step 1: Viết test đỏ**
 
 ```ts
 it('nearestTemplate: cùng số ngày, Jaccard cộng 0,25 khi cùng with, hai tập rỗng = 1, hoà lấy id nhỏ', () => {
@@ -402,13 +402,13 @@ it('theo nhịp độ: thong thả cắt còn 4, dày bù tới 6 từ cụm c�
 it('ngày của mẫu dưới 3 điểm thì thất bại', () => { /* mọi điểm của mẫu closed, cụm không còn ứng viên → { ok: false } */ });
 ```
 
-- [ ] **Step 2: Chạy test, thấy đỏ** — `pnpm --filter @ranhduong/api test -- planner/templates`, Expected: FAIL.
+- [x] **Step 2: Chạy test, thấy đỏ** — `pnpm --filter @ranhduong/api test -- planner/templates`, Expected: FAIL.
 
-- [ ] **Step 3: Triển khai** theo Interfaces.
+- [x] **Step 3: Triển khai** theo Interfaces.
 
-- [ ] **Step 4: Chạy lại test** — Expected: PASS.
+- [x] **Step 4: Chạy lại test** — Expected: PASS.
 
-- [ ] **Step 5: Commit** — `git commit -m "feat: S34 adapt nearest itinerary template"`
+- [x] **Step 5: Commit** — `git commit -m "feat: S34 adapt nearest itinerary template"`
 
 ### Task 7: `planItinerary`, thiếu điểm và gợi ý
 
@@ -430,7 +430,7 @@ export function planItinerary(input: PlanInput): PlanResult;
 
 `visits` theo thứ tự chọn (điểm số giảm dần); S35 sắp tuyến. Trình tự: `prepare` → mẫu gần nhất → `planFromTemplate` → không được thì `planFromScratch`. Thất bại thì gợi ý theo quyết định 11, mỗi gợi ý kiểm bằng một lần chạy nội bộ không tính gợi ý (không đệ quy); `shortages` lấy từ lần tạo từ đầu.
 
-- [ ] **Step 1: Viết test đỏ**
+- [x] **Step 1: Viết test đỏ**
 
 ```ts
 it('dùng mẫu gần nhất, trả templateId và dạng ngày cho S35', () => {
@@ -464,13 +464,13 @@ it('không có điểm nào: shortages có, không gợi ý', () => {
 });
 ```
 
-- [ ] **Step 2: Chạy test, thấy đỏ** — `pnpm --filter @ranhduong/api test -- planner/plan-itinerary`, Expected: FAIL.
+- [x] **Step 2: Chạy test, thấy đỏ** — `pnpm --filter @ranhduong/api test -- planner/plan-itinerary`, Expected: FAIL.
 
-- [ ] **Step 3: Triển khai** theo Interfaces; `NotEnoughPlacesDetails.parse` kết quả lỗi trước khi trả.
+- [x] **Step 3: Triển khai** theo Interfaces; `NotEnoughPlacesDetails.parse` kết quả lỗi trước khi trả.
 
-- [ ] **Step 4: Chạy lại toàn bộ test planner** — `pnpm --filter @ranhduong/api test -- planner`, Expected: PASS.
+- [x] **Step 4: Chạy lại toàn bộ test planner** — `pnpm --filter @ranhduong/api test -- planner`, Expected: PASS.
 
-- [ ] **Step 5: Commit** — `git commit -m "feat: S34 plan itinerary days with not-enough-places suggestions"`
+- [x] **Step 5: Commit** — `git commit -m "feat: S34 plan itinerary days with not-enough-places suggestions"`
 
 ### Task 8: Tài liệu, kiểm tra toàn repo và review
 
@@ -478,12 +478,22 @@ it('không có điểm nào: shortages có, không gợi ý', () => {
 - Create: `docs/runbooks/itinerary-place-selection.md`
 - Modify: `docs/technical-design.md` mục 7 (bước 2–6, 12: ghi giá trị khởi đầu của "Quyết định trong plan"), `docs/backlog-slice-2.md` (trạng thái S34), `CLAUDE.md` (Trạng thái)
 
-- [ ] **Step 1: Viết runbook**: planner làm gì và không làm gì (không sắp tuyến/giờ/bữa: S35; không đọc DB: S36/S37), đầu vào/đầu ra `planItinerary`, hằng số, cách S37 nạp `itineraryZones`/mùa/mẫu published/độ phổ biến, yêu cầu dữ liệu (chạy lại `pnpm seed` để ghi `adjacentZones` vào DB đang có; chợ cần `shop` hoặc thẻ `dac-san` để vào ngày 5; `transport` rỗng = cả hai), độ phức tạp, lệnh test.
-- [ ] **Step 2: Cập nhật technical-design mục 7, backlog, CLAUDE.md** — chỉ ghi đúng những gì đã kiểm ở local; staging, điện thoại thật, CI remote ghi là chưa kiểm.
-- [ ] **Step 3: Kiểm toàn repo**
+- [x] **Step 1: Viết runbook**: planner làm gì và không làm gì (không sắp tuyến/giờ/bữa: S35; không đọc DB: S36/S37), đầu vào/đầu ra `planItinerary`, hằng số, cách S37 nạp `itineraryZones`/mùa/mẫu published/độ phổ biến, yêu cầu dữ liệu (chạy lại `pnpm seed` để ghi `adjacentZones` vào DB đang có; chợ cần `shop` hoặc thẻ `dac-san` để vào ngày 5; `transport` rỗng = cả hai), độ phức tạp, lệnh test.
+- [x] **Step 2: Cập nhật technical-design mục 7, backlog, CLAUDE.md** — chỉ ghi đúng những gì đã kiểm ở local; staging, điện thoại thật, CI remote ghi là chưa kiểm.
+- [x] **Step 3: Kiểm toàn repo**
 
 Run: `pnpm infra:up; pnpm turbo run lint typecheck test build`
 Expected: mọi task xanh (20 task như các story trước).
 
-- [ ] **Step 4: Review độc lập** theo `superpowers:requesting-code-review` trên diff nhánh; sửa lỗi có căn cứ, chạy lại Step 3.
-- [ ] **Step 5: Commit** — `git commit -m "docs: S34 record place selection runbook and status"`
+- [x] **Step 4: Review độc lập** theo `superpowers:requesting-code-review` trên diff nhánh; sửa lỗi có căn cứ, chạy lại Step 3.
+- [x] **Step 5: Commit** — `git commit -m "docs: S34 record place selection runbook and status"`
+
+## Execution Record
+
+- Thực thi tuần tự trong phiên (executing-plans) trên nhánh `feat/S34-itinerary-place-selection` của workspace hiện tại, không tạo worktree, theo quy ước các story trước.
+- Task 1–8 xong; mỗi task có log RED/GREEN trong `.superpowers/sdd/…/`. Kiểm toàn repo: `pnpm turbo run lint typecheck test build` 20/20, SSR web 84/84.
+- Ruling Task 6: thêm `hasPreferences` (có test) dùng chung cho "khách có tiêu chí"; ngày 5 của mẫu 5 ngày chỉ bù bằng điểm thong thả.
+- Ruling Task 7: test bất biến thêm bộ dữ liệu thưa và kiểm thẳng `active`/xác minh/ca mở; đã thử đột biến bỏ lọc `active` và bỏ hạn xác minh, test đều đỏ.
+- Review độc lập toàn nhánh: sẵn sàng sau khi sửa. Đã sửa: bằng điểm thì giữ điểm của mẫu (quyết định 7 bổ sung; test RED→GREEN); tài liệu `drop_interests` có thể giúp cả khi không đổi mẫu (quyết định 11 không còn đúng hoàn toàn); runbook nói rõ `zoneIds` theo mẫu có thể hơn 2 cụm/không kề.
+- Hoãn (minor): ngày 5 có thể thiếu vì ngày 1–4 chọn tham lam trong cụm; vét cạn cụm tăng theo hàm mũ khi thành phố có nhiều cụm (Đà Lạt tối đa 400 lá, dưới 5 ms); test bất biến chưa có mẫu; thứ tự cụm phụ thuộc `_id`.
+- Chưa kiểm: CI remote, staging, điện thoại thật (chưa có giao diện/endpoint; làm cùng S36/S37).
