@@ -103,6 +103,11 @@ describe('S35 generateItinerary', () => {
     expect(r.ok && r.templateId).toBeUndefined();
   });
 
+  it('zoneIds chỉ còn cụm có điểm tham quan sau khi S35 bỏ điểm', () => {
+    const r = generateItinerary(planInput({ places: [...placesIn(0, 3, 1), ...placesIn(1, 1, 11, { openingHours: allDays('05:00', '05:30') })] }));
+    expect(r).toMatchObject({ ok: true, days: [{ zoneIds: [ZONES[0]!.id] }] });
+  });
+
   it('dùng mẫu khi S35 xếp được, trả templateId', () => {
     const places = placesIn(0, 4, 1);
     const r = generateItinerary(planInput({ places, templates: [fakeTemplate('tpl-gia-lap', [], [places.map((p) => p.id)])] }));

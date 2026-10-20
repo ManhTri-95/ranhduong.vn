@@ -70,7 +70,9 @@ function scheduleDraft(input: PlanInput, ctx: PlanContext, result: { templateId?
     for (const detour of detours) excluded.add(detour.placeId);
     return {
       day: pool.trip.day, date: pool.trip.date, weekday: pool.trip.weekday, rainy: pool.rainy, pace: pool.pace,
-      zoneIds: result.days[i]?.zoneIds ?? [], startTime: dayStartTime(stops),
+      // Bỏ cụm không còn điểm tham quan nào sau khi S35 bỏ điểm sai giờ hay quá 21:30.
+      zoneIds: (result.days[i]?.zoneIds ?? []).filter((id) => stops.some((stop) => stop.kind === 'visit' && stop.place.zoneId === id)),
+      startTime: dayStartTime(stops),
       stops: stops.map((stop, j) => {
         const t = times.stops[j]!;
         return { placeId: stop.place.id, kind: stop.kind, start: formatClock(t.start), end: formatClock(t.end), travelMinFromPrev: t.travelMinFromPrev };
