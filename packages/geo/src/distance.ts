@@ -11,13 +11,17 @@ export function haversineMeters(a: LatLng, b: LatLng): number {
   return 2 * EARTH_RADIUS_M * Math.asin(Math.sqrt(h));
 }
 
+/** Phút di chuyển chưa làm tròn (chim bay × 1,4 ÷ 25 km/h, mục 7): để so sánh tuyến và detour. */
+export function estimateTravelMinutesExact(a: LatLng, b: LatLng, factor = 1.4, speedKmh = 25): number {
+  return ((haversineMeters(a, b) * factor) / 1000 / speedKmh) * 60;
+}
+
 /** Ước lượng phút di chuyển khi chưa có ma trận OSRM: chim bay × 1,4 ÷ 25 km/h (mục 7). */
 export function estimateTravelMinutes(a: LatLng, b: LatLng, factor = 1.4, speedKmh = 25): number {
-  const km = (haversineMeters(a, b) * factor) / 1000;
-  return Math.max(1, Math.round((km / speedKmh) * 60));
+  return Math.max(1, Math.round(estimateTravelMinutesExact(a, b, factor, speedKmh)));
 }
 
 /** Admin mẫu: công thức raw làm tròn tới 5 phút, không thêm đệm của bộ tối ưu lát 2. */
 export function estimateTemplateTravelMinutes(a: LatLng, b: LatLng): number {
-  return Math.round((haversineMeters(a, b) / 1000 * 1.4 / 25 * 60) / 5) * 5;
+  return Math.round(estimateTravelMinutesExact(a, b) / 5) * 5;
 }
