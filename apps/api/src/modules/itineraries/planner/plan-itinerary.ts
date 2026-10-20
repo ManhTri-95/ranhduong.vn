@@ -29,10 +29,10 @@ export type PlanResult =
   | { ok: true; templateId?: string; days: PlannedDay[] }
   | { ok: false; code: 'NOT_ENOUGH_PLACES'; details: NotEnoughPlacesDetails };
 
-type Draft = { ok: true; templateId?: string; days: DayPick[] } | { ok: false; shortages: PlanShortage[] };
+export type Draft = { ok: true; templateId?: string; days: DayPick[] } | { ok: false; shortages: PlanShortage[] };
 
-/** Mẫu gần nhất trước; mẫu không đủ điểm thì tạo từ đầu. */
-function draft(input: PlanInput): { ctx: PlanContext; result: Draft } {
+/** Mẫu gần nhất trước; mẫu không đủ điểm thì tạo từ đầu (S35 xếp giờ trên kết quả này). */
+export function draftPlan(input: PlanInput): { ctx: PlanContext; result: Draft } {
   const ctx = prepare(input);
   const template = nearestTemplate(ctx.templates, ctx.request);
   if (template) {
@@ -58,13 +58,19 @@ function toPlannedDay(pool: DayPool, pick: DayPick | undefined): PlannedDay {
  * cùng kết quả. Thiếu điểm thì trả NOT_ENOUGH_PLACES, chỉ kèm gợi ý đã chạy thử và tạo được.
  */
 export function planItinerary(input: PlanInput): PlanResult {
-  const { ctx, result } = draft(input);
+  const { ctx, result } = draftPlan(input);
   if (result.ok) {
     return { ok: true, ...(result.templateId ? { templateId: result.templateId } : {}), days: ctx.days.map((pool, i) => toPlannedDay(pool, result.days[i])) };
   }
-  const suggestions: PlanSuggestion[] = [];
-  const fewerDays = ([4, 3, 2, 1] as const).find((days) => days < input.request.days && draft({ ...input, request: { ...input.request, days } }).result.ok);
-  if (fewerDays) suggestions.push({ kind: 'reduce_days', days: fewerDays });
-  if (input.request.tags.length > 0 && draft({ ...input, request: { ...input.request, tags: [] } }).result.ok) suggestions.push({ kind: 'drop_interests' });
+  const suggestions = suggestFor(input, (attempt) => draftPlan(attempt).result.ok);
   return { ok: false, code: 'NOT_ENOUGH_PLACES', details: NotEnoughPlacesDetails.parse({ shortages: result.shortages, suggestions }) };
+}
+
+/** Gợi ý khi thiếu điểm, mỗi gợi ý đã chạy thử bằng `succeeds`: số ngày lớn nhất còn tạo được, bỏ hết gu. */
+export function suggestFor(input: PlanInput, succeeds: (input: PlanInput) => boolean): PlanSuggestion[] {
+  const suggestions: PlanSuggestion[] = [];
+  const fewerDays = ([4, 3, 2, 1] as const).find((days) => days < input.request.days && succeeds({ ...input, request: { ...input.request, days } }));
+  if (fewerDays) suggestions.push({ kind: 'reduce_days', days: fewerDays });
+  if (input.request.tags.length > 0 && succeeds({ ...input, request: { ...input.request, tags: [] } })) suggestions.push({ kind: 'drop_interests' });
+  return suggestions;
 }
