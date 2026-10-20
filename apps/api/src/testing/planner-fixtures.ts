@@ -1,4 +1,5 @@
-import type { ItineraryPlace, ItineraryRequest, ItineraryZone } from '@ranhduong/contracts';
+import type { CitySeason, ItineraryPlace, ItineraryRequest, ItineraryZone } from '@ranhduong/contracts';
+import type { PlanInput } from '../modules/itineraries/planner/plan-context';
 
 // Dữ liệu giả cho test thuật toán lịch trình: tên rõ là giả, toạ độ quanh [0, 0] để không trùng địa điểm thật nào.
 
@@ -46,4 +47,14 @@ export function placesIn(zoneIndex: number, count: number, firstN: number, overr
 /** Yêu cầu giả: 1 ngày từ Thứ Hai 23/11/2026, xe máy, nhóm bạn, không gu, thong thả. */
 export function fakeRequest(overrides: Partial<ItineraryRequest> = {}): ItineraryRequest {
   return { days: 1, startDate: '2026-11-23', transport: 'motorbike', with: 'friends', tags: [], pace: 'relaxed', ...overrides };
+}
+
+/** Mùa giả đủ trường CitySeason; test ghi đè kind, from, to. */
+export const SEASON_GIA_LAP: CitySeason = {
+  key: 'mua-gia-lap', kind: 'other', from: '01-01', to: '01-31', accent: '#123456', title: 'Mùa Giả Lập', sub: 'Mô tả Giả Lập', illustration: 'gia-lap',
+};
+
+/** Đầu vào thuật toán: yêu cầu giả, chưa có điểm, bốn cụm giả, không mùa, không mẫu, chưa có số liệu phổ biến. */
+export function planInput(overrides: Partial<PlanInput> = {}): PlanInput {
+  return { request: fakeRequest(), places: [], zones: ZONES, seasons: [], templates: [], popularity: new Map(), now: NOW, ...overrides };
 }
