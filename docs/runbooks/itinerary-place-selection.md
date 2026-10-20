@@ -2,7 +2,7 @@
 
 `planItinerary` (`apps/api/src/modules/itineraries/planner/plan-itinerary.ts`) chọn cụm và điểm tham quan cho từng ngày của lịch trình khách. Đây là hàm thuần: không đọc DB, Redis, env hay đồng hồ; `now` truyền vào; cùng đầu vào cho cùng kết quả. Chưa có endpoint nào gọi hàm này: S36 (báo cáo độ phủ) và S37 (API tạo lịch trình) nạp dữ liệu rồi gọi.
 
-S34 **không** sắp tuyến, xếp giờ, chèn bữa ăn hay gợi ý tiện đường; các việc đó thuộc S35, chạy trên kết quả của S34.
+S34 **không** sắp tuyến, xếp giờ, chèn bữa ăn hay gợi ý tiện đường; các việc đó thuộc S35 (`generateItinerary`, [runbook](itinerary-route-schedule.md)), chạy trên kết quả của S34. S36/S37 gọi `generateItinerary`, không gọi thẳng `planItinerary`.
 
 ## Đầu vào
 
@@ -37,7 +37,7 @@ Các trọng số và mức cộng (mái che, cùng đi cùng ai) là giá trị
 
 - **Bảng cụm kề** lưu ở `Zone.adjacentZones`, nguồn là seed (`apps/api/src/seed/da-lat.ts`). `CitySeed` từ chối cụm kề không có trong seed, kề chính nó, lặp hoặc chỉ kề một chiều. DB đang chạy cần `pnpm seed` lại để ghi bảng kề; document cụm cũ thiếu trường thì đọc ra rỗng, nghĩa là không ghép cặp nào. Ranh giới cụm (S03) đổi thì sửa bảng kề trong seed rồi chạy lại.
 - **Chợ** cần danh mục mua sắm hoặc thẻ `dac-san` mới được chọn cho ngày thứ 5.
-- Điểm thiếu thời lượng ghé vẫn được chọn; S35 dùng mặc định 60 phút như `analyzeTemplate`. Cột "Còn thiếu" (S33) nhắc bổ sung.
+- Điểm thiếu thời lượng ghé vẫn được chọn; S35 xếp giờ với 60 phút (cùng mặc định với `analyzeTemplate`). Cột "Còn thiếu" (S33) nhắc bổ sung.
 
 ## Kiểm tra
 
