@@ -1,4 +1,4 @@
-import type { CitySeason, ItineraryPlace, ItineraryRequest, ItineraryZone, TripInterest, TripWith } from '@ranhduong/contracts';
+import type { CitySeason, ItineraryPlace, ItineraryRequest, ItineraryZone, OpeningSlot, TripInterest, TripWith } from '@ranhduong/contracts';
 import type { PlanInput, PlanTemplate } from '../modules/itineraries/planner/plan-context';
 
 // Dữ liệu giả cho test thuật toán lịch trình: tên rõ là giả, toạ độ quanh [0, 0] để không trùng địa điểm thật nào.
@@ -62,4 +62,9 @@ export function planInput(overrides: Partial<PlanInput> = {}): PlanInput {
 /** Mẫu giả: mỗi ngày là danh sách placeId, mọi điểm là điểm ghé. */
 export function fakeTemplate(id: string, tags: TripInterest[], days: string[][], w?: TripWith): PlanTemplate {
   return { id, tags, with: w, days: days.map((ids) => ({ stops: ids.map((placeId) => ({ placeId, kind: 'visit' as const })) })) };
+}
+
+/** Một ca `open`–`close` cho mỗi thứ 0–6. */
+export function allDays(open: string, close: string): OpeningSlot[] {
+  return [0, 1, 2, 3, 4, 5, 6].map((day) => ({ day, open, close }));
 }

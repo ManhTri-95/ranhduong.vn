@@ -66,7 +66,7 @@ export interface ScoredPlace {
 }
 
 /** Điểm số giảm dần, hoà thì id tăng dần: cùng đầu vào luôn cùng thứ tự. */
-export function byScore(a: ScoredPlace, b: ScoredPlace): number {
+export function byScore(a: Pick<ScoredPlace, 'place' | 'score'>, b: Pick<ScoredPlace, 'place' | 'score'>): number {
   if (Math.abs(a.score - b.score) > EPS) return b.score - a.score;
   return a.place.id < b.place.id ? -1 : a.place.id > b.place.id ? 1 : 0;
 }
