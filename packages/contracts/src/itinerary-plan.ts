@@ -12,6 +12,8 @@ export const ItineraryPlace = TemplatePlace.extend({
   transport: z.array(Transport),
   /** Chỉ từ đánh giá trên nền tảng; lát 2 chưa có nên thiếu. */
   ratingAvg: z.number().min(1).max(5).optional(),
+  /** Mức giá 1–4; S35 ưu tiên quán ăn không đắt hơn mặt bằng của ngày. */
+  priceLevel: z.literal([1, 2, 3, 4]).optional(),
 });
 export type ItineraryPlace = z.infer<typeof ItineraryPlace>;
 

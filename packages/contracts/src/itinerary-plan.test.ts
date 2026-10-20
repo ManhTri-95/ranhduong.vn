@@ -16,6 +16,10 @@ describe('ItineraryPlace', () => {
   it('từ chối thẻ không phải slug', () => {
     expect(ItineraryPlace.safeParse({ ...PLACE, tags: ['Chill Cafe'] }).success).toBe(false);
   });
+  it('nhận mức giá 1–4 cho bữa ăn S35, từ chối mức khác', () => {
+    expect(ItineraryPlace.parse({ ...PLACE, priceLevel: 2 }).priceLevel).toBe(2);
+    expect(ItineraryPlace.safeParse({ ...PLACE, priceLevel: 5 }).success).toBe(false);
+  });
 });
 
 describe('NotEnoughPlacesDetails', () => {
