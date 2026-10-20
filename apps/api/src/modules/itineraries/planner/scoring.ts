@@ -25,6 +25,11 @@ function criteria(request: Preferences): { tags: readonly string[]; bestTimes: r
   ];
 }
 
+/** Khách có ít nhất một tiêu chí gu hoặc đi cùng ai để so khớp. */
+export function hasPreferences(request: Preferences): boolean {
+  return criteria(request).length > 0;
+}
+
 /** Tỉ lệ tiêu chí khớp (0..1); gu chỉ cộng điểm, không dùng để loại điểm. Không có tiêu chí thì 0. */
 export function interestMatch(place: Pick<ItineraryPlace, 'tags' | 'bestTime'>, request: Preferences): number {
   const list = criteria(request);

@@ -1,5 +1,5 @@
-import type { CitySeason, ItineraryPlace, ItineraryRequest, ItineraryZone } from '@ranhduong/contracts';
-import type { PlanInput } from '../modules/itineraries/planner/plan-context';
+import type { CitySeason, ItineraryPlace, ItineraryRequest, ItineraryZone, TripInterest, TripWith } from '@ranhduong/contracts';
+import type { PlanInput, PlanTemplate } from '../modules/itineraries/planner/plan-context';
 
 // Dữ liệu giả cho test thuật toán lịch trình: tên rõ là giả, toạ độ quanh [0, 0] để không trùng địa điểm thật nào.
 
@@ -57,4 +57,9 @@ export const SEASON_GIA_LAP: CitySeason = {
 /** Đầu vào thuật toán: yêu cầu giả, chưa có điểm, bốn cụm giả, không mùa, không mẫu, chưa có số liệu phổ biến. */
 export function planInput(overrides: Partial<PlanInput> = {}): PlanInput {
   return { request: fakeRequest(), places: [], zones: ZONES, seasons: [], templates: [], popularity: new Map(), now: NOW, ...overrides };
+}
+
+/** Mẫu giả: mỗi ngày là danh sách placeId, mọi điểm là điểm ghé. */
+export function fakeTemplate(id: string, tags: TripInterest[], days: string[][], w?: TripWith): PlanTemplate {
+  return { id, tags, with: w, days: days.map((ids) => ({ stops: ids.map((placeId) => ({ placeId, kind: 'visit' as const })) })) };
 }

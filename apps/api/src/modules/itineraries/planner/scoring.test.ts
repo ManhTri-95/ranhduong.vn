@@ -1,7 +1,7 @@
 import type { BestTime, PlaceCover, TripInterest, TripWith } from '@ranhduong/contracts';
 import { describe, expect, it } from 'vitest';
 import { fakePlace } from '../../../testing/planner-fixtures';
-import { byScore, interestMatch, pickVisits, pinOf, popularityShares, scorePlace, type ScoredPlace } from './scoring';
+import { byScore, hasPreferences, interestMatch, pickVisits, pinOf, popularityShares, scorePlace, type ScoredPlace } from './scoring';
 
 const req = (tags: TripInterest[], w: TripWith = 'friends') => ({ tags, with: w });
 const scored = (n: number, score: number, bestTime: BestTime[] = []): ScoredPlace => ({ place: fakePlace(n, { bestTime }), score, match: 0 });
@@ -70,5 +70,11 @@ describe('pickVisits', () => {
   });
   it('một điểm xuất hiện hai lần trong danh sách chỉ được chọn một lần', () => {
     expect(pickVisits([scored(5, 0.5), scored(5, 0.4), scored(6, 0.3)], 3, new Set())).toHaveLength(2);
+  });
+});
+
+describe('hasPreferences', () => {
+  it('có tiêu chí khi chọn gu hoặc đi cùng Gia đình', () => {
+    expect([hasPreferences(req([])), hasPreferences(req(['chill_cafe'])), hasPreferences(req([], 'family')), hasPreferences(req([], 'couple'))]).toEqual([false, true, true, false]);
   });
 });
