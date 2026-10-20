@@ -39,6 +39,7 @@ S37 khi lưu cần: sinh `key` (UUID) cho từng điểm, đổi `detours[].afte
 5. **Sửa sai giờ**: điểm sai giờ đầu tiên thử đổi với điểm kề trước, rồi điểm kề sau (không đổi điểm ghim). Nhận khi số điểm sai giờ giảm. Không được thì bỏ điểm có điểm số thấp nhất trong các điểm đang sai giờ, kể cả điểm ghim. Bỏ điểm bình minh thì ngày bắt đầu lại 07:00.
 6. **Chèn bữa** (`meals.ts`): chỉ khi ngày đi qua khung giờ ăn (`MEAL_WINDOWS`: trưa 11:30–13:30, tối 18:00–20:00), cùng quy tắc nhắc thiếu bữa của S15.
    - Ứng viên: quán phục vụ ăn uống, hợp lệ trong ngày, chưa có trong chuyến, mở suốt bữa, giờ bắt đầu bữa nằm trong khung.
+   - Quán bị bỏ khỏi lượt tham quan có thể dùng làm bữa trong ngày đó hoặc ngày sau. Các điểm còn giữ trong ngày, đã đi ngày trước và dành cho ngày sau không được lặp thành bữa ăn.
    - Vị trí: sau bất kỳ điểm nào, trừ sau điểm ghim cuối.
    - Xếp hạng: phút thêm vào tuyến (đi vòng cộng chờ tới giờ ăn, làm tròn 5 phút), rồi đúng mức giá, rồi điểm số, rồi id.
    - **Mức giá** (chủ dự án chọn 20/10/2026): mức trần của ngày là `priceLevel` cao nhất của các điểm tham quan trong ngày; điểm chưa có mức giá tính là 2. Quán không quá mức trần, hoặc chưa có mức giá, là đúng mức giá. Đây chỉ là thứ tự ưu tiên, không loại quán.

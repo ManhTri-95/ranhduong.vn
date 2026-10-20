@@ -69,6 +69,46 @@ describe('S35 generateItinerary', () => {
     expect(r.ok && r.days[0]!.stops.filter((s) => s.kind === 'meal')).toHaveLength(1);
   });
 
+  it('quán bị bỏ khỏi lượt tham quan vẫn dùng được cho bữa trưa đúng giờ', () => {
+    const cafe = fakePlace(3, { category: 'cafe', alsoCategories: ['food'], visitDurationMin: 60, openingHours: allDays('12:00', '22:00') });
+    const evening = fakePlace(4, { bestTime: ['evening'], visitDurationMin: 60, openingHours: allDays('17:00', '22:00') });
+    const r = generateItinerary(planInput({ places: [...placesIn(0, 2, 1, { visitDurationMin: 60 }), cafe, evening] }));
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    const day = r.days[0]!;
+    expect(day.stops.filter((stop) => stop.kind === 'visit').map((stop) => stop.placeId)).toEqual([fakePlace(1).id, fakePlace(2).id, evening.id]);
+    expect(day.stops).toContainEqual(expect.objectContaining({ placeId: cafe.id, kind: 'meal', start: '12:00', end: '13:00' }));
+    expect(day.issues).not.toContain('missing_lunch');
+  });
+
+  it('quán bị bỏ ngày trước vẫn dùng được cho bữa trưa ngày sau', () => {
+    const cafe = fakePlace(4, { category: 'cafe', alsoCategories: ['food'], visitDurationMin: 60, openingHours: allDays('12:00', '22:00') });
+    const firstDay = [...placesIn(0, 3, 1, { visitDurationMin: 60 }), cafe];
+    const secondDay = [...placesIn(1, 3, 11, { visitDurationMin: 60 }), fakePlace(14, { zoneId: ZONES[1]!.id, bestTime: ['evening'], visitDurationMin: 60, openingHours: allDays('17:00', '22:00') })];
+    const template = fakeTemplate('tpl-gia-lap', [], [firstDay.map((p) => p.id), secondDay.map((p) => p.id)]);
+    const r = generateItinerary(planInput({ request: fakeRequest({ days: 2 }), places: [...firstDay, ...secondDay], templates: [template] }));
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.days[0]!.stops.some((stop) => stop.placeId === cafe.id)).toBe(false);
+    expect(r.days[1]!.stops).toContainEqual(expect.objectContaining({ placeId: cafe.id, kind: 'meal', start: '12:00', end: '13:00' }));
+    expect(r.days[1]!.issues).not.toContain('missing_lunch');
+  });
+
+  it('giữ quán tham quan của ngày sau khỏi bữa ăn ngày trước', () => {
+    const firstDay = placesIn(0, 4, 1, { visitDurationMin: 90 });
+    const cafe = fakePlace(11, { zoneId: ZONES[1]!.id, category: 'cafe', alsoCategories: ['food'], visitDurationMin: 60 });
+    const secondDay = [cafe, ...placesIn(1, 3, 12, { visitDurationMin: 60 })];
+    const template = fakeTemplate('tpl-gia-lap', [], [firstDay.map((p) => p.id), secondDay.map((p) => p.id)]);
+    const r = generateItinerary(planInput({ request: fakeRequest({ days: 2 }), places: [...firstDay, ...secondDay], templates: [template] }));
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.days[0]!.stops.some((stop) => stop.placeId === cafe.id)).toBe(false);
+    expect(r.days[0]!.issues).toContain('missing_lunch');
+    expect(r.days[1]!.stops).toContainEqual(expect.objectContaining({ placeId: cafe.id, kind: 'visit' }));
+    const ids = r.days.flatMap((day) => day.stops.map((stop) => stop.placeId));
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
   it('nơi ở đổi điểm đầu tuyến nhưng không có trong kết quả', () => {
     const places = placesIn(0, 4, 1);
     const stay: GeoPoint = { type: 'Point', coordinates: [0.123456, 0.0987654] };

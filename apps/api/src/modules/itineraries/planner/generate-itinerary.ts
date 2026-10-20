@@ -51,7 +51,10 @@ function attempt(input: PlanInput): Attempt {
 function scheduleDraft(input: PlanInput, ctx: PlanContext, result: { templateId?: string; days: DayPick[] }): Attempt {
   const used = new Set(result.days.flatMap((day) => day.picks.map(({ place }) => place.id)));
   const built: BuiltDay[] = ctx.days.map((pool, i) => {
-    const day = buildDay(pool, result.days[i] ?? { zoneIds: [], picks: [] }, { stay: input.request.stayLocation, used });
+    const pick = result.days[i] ?? { zoneIds: [], picks: [] };
+    // insertMeals tự loại điểm còn trong ngày; giải phóng điểm bị bỏ, giữ điểm ngày trước và chỗ dành cho ngày sau.
+    for (const { place } of pick.picks) used.delete(place.id);
+    const day = buildDay(pool, pick, { stay: input.request.stayLocation, used });
     for (const stop of day.stops) used.add(stop.place.id);
     return day;
   });
