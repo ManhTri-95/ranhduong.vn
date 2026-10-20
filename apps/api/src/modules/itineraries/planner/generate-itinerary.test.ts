@@ -16,7 +16,7 @@ import {
   type TripDays,
 } from '@ranhduong/contracts';
 import { describe, expect, it } from 'vitest';
-import { allDays, fakePlace, fakeRequest, NOW, placesIn, planInput, ZONES } from '../../../testing/planner-fixtures';
+import { allDays, fakePlace, fakeRequest, fakeTemplate, NOW, placesIn, planInput, ZONES } from '../../../testing/planner-fixtures';
 import { isEligible } from './candidates';
 import { generateItinerary } from './generate-itinerary';
 import { VISITS_PER_DAY } from './plan-context';
@@ -93,6 +93,20 @@ describe('S35 generateItinerary', () => {
       ok: false, code: 'NOT_ENOUGH_PLACES',
       details: { shortages: [{ day: 2, zoneSlugs: [ZONES[1]!.slug], available: 0 }], suggestions: [{ kind: 'reduce_days', days: 1 }] },
     });
+  });
+
+  it('mẫu gần nhất bị S35 bỏ điểm tới dưới 3 điểm thì tạo từ đầu', () => {
+    const z1 = ZONES[1]!.id;
+    const template = [fakePlace(11, { zoneId: z1 }), ...[12, 13].map((n) => fakePlace(n, { zoneId: z1, openingHours: allDays('07:00', '08:00') }))];
+    const r = generateItinerary(planInput({ places: [...template, ...placesIn(0, 8, 1)], templates: [fakeTemplate('tpl-gia-lap', [], [template.map((p) => p.id)])] }));
+    expect(r).toMatchObject({ ok: true, days: [{ zoneIds: [ZONES[0]!.id] }] });
+    expect(r.ok && r.templateId).toBeUndefined();
+  });
+
+  it('dùng mẫu khi S35 xếp được, trả templateId', () => {
+    const places = placesIn(0, 4, 1);
+    const r = generateItinerary(planInput({ places, templates: [fakeTemplate('tpl-gia-lap', [], [places.map((p) => p.id)])] }));
+    expect(r).toMatchObject({ ok: true, templateId: 'tpl-gia-lap' });
   });
 
   it('quá 21:30 vì điểm buổi tối mở muộn thì bỏ điểm đó, không báo thiếu điểm', () => {

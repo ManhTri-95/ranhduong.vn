@@ -1,9 +1,10 @@
 import { formatClock, NotEnoughPlacesDetails, type ItineraryPace, type MealKind, type PlanShortage, type StopKind } from '@ranhduong/contracts';
 import { buildDay, type BuiltDay } from './build-day';
 import { suggestDetours, type DetourSuggestion } from './detours';
-import { MIN_VISITS_PER_DAY, type PlanInput } from './plan-context';
+import { MIN_VISITS_PER_DAY, type PlanContext, type PlanInput } from './plan-context';
 import { draftPlan, suggestFor } from './plan-itinerary';
 import { dayStartTime } from './timing';
+import { planFromScratch, type DayPick } from './zones';
 
 /** Điểm dừng đã xếp giờ; S37 gắn `key`, `note`, `locked`, `isVip` khi lưu. */
 export interface ScheduledStop {
@@ -37,9 +38,17 @@ export type GenerateResult =
 
 type Attempt = { ok: true; templateId?: string; days: ScheduledDay[] } | { ok: false; shortages: PlanShortage[] };
 
+/** Mẫu gần nhất trước; mẫu mà S35 phải bỏ điểm tới dưới 3 điểm thì tạo từ đầu như khi S34 bỏ mẫu. */
 function attempt(input: PlanInput): Attempt {
   const { ctx, result } = draftPlan(input);
   if (!result.ok) return result;
+  const scheduled = scheduleDraft(input, ctx, result);
+  if (scheduled.ok || !result.templateId) return scheduled;
+  const scratch = planFromScratch(ctx);
+  return scratch.ok ? scheduleDraft(input, ctx, scratch) : scratch;
+}
+
+function scheduleDraft(input: PlanInput, ctx: PlanContext, result: { templateId?: string; days: DayPick[] }): Attempt {
   const used = new Set(result.days.flatMap((day) => day.picks.map(({ place }) => place.id)));
   const built: BuiltDay[] = ctx.days.map((pool, i) => {
     const day = buildDay(pool, result.days[i] ?? { zoneIds: [], picks: [] }, { stay: input.request.stayLocation, used });
