@@ -7,6 +7,8 @@ import { byScore, pinOf, type ScoredPlace } from './scoring';
 export const DAY_START = '07:00';
 /** Ngày có điểm bình minh ghim đầu. */
 export const SUNRISE_START = '04:45';
+/** Điểm bình minh chờ quán mở tới giờ này; mở muộn hơn thì không còn là săn mây (product-spec mục 8: 4–6h). */
+export const SUNRISE_LATEST = '06:00';
 /** Gửi xe, đi bộ: cộng vào mỗi chặng di chuyển. */
 export const TRAVEL_BUFFER_MIN = 10;
 /** Điểm ghé thường chờ quán mở tối đa bấy nhiêu phút; trước DAY_START chờ không giới hạn. */
@@ -39,17 +41,21 @@ export function dayStartTime(stops: readonly DayStop[]): string {
   return stops[0]?.pin === 'first' ? SUNRISE_START : DAY_START;
 }
 
-/** Xếp giờ bằng hàm chung với kiểm tra mẫu S15, thêm quy tắc chờ quán mở của thuật toán. */
+/**
+ * Xếp giờ bằng hàm chung với kiểm tra mẫu S15, thêm quy tắc chờ quán mở: điểm thường chờ tối đa 30 phút, trước
+ * 07:00 chờ bao lâu cũng được; điểm ghim cuối chờ không giới hạn; điểm bình minh chỉ chờ tới 06:00.
+ */
 export function timeStops(stops: readonly DayStop[], weekday: number): DaySchedule {
   return scheduleDay(
-    stops.map((stop) => ({
-      placeId: stop.place.id, kind: stop.kind, notBefore: stop.notBefore,
-      maxWaitMin: stop.pin === 'last' ? 1440 : OPEN_WAIT_MAX_MIN,
-    })),
-    {
-      startTime: dayStartTime(stops), weekday, travel: legMinutes, freeWaitUntil: clockMinutes(DAY_START),
-      places: new Map(stops.map((stop) => [stop.place.id, stop.place])),
-    },
+    stops.map((stop) => {
+      const sunrise = stop.pin === 'first';
+      return {
+        placeId: stop.place.id, kind: stop.kind, notBefore: stop.notBefore,
+        maxWaitMin: sunrise ? 0 : stop.pin === 'last' ? 1440 : OPEN_WAIT_MAX_MIN,
+        waitUntil: clockMinutes(sunrise ? SUNRISE_LATEST : DAY_START),
+      };
+    }),
+    { startTime: dayStartTime(stops), weekday, travel: legMinutes, places: new Map(stops.map((stop) => [stop.place.id, stop.place])) },
   );
 }
 

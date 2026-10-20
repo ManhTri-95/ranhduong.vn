@@ -35,11 +35,12 @@ describe('S35 scheduleDay', () => {
     expect(run([{ ...stop(A), maxWaitMin: 60 }], { [A]: split }).stops[0]?.start).toBe(480);
   });
 
-  it('trước freeWaitUntil chờ bao lâu cũng được', () => {
+  it('chờ quán mở tới waitUntil của từng điểm, kể cả quá maxWaitMin', () => {
     const perPlace = { [A]: [{ day: 6, open: '04:00', close: '22:00' }], [B]: [{ day: 6, open: '07:00', close: '22:00' }] };
-    const stops = [{ ...stop(A), maxWaitMin: 30 }, { ...stop(B), maxWaitMin: 30 }];
-    expect(run(stops, perPlace, { startTime: '04:45', freeWaitUntil: 420 }).stops[1]).toMatchObject({ arrival: 355, start: 420, withinHours: true });
-    expect(run(stops, perPlace, { startTime: '04:45' }).stops[1]).toMatchObject({ start: 355, withinHours: false });
+    const opts = { startTime: '04:45' };
+    expect(run([{ ...stop(A), maxWaitMin: 30 }, { ...stop(B), maxWaitMin: 30, waitUntil: 420 }], perPlace, opts).stops[1]).toMatchObject({ arrival: 355, start: 420, withinHours: true });
+    expect(run([{ ...stop(A), maxWaitMin: 30 }, { ...stop(B), maxWaitMin: 30 }], perPlace, opts).stops[1]).toMatchObject({ start: 355, withinHours: false });
+    expect(run([{ ...stop(B), waitUntil: 360 }], perPlace, opts).stops[0]).toMatchObject({ start: 285, withinHours: false });
   });
 
   it('giờ sửa tay không bị chờ', () => {

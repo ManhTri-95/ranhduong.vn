@@ -26,6 +26,14 @@ describe('S35 timing', () => {
     expect(timeStops([sunrise, v(1)], 1).stops.map((s) => s.start)).toEqual([285, 420]); // chờ quán mở 07:00
   });
 
+  it('điểm bình minh chỉ chờ quán mở tới 06:00; mở muộn hơn thì sai giờ và bị bỏ', () => {
+    const early = v(5, { bestTime: ['sunrise'], openingHours: allDays('05:30', '22:00') });
+    expect(timeStops([early, v(1)], 1).stops[0]).toMatchObject({ start: 330, withinHours: true });
+    const late = v(5, { bestTime: ['sunrise'], openingHours: allDays('07:00', '17:00') });
+    expect(timeStops([late, v(1)], 1).stops[0]?.withinHours).toBe(false);
+    expect(dayStartTime(repairHours([late, v(1)], 1))).toBe('07:00');
+  });
+
   it('điểm ghim cuối chờ tới giờ mở, kể cả ca qua nửa đêm', () => {
     const night = v(6, { bestTime: ['evening'], openingHours: allDays('17:00', '02:00') });
     expect(timeStops([v(1), night], 1).stops[1]).toMatchObject({ start: 1020, withinHours: true });

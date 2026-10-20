@@ -43,6 +43,8 @@ export interface ScheduleStop {
   notBefore?: number;
   /** Chờ quán mở tối đa bấy nhiêu phút; mặc định 0 (S15 không chờ). */
   maxWaitMin?: number;
+  /** Phút từ 00:00: quán mở trước hoặc đúng giờ này thì chờ được, dù quá maxWaitMin (ngày bắt đầu sớm). */
+  waitUntil?: number;
 }
 
 export interface ScheduledTimes {
@@ -66,16 +68,14 @@ export interface ScheduleDayOptions {
   weekday: number;
   places: ReadonlyMap<string, TemplatePlace>;
   travel: (from: GeoPoint, to: GeoPoint) => number;
-  /** Trước giờ này (phút) được chờ quán mở không giới hạn, cho ngày bắt đầu sớm. */
-  freeWaitUntil?: number;
 }
 
 /** Giờ mở sớm nhất sau `base` (trong giới hạn chờ) phủ hết lượt ghé; không có thì `base`. */
-function waitForOpening(place: TemplatePlace, weekday: number, base: number, duration: number, maxWaitMin: number, freeWaitUntil: number): number {
+function waitForOpening(place: TemplatePlace, weekday: number, base: number, duration: number, maxWaitMin: number, waitUntil: number): number {
   const openings = place.openingHours
     .filter((slot) => slot.day === weekday && slot.open !== slot.close)
     .map((slot) => clockMinutes(slot.open))
-    .filter((open) => open > base && (open <= base + maxWaitMin || open <= freeWaitUntil))
+    .filter((open) => open > base && (open <= base + maxWaitMin || open <= waitUntil))
     .sort((a, b) => a - b);
   return openings.find((open) => coversVisit(place, weekday, open, open + duration)) ?? base;
 }
@@ -83,7 +83,6 @@ function waitForOpening(place: TemplatePlace, weekday: number, base: number, dur
 /** Xếp giờ một ngày theo thứ tự cho sẵn; hàm chung của kiểm tra mẫu (S15) và thuật toán lịch trình (S35). */
 export function scheduleDay(stops: readonly ScheduleStop[], options: ScheduleDayOptions): DaySchedule {
   const { weekday, places, travel } = options;
-  const freeWaitUntil = options.freeWaitUntil ?? -1;
   let cursor = clockMinutes(options.startTime);
   let previous: TemplatePlace | undefined;
   const times = stops.map((stop): ScheduledTimes => {
@@ -93,7 +92,7 @@ export function scheduleDay(stops: readonly ScheduleStop[], options: ScheduleDay
     const duration = stop.durationMin ?? place?.visitDurationMin ?? 60;
     let start = stop.manualStart ? clockMinutes(stop.manualStart) : Math.max(arrival, stop.notBefore ?? arrival);
     if (!stop.manualStart && place && !coversVisit(place, weekday, start, start + duration)) {
-      start = waitForOpening(place, weekday, start, duration, stop.maxWaitMin ?? 0, freeWaitUntil);
+      start = waitForOpening(place, weekday, start, duration, stop.maxWaitMin ?? 0, stop.waitUntil ?? -1);
     }
     const end = stop.manualEnd ? clockMinutes(stop.manualEnd) : start + duration;
     cursor = end;
