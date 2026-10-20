@@ -46,6 +46,22 @@ describe('CitySeed', () => {
     const zones = [{ ...SEED.zones[0], area: square(0.1, 0.1, 1.5, 0.4) }, SEED.zones[1]];
     expect(issuePaths({ ...SEED, zones })).toContainEqual(['zones', 0, 'area']);
   });
+  it('adjacentZones mặc định rỗng', () => {
+    expect(CitySeed.parse(SEED).zones[0]?.adjacentZones).toEqual([]);
+  });
+  it('nhận bảng kề đối xứng', () => {
+    const zones = [{ ...SEED.zones[0], adjacentZones: ['cum-gia-lap-b'] }, { ...SEED.zones[1], adjacentZones: ['cum-gia-lap-a'] }];
+    expect(CitySeed.safeParse({ ...SEED, zones }).success).toBe(true);
+  });
+  it.each([
+    ['cụm không có trong seed', ['cum-gia-lap-x'], ['cum-gia-lap-a']],
+    ['kề chính nó', ['cum-gia-lap-a'], []],
+    ['lặp cụm kề', ['cum-gia-lap-b', 'cum-gia-lap-b'], ['cum-gia-lap-a']],
+    ['chỉ kề một chiều', ['cum-gia-lap-b'], []],
+  ])('từ chối bảng kề có %s', (_, a, b) => {
+    const zones = [{ ...SEED.zones[0], adjacentZones: a }, { ...SEED.zones[1], adjacentZones: b }];
+    expect(issuePaths({ ...SEED, zones })).toContainEqual(['zones', 0, 'adjacentZones']);
+  });
   it('từ chối múi giờ khác Asia/Ho_Chi_Minh và seed không có cụm nào', () => {
     expect(CitySeed.safeParse({ ...SEED, city: { ...SEED.city, timezone: 'Asia/Bangkok' } }).success).toBe(false);
     expect(CitySeed.safeParse({ ...SEED, zones: [] }).success).toBe(false);

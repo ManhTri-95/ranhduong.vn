@@ -7,6 +7,7 @@ import {
   type CitySeasonContext,
   type CityRef,
   type CitySeedResult,
+  type ItineraryZone,
   type LngLat,
   type ZoneRef,
   type ZoneSuggestResponse,
@@ -81,6 +82,11 @@ export class CitiesService {
   /** Các cụm của thành phố (id, slug, tên) theo thứ tự seed. */
   zones(cityId: string): Promise<ZoneRef[]> {
     return this.repo.listZones(cityId);
+  }
+
+  /** Các cụm kèm bảng kề theo thứ tự seed, đầu vào gán cụm của thuật toán lịch trình (S34). */
+  itineraryZones(cityId: string): Promise<ItineraryZone[]> {
+    return this.repo.listItineraryZones(cityId);
   }
 
   /** Cụm gợi ý cho điểm ghim (decisions 2026-10-07): chứa điểm, trên cạnh chung thì cả hai, ngoài khung thì gần nhất. */

@@ -29,31 +29,37 @@ const SOUTH_LINE = 11.922;
  * ghép với hai cạnh ngắn sẽ lệch nhau vài mét.
  * Đổi ranh giới thì sửa các đường chia ở trên rồi chạy lại `pnpm seed` (_id cụm giữ nguyên).
  * Gán cụm cho địa điểm vẫn chọn tay (data-collection mục 5); polygon dùng để vẽ và gợi ý.
+ * adjacentZones: cụm ghép được trong một ngày lịch trình (backlog lát 2, quyết định 2, duyệt 19/10/2026): chung ranh giới,
+ * cấm Phía Bắc + Phía Đông; Phía Nam và Phía Bắc không chung ranh giới. Ranh giới đổi thì sửa bảng kề theo.
  */
-const ZONES: { slug: DalatZone; name: string; area: GeoPolygon }[] = [
+const ZONES: { slug: DalatZone; name: string; area: GeoPolygon; adjacentZones: DalatZone[] }[] = [
   {
     // Hồ Xuân Hương, chợ Đà Lạt, ga Đà Lạt
     slug: 'trung-tam',
     name: 'Trung tâm',
     area: polygon([WEST, SOUTH_LINE], [EAST_LINE, SOUTH_LINE], [EAST_LINE, NORTH_LINE], [WEST, NORTH_LINE]),
+    adjacentZones: ['phia-nam', 'phia-bac', 'phia-dong'],
   },
   {
     // Tuyền Lâm, Datanla, Trúc Lâm, Prenn
     slug: 'phia-nam',
     name: 'Phía Nam',
     area: polygon([WEST, SOUTH], [EAST_LINE, SOUTH], [EAST_LINE, SOUTH_LINE], [WEST, SOUTH_LINE]),
+    adjacentZones: ['trung-tam', 'phia-dong'],
   },
   {
     // Langbiang, Lạc Dương, Đankia
     slug: 'phia-bac',
     name: 'Phía Bắc',
     area: polygon([WEST, NORTH_LINE], [EAST_LINE, NORTH_LINE], [EAST, NORTH_LINE], [EAST, NORTH], [WEST, NORTH]),
+    adjacentZones: ['trung-tam'],
   },
   {
     // Trại Mát, Cầu Đất, Trạm Hành
     slug: 'phia-dong',
     name: 'Phía Đông',
     area: polygon([EAST_LINE, SOUTH], [EAST, SOUTH], [EAST, NORTH_LINE], [EAST_LINE, NORTH_LINE], [EAST_LINE, SOUTH_LINE]),
+    adjacentZones: ['trung-tam', 'phia-nam'],
   },
 ];
 

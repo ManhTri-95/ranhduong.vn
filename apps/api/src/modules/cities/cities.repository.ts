@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { CitySeasonContext, GeoPolygon, type CityInput, type CitySeasonEditInput, type LngLat, type ZoneInput } from '@ranhduong/contracts';
+import { CitySeasonContext, GeoPolygon, type CityInput, type CitySeasonEditInput, type ItineraryZone, type LngLat, type ZoneInput } from '@ranhduong/contracts';
 import { Types } from 'mongoose';
 import { CITY_MODEL, type CityDoc, type CityModel } from './schemas/city.schema';
 import { ZONE_MODEL, type ZoneModel } from './schemas/zone.schema';
@@ -76,7 +76,7 @@ export class CitiesRepository {
   /** Upsert theo {cityId, slug}; _id giữ nguyên khi cập nhật để Place.zoneId không gãy. */
   async upsertZone(cityId: string, zone: ZoneInput): Promise<UpsertResult> {
     const filter = { cityId: new Types.ObjectId(cityId), slug: zone.slug };
-    const res = await this.zones.updateOne(filter, { $set: { name: zone.name, area: zone.area } }, { upsert: true });
+    const res = await this.zones.updateOne(filter, { $set: { name: zone.name, area: zone.area, adjacentZones: zone.adjacentZones } }, { upsert: true });
     if (res.upsertedId) return { id: res.upsertedId.toString(), created: true };
     const existing = await this.zones.findOne(filter, { _id: 1 }).lean().orFail();
     return { id: existing._id.toString(), created: false };
@@ -98,6 +98,12 @@ export class CitiesRepository {
   async listZones(cityId: string): Promise<{ id: string; slug: string; name: string }[]> {
     const docs = await this.zones.find({ cityId: new Types.ObjectId(cityId) }, { slug: 1, name: 1 }).sort({ _id: 1 }).lean();
     return docs.map((d) => ({ id: d._id.toString(), slug: d.slug, name: d.name }));
+  }
+
+  /** Các cụm kèm bảng kề theo thứ tự seed, cho thuật toán lịch trình; document cũ thiếu bảng kề thì rỗng. */
+  async listItineraryZones(cityId: string): Promise<ItineraryZone[]> {
+    const docs = await this.zones.find({ cityId: new Types.ObjectId(cityId) }, { slug: 1, name: 1, adjacentZones: 1 }).sort({ _id: 1 }).lean();
+    return docs.map((d) => ({ id: d._id.toString(), slug: d.slug, name: d.name, adjacentZones: d.adjacentZones ?? [] }));
   }
 
   /** Polygon các cụm của thành phố theo thứ tự seed, để gợi ý cụm khi ghim. */

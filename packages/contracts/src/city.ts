@@ -33,6 +33,8 @@ export const ZoneInput = z.object({
   slug: Slug,
   name: z.string().min(1),
   area: GeoPolygon,
+  /** Slug cụm ghép được trong một ngày lịch trình: chung ranh giới, đã trừ cặp cấm; đối xứng (technical-design mục 3). */
+  adjacentZones: z.array(Slug).default([]),
 });
 export type ZoneInput = z.infer<typeof ZoneInput>;
 
@@ -55,6 +57,17 @@ export const CitySeed = z
         ctx.addIssue({ code: 'custom', path: ['zones', i, 'area'], message: `Cụm ${zone.slug} nằm ngoài khung bản đồ` });
       }
     });
+    const bySlug = new Map(seed.zones.map((zone) => [zone.slug, zone]));
+    seed.zones.forEach((zone, i) => {
+      const issue = (message: string) => ctx.addIssue({ code: 'custom', path: ['zones', i, 'adjacentZones'], message });
+      zone.adjacentZones.forEach((other, j) => {
+        const target = bySlug.get(other);
+        if (other === zone.slug) issue(`Cụm ${zone.slug} không được kề chính nó`);
+        else if (!target) issue(`Cụm ${zone.slug} kề với cụm không có trong seed: ${other}`);
+        else if (zone.adjacentZones.indexOf(other) !== j) issue(`Cụm ${zone.slug} lặp cụm kề ${other}`);
+        else if (!target.adjacentZones.includes(zone.slug)) issue(`Cụm ${zone.slug} kề ${other} nhưng ${other} không kề lại`);
+      });
+    });
   });
 export type CitySeed = z.infer<typeof CitySeed>;
 
@@ -75,6 +88,10 @@ export type CityRef = z.infer<typeof CityRef>;
 /** Cụm khu vực đã xác định, truyền giữa các module của API (id là ObjectId dạng chuỗi). */
 export const ZoneRef = z.object({ id: ObjectIdString, slug: Slug, name: z.string().min(1) });
 export type ZoneRef = z.infer<typeof ZoneRef>;
+
+/** Cụm kèm bảng kề, đầu vào của thuật toán lịch trình (S34). */
+export const ItineraryZone = ZoneRef.extend({ adjacentZones: z.array(Slug) });
+export type ItineraryZone = z.infer<typeof ItineraryZone>;
 
 /** GET /v1/cities/:city: thông tin công khai và danh sách cụm (technical-design mục 6). */
 export const CityPublic = z.object({

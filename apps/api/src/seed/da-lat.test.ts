@@ -13,6 +13,16 @@ describe('DA_LAT_SEED', () => {
     expect(DA_LAT_SEED.zones.map((z) => z.slug).sort()).toEqual([...DalatZone.options].sort());
   });
 
+  it('bảng kề đúng quyết định 19/10/2026, không ghép Bắc–Đông', () => {
+    const graph = Object.fromEntries(DA_LAT_SEED.zones.map((z) => [z.slug, [...z.adjacentZones].sort()]));
+    expect(graph).toEqual({
+      'trung-tam': ['phia-bac', 'phia-dong', 'phia-nam'],
+      'phia-nam': ['phia-dong', 'trung-tam'],
+      'phia-bac': ['trung-tam'],
+      'phia-dong': ['phia-nam', 'trung-tam'],
+    });
+  });
+
   describe('ghi vào MongoDB', () => {
     let conn: Connection;
     let cities: CityModel;
@@ -54,6 +64,17 @@ describe('DA_LAT_SEED', () => {
         }
       }
       expect(misses).toEqual([]);
+    });
+
+    it('itineraryZones đọc lại bảng kề theo thứ tự seed; seed lại thì cập nhật', async () => {
+      const { cityId } = await service.applySeed(DA_LAT_SEED);
+      expect((await service.itineraryZones(cityId)).map((z) => [z.slug, z.adjacentZones.length])).toEqual([
+        ['trung-tam', 3], ['phia-nam', 2], ['phia-bac', 1], ['phia-dong', 2],
+      ]);
+      const edited = { ...DA_LAT_SEED, zones: DA_LAT_SEED.zones.map((z) => ({ ...z, adjacentZones: [] })) };
+      await service.applySeed(edited);
+      expect((await service.itineraryZones(cityId)).every((z) => z.adjacentZones.length === 0)).toBe(true);
+      await service.applySeed(DA_LAT_SEED); // trả lại bảng kề gốc cho các test sau
     });
 
     it('tâm thành phố nằm trong cụm Trung tâm', async () => {

@@ -10,6 +10,8 @@ export const ZoneSchema = new Schema(
     slug: { type: String, required: true },
     name: { type: String, required: true },
     area: { type: PolygonSchema, required: true },
+    /** Slug cụm ghép được trong một ngày lịch trình (S34); seed là nguồn, document cũ thiếu thì rỗng. */
+    adjacentZones: { type: [String], default: [] },
   },
   { collection: 'zones', timestamps: true },
 );
