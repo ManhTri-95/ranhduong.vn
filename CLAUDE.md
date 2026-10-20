@@ -99,6 +99,8 @@ pnpm --filter @ranhduong/geo test        # test một package
 
 ## Trạng thái
 
+- S34 code xong trên `feat/S34-itinerary-place-selection`: `Zone.adjacentZones` trong contracts/seed (Đà Lạt cấm Bắc–Đông, `CitySeed` kiểm đối xứng), `CitiesService.itineraryZones`; hàm thuần `planItinerary` ở `apps/api/src/modules/itineraries/planner/` lọc ứng viên theo ngày, chấm điểm (gu chỉ cộng, mái che ngày mưa theo `City.seasons`), mẫu gần nhất chỉ thay điểm không hợp, tạo từ đầu bằng vét cạn tổ hợp cụm (4 ngày đầu không lặp cụm, ngày 5 thong thả), `NOT_ENOUGH_PLACES` kèm gợi ý đã chạy thử. Chưa có endpoint (S36/S37). 20 task workspace, 84 SSR đạt. Runbook `docs/runbooks/itinerary-place-selection.md`; chờ CI remote và `pnpm seed` lại để ghi bảng kề.
+
 - S33 code xong trên `feat/S33-itinerary-data-reminders`: danh sách admin nhắc thiếu thời lượng, thời điểm đẹp, cụm, quá hạn/chưa xác minh và sắp tới hạn (7 ngày trước mốc 90 ngày); lọc từng nhắc, giữ URL và số đếm tab, bảng/thẻ điện thoại, không chặn kích hoạt. Contracts/API truyền hai trường mới, dữ liệu cũ vẫn đọc được; 20 task workspace, 84 SSR, Chrome 390px/desktop và review độc lập đạt. Runbook `docs/runbooks/itinerary-data-reminders.md`; chờ CI remote, staging, điện thoại thật và Sentry 24 giờ.
 
 - S32 code xong trong workspace: admin lịch trình có chip Gu tối đa 3 và Đi cùng ai, contracts dùng enum S31, lưu riêng `params.tags`/`params.with` khỏi `style`; mở/lưu mẫu cũ và khôi phục nháp cũ/mới, bỏ chọn không suy lại từ phong cách; preview điện thoại/Google giữ nguyên. 20 task workspace, 84 SSR, Chrome 390px/desktop và review độc lập đạt. Runbook `docs/runbooks/template-trip-preferences.md`; chờ CI remote, staging, điện thoại thật và Sentry 24 giờ.
