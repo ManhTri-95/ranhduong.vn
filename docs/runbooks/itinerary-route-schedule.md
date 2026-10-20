@@ -16,7 +16,9 @@ Giống `planItinerary` (S34): `PlanInput` gồm `request`, `places`, `zones`, `
   - `stops`: `{ placeId, kind: 'visit' | 'meal', start, end, travelMinFromPrev }`, giờ dạng `HH:mm`.
   - `detours`: `{ afterIndex, placeId, detourMin }`.
   - `issues`: `missing_lunch` hoặc `missing_dinner` khi ngày đi qua khung giờ ăn mà không chèn được quán hợp lệ.
-- Thiếu điểm: `{ ok: false, code: 'NOT_ENOUGH_PLACES', details }` như S34. `shortages` gồm cả ngày mà S35 phải bỏ điểm (sai giờ, quá 21:30) tới mức còn dưới 3 điểm tham quan. Gợi ý `reduce_days`/`drop_interests` đã chạy thử trên toàn bộ S34 + S35.
+- `zoneIds` chỉ giữ cụm còn điểm tham quan sau khi S35 bỏ điểm.
+- Mẫu gần nhất mà S35 phải bỏ điểm tới dưới 3 điểm tham quan thì bỏ mẫu và tạo từ đầu, như khi S34 bỏ mẫu.
+- Thiếu điểm: `{ ok: false, code: 'NOT_ENOUGH_PLACES', details }` như S34. `shortages` gồm cả ngày mà S35 phải bỏ điểm (sai giờ, quá 21:30) tới mức còn dưới 3 điểm tham quan; khi đó `available` là số điểm còn xếp được, không phải số điểm của cụm. Gợi ý `reduce_days`/`drop_interests` đã chạy thử trên toàn bộ S34 + S35.
 
 S37 khi lưu cần: sinh `key` (UUID) cho từng điểm, đổi `detours[].afterIndex` thành `afterKey`, đặt `note: ''`, `locked: false`, `isVip: false`.
 
@@ -31,6 +33,7 @@ S37 khi lưu cần: sinh `key` (UUID) cho từng điểm, đổi `detours[].afte
 4. **Chờ quán mở**:
    - Điểm thường chờ tối đa 30 phút.
    - Trước 07:00 chờ bao lâu cũng được: sau điểm bình minh, quán mở 07:00 không bị bỏ.
+   - Điểm bình minh chỉ chờ tới 06:00. Mở muộn hơn thì không còn là săn mây: điểm đó bị bỏ và ngày bắt đầu 07:00.
    - Điểm ghim cuối (chợ đêm) chờ tới giờ mở, không giới hạn.
    - S15 không chờ: các tuỳ chọn chờ mặc định tắt.
 5. **Sửa sai giờ**: điểm sai giờ đầu tiên thử đổi với điểm kề trước, rồi điểm kề sau (không đổi điểm ghim). Nhận khi số điểm sai giờ giảm. Không được thì bỏ điểm có điểm số thấp nhất trong các điểm đang sai giờ, kể cả điểm ghim. Bỏ điểm bình minh thì ngày bắt đầu lại 07:00.
@@ -40,9 +43,9 @@ S37 khi lưu cần: sinh `key` (UUID) cho từng điểm, đổi `detours[].afte
    - Xếp hạng: phút thêm vào tuyến (đi vòng cộng chờ tới giờ ăn, làm tròn 5 phút), rồi đúng mức giá, rồi điểm số, rồi id.
    - **Mức giá** (chủ dự án chọn 20/10/2026): mức trần của ngày là `priceLevel` cao nhất của các điểm tham quan trong ngày; điểm chưa có mức giá tính là 2. Quán không quá mức trần, hoặc chưa có mức giá, là đúng mức giá. Đây chỉ là thứ tự ưu tiên, không loại quán.
    - Không chèn được thì ngày vẫn tạo, kèm `issues`.
-7. **21:30**: ngày kết thúc sau 21:30 thì bỏ điểm tham quan điểm số thấp nhất, rồi sửa giờ và chèn bữa lại. Còn dưới 3 điểm tham quan thì báo thiếu điểm.
+7. **21:30**: ngày kết thúc sau 21:30 thì bỏ một điểm tham quan rồi sửa giờ và chèn bữa lại. Điểm bị bỏ là điểm có điểm số thấp nhất trong những điểm mà bỏ đi thì ngày thật sự kết thúc sớm hơn; không có điểm nào như vậy thì bỏ điểm thấp nhất. Nhờ vậy điểm buổi tối mở muộn (phòng trà mở 20:00) hay bị bữa tối đẩy quá 21:30 sẽ bị bỏ, thay vì bỏ hết các điểm khác rồi báo thiếu điểm. Bữa ăn vẫn được ưu tiên hơn điểm tham quan đó. Còn dưới 3 điểm tham quan thì báo thiếu điểm.
 8. **Tiện đường** (`detours.ts`, chạy sau khi dựng mọi ngày):
-   - Mỗi cặp điểm liên tiếp có tối đa một gợi ý. Chọn điểm phải đi vòng ít nhất, dưới 10 phút (phút chưa làm tròn).
+   - Mỗi cặp điểm liên tiếp có tối đa một gợi ý. Chọn điểm phải đi vòng ít nhất (so bằng phút chưa làm tròn); số phút làm tròn phải dưới 10, đúng số hiển thị.
    - Điểm gợi ý lấy từ điểm tham quan hợp lệ của ngày, chưa có trong chuyến, chưa được gợi ý ở chỗ khác, mở suốt lượt ghé nếu ghé ngay sau điểm trước.
    - `detourMin` là số phút đi vòng, làm tròn.
 
@@ -54,7 +57,7 @@ Các hằng số (07:00/04:45, 21:30, đệm 10, chờ 30, đi vòng 10, mức g
 
 `generate-itinerary.test.ts` đo 140 yêu cầu (1–5 ngày × 7 thứ khởi hành × 2 nhịp × có/không nơi ở) trên 200 địa điểm giả (4 cụm, khoảng 25% quán ăn).
 
-Kết quả trên máy dev Windows 11, Node 24, ngày 20/10/2026: p95 17,2 ms, chậm nhất 25,0 ms. Mục tiêu là p95 dưới 500 ms.
+Kết quả trên máy dev Windows 11, Node 24, ngày 20/10/2026 (sau bản sửa review): p95 16,7 ms, chậm nhất 22,4 ms. Mục tiêu là p95 dưới 500 ms.
 
 Ca thiếu điểm tốn hơn ca thường vì chạy thử tối đa 5 lần để tìm gợi ý.
 
@@ -67,7 +70,7 @@ pnpm --filter @ranhduong/api exec vitest run src/modules/itineraries/planner
 pnpm turbo run lint typecheck test build
 ```
 
-Test bất biến trong `generate-itinerary.test.ts` dùng hạt cố định, chạy trên hai bộ: 200 điểm và 40 điểm đầu. Lần chạy hiện tại có 149 ca tạo được và 131 ca thiếu điểm. Với mỗi ca tạo được, test kiểm:
+Test bất biến trong `generate-itinerary.test.ts` dùng hạt cố định, chạy trên hai bộ: 200 điểm và 40 điểm đầu. Lần chạy hiện tại có 147 ca tạo được và 133 ca thiếu điểm. Test bất biến mới dùng một hạt, chưa có mùa mưa và mẫu; các ca mẫu, 21:30, bình minh và tiện đường 9,5–10 phút có test riêng. Với mỗi ca tạo được, test kiểm:
 
 - Mỗi điểm dừng hợp lệ trong ngày và mở suốt giờ ghé.
 - Giờ không chồng nhau; ngày kết thúc không sau 21:30.

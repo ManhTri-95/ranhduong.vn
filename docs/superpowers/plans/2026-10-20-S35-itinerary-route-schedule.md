@@ -503,3 +503,20 @@ it('p95 dưới 500 ms với 200 địa điểm giả', () => {
 - [ ] **Step 3: Kiểm toàn repo** — `pnpm infra:up; pnpm turbo run lint typecheck test build`, Expected: mọi task xanh (20 task như các story trước); thêm `pnpm --filter @ranhduong/web test:ssr` vì contracts đổi (admin/web dùng `analyzeTemplate`), Expected: xanh.
 - [ ] **Step 4: Review độc lập** theo `superpowers:requesting-code-review` trên diff nhánh so với `main`; sửa lỗi có căn cứ (test đỏ trước), chạy lại Step 3.
 - [ ] **Step 5: Commit** — `git commit -m "docs: S35 record route and schedule runbook and status"`
+
+## Execution Record
+
+- Thực thi tuần tự trong phiên (executing-plans) trên nhánh `feat/S35-itinerary-route-schedule` của workspace hiện tại, không tạo worktree, theo quy ước các story trước. Task 1–8 xong, mỗi task có RED/GREEN và dòng ledger trong `.superpowers/sdd/…/progress.md`.
+- Ruling Task 3: `byScore` nhận `Pick<ScoredPlace, 'place' | 'score'>` để sắp `DayStop`. Ruling Task 7: `issues` có kiểu `` `missing_${MealKind}`[] ``.
+- Review độc lập toàn nhánh: S15 không đổi (fuzz 20.000 đầu vào). Đã sửa (mỗi lỗi có test đỏ trước):
+  - Điểm bình minh chờ tới 07:00 trong khi ngày báo 04:45. Quyết định 4 bổ sung: điểm bình minh chỉ chờ tới 06:00. `scheduleDay` thay `freeWaitUntil` cấp ngày bằng `waitUntil` theo từng điểm.
+  - `detourMin` có thể bằng 10. Quyết định 9 bổ sung: lọc theo số phút đã làm tròn.
+  - Quy tắc 21:30 không gỡ được khi trễ do điểm buổi tối mở muộn hay bữa tối. Quyết định 7 bổ sung: bỏ điểm thấp nhất trong các điểm mà bỏ đi thì ngày ngắn lại.
+  - Mẫu bị S35 bỏ điểm tới dưới 3 điểm không quay lại tạo từ đầu.
+  - `zoneIds` giữ cụm không còn điểm nào.
+- Hoãn (minor):
+  - Ngày thiếu điểm do S35 bỏ điểm: `available` là số điểm còn xếp được (đã ghi ở runbook).
+  - `latLng` lặp ở hai file.
+  - Test bất biến một hạt, chưa có mùa mưa và mẫu.
+  - Ngày có chợ đêm thường trống từ trưa tới tối.
+- Đo: p95 16,7 ms, chậm nhất 22,4 ms (140 yêu cầu, 200 điểm giả). Chưa kiểm: CI remote, staging, điện thoại thật (chưa có endpoint; làm cùng S36/S37).
