@@ -23,6 +23,12 @@ describe('S35 suggestDetours', () => {
     expect(suggestDetours([A, B], t, [cand(12, pt(0.11, 0.13))], 1, new Set())).toEqual([]);
   });
 
+  it('số phút hiển thị luôn dưới 10: đi vòng 9,5–10 phút thì không gợi ý', () => {
+    // pt(0.11, 0.1205) đi vòng khoảng 9,57 phút, làm tròn thành 10.
+    expect(suggestDetours([A, B], t, [cand(14, pt(0.11, 0.1205))], 1, new Set())).toEqual([]);
+    expect(suggestDetours([A, B], t, [cand(15, pt(0.11, 0.12))], 1, new Set())).toEqual([{ afterIndex: 0, placeId: fakePlace(15).id, detourMin: 9 }]);
+  });
+
   it('bỏ điểm đã có trong chuyến hoặc đóng cửa lúc ghé', () => {
     const near = cand(10, pt(0.11, 0.105));
     expect(suggestDetours([A, B], t, [cand(11, pt(0.11, 0.1)), near], 1, new Set([fakePlace(11).id]))[0]?.placeId).toBe(near.place.id);

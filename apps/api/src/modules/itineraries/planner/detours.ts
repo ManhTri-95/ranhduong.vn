@@ -3,7 +3,7 @@ import { exactTravel } from './route';
 import { EPS, type ScoredPlace } from './scoring';
 import { legMinutes, type DayStop } from './timing';
 
-/** Điểm đi vòng dưới bấy nhiêu phút là "Tiện đường" (product-spec mục 8). */
+/** Điểm đi vòng dưới bấy nhiêu phút (sau khi làm tròn, đúng số hiển thị) là "Tiện đường" (product-spec mục 8). */
 export const DETOUR_MAX_MIN = 10;
 
 /** Gợi ý tuỳ chọn ghé thêm sau điểm dừng thứ `afterIndex`; S37 đổi chỉ số thành `afterKey`. */
@@ -28,7 +28,7 @@ export function suggestDetours(stops: readonly DayStop[], times: DaySchedule, po
     for (const { place } of pool) {
       if (!place.location || taken.has(place.id)) continue;
       const detour = exactTravel(a.location, place.location) + exactTravel(place.location, b.location) - exactTravel(a.location, b.location);
-      if (detour >= DETOUR_MAX_MIN || (best && detour >= best.detour - EPS)) continue;
+      if (Math.round(detour) >= DETOUR_MAX_MIN || (best && detour >= best.detour - EPS)) continue;
       const arrival = leaveAt + legMinutes(a.location, place.location);
       if (!coversVisit(place, weekday, arrival, arrival + (place.visitDurationMin ?? 60))) continue;
       best = { placeId: place.id, detour };
