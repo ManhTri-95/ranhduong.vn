@@ -11,6 +11,7 @@ export * from './itinerary.js';
 export * from './itinerary-admin.js';
 export * from './itinerary-meals.js';
 export * from './itinerary-narrative.js';
+export * from './itinerary-plan.js';
 export * from './itinerary-public.js';
 export * from './itinerary-request.js';
 export * from './itinerary-schedule.js';

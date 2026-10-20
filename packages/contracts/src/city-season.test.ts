@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { CitySeason } from './city.js';
-import { selectCitySeason } from './city-season.js';
+import { inRainSeason, selectCitySeason } from './city-season.js';
 
 const flower: CitySeason = { key: 'mai-anh-dao', from: '12-20', to: '02-28', accent: '#E58FA8', title: 'Mùa hoa Giả Lập', sub: 'Mô tả Giả Lập', illustration: 'cherry-blossom' };
 const at = (day: string) => new Date(`${day}T05:00:00Z`);
@@ -35,5 +35,22 @@ describe('selectCitySeason', () => {
   it('recognizes old flower keys and preserves ordering within a priority group', () => {
     const rain = { ...flower, key: 'mua-mua', from: '01-01', to: '12-31' };
     expect(select([rain, flower, { ...flower, key: 'da-quy' }], at('2026-01-05'))?.key).toBe('mai-anh-dao');
+  });
+});
+
+describe('inRainSeason', () => {
+  const rain = (from: string, to: string, extra: Partial<CitySeason> = {}): CitySeason => ({ ...flower, key: 'mua-gia-lap', kind: 'rain', from, to, ...extra });
+  it('bao gồm hai đầu khoảng', () => {
+    const seasons = [rain('05-01', '11-30')];
+    expect(['05-01', '11-30', '12-01'].map((day) => inRainSeason(seasons, day))).toEqual([true, true, false]);
+  });
+  it('mùa mưa vắt qua năm mới', () => {
+    const seasons = [rain('12-20', '01-10')];
+    expect(['12-31', '01-01', '01-11'].map((day) => inRainSeason(seasons, day))).toEqual([true, true, false]);
+  });
+  it('chỉ mùa mưa mới tính; mùa cũ key mua-mua không có kind vẫn là mưa; không có mùa thì false', () => {
+    expect(inRainSeason([rain('05-01', '11-30', { kind: 'flower' })], '06-01')).toBe(false);
+    expect(inRainSeason([rain('05-01', '11-30', { kind: undefined, key: 'mua-mua' })], '06-01')).toBe(true);
+    expect(inRainSeason([], '06-01')).toBe(false);
   });
 });
