@@ -95,6 +95,22 @@ describe('S35 generateItinerary', () => {
     });
   });
 
+  it('quá 21:30 vì điểm buổi tối mở muộn thì bỏ điểm đó, không báo thiếu điểm', () => {
+    const late = fakePlace(1, { bestTime: ['evening'], tags: ['chill'], visitDurationMin: 120, openingHours: allDays('20:00', '23:30') });
+    const r = generateItinerary(planInput({ request: fakeRequest({ tags: ['chill_cafe'] }), places: [late, ...placesIn(0, 8, 2), ...placesIn(0, 3, 30, { category: 'food' })] }));
+    expect(r.ok).toBe(true);
+    expect(r.ok && r.days[0]!.stops.at(-1)!.end <= '21:30').toBe(true);
+  });
+
+  it('quá 21:30 vì bữa tối đẩy điểm buổi tối thì vẫn tạo được lịch trình', () => {
+    const evening = fakePlace(1, { bestTime: ['evening'], tags: ['chill'], visitDurationMin: 120, openingHours: allDays('19:30', '23:30') });
+    const lunch = fakePlace(20, { category: 'food', visitDurationMin: 60, openingHours: allDays('10:00', '14:00') });
+    const dinner = fakePlace(21, { category: 'food', visitDurationMin: 90, openingHours: allDays('17:00', '22:00') });
+    const r = generateItinerary(planInput({ request: fakeRequest({ tags: ['chill_cafe'] }), places: [evening, ...placesIn(0, 6, 2), lunch, dinner] }));
+    expect(r.ok).toBe(true);
+    expect(r.ok && r.days[0]!.stops.at(-1)!.end <= '21:30').toBe(true);
+  });
+
   it('bất biến trên 200 địa điểm giả có hạt cố định', () => {
     const places = seededPlaces(35, 200);
     const byId = new Map(places.map((p) => [p.id, p]));

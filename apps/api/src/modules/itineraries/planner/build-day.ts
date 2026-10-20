@@ -33,22 +33,31 @@ function preferRainCover(order: DayStop[], weekday: number, stay?: GeoPoint): Da
   return rainCoverMinutes(reversed, timeStops(reversed, weekday)) > rainCoverMinutes(order, timeStops(order, weekday)) ? reversed : order;
 }
 
+const dayEnd = (times: DaySchedule) => times.stops.at(-1)?.end ?? 0;
+
 /**
  * Sắp tuyến, xếp giờ và chèn bữa cho một ngày (technical-design mục 7 bước 7–9): sửa sai giờ mở cửa, ngày kết thúc
- * sau 21:30 thì bỏ điểm điểm số thấp nhất rồi làm lại. Còn dưới 3 điểm tham quan thì trả về để báo thiếu điểm.
+ * sau 21:30 thì bỏ điểm điểm số thấp nhất trong các điểm mà bỏ đi thì ngày kết thúc sớm hơn (không có thì điểm thấp
+ * nhất), rồi làm lại. Còn dưới 3 điểm tham quan thì trả về để báo thiếu điểm.
  */
 export function buildDay(pool: DayPool, pick: DayPick, options: { stay?: GeoPoint; used: ReadonlySet<string> }): BuiltDay {
   const weekday = pool.trip.weekday;
+  const foods = [...pool.scored.values()].filter(({ place }) => servesCategory(place, 'food')).sort(byScore);
+  const settle = (visits: readonly DayStop[]) => {
+    const order = repairHours(visits, weekday);
+    if (order.length < MIN_VISITS_PER_DAY) return { order, stops: order, times: timeStops(order, weekday), missing: [] };
+    const { stops, missing } = insertMeals(order, foods, weekday, options.used);
+    return { order, stops, times: timeStops(stops, weekday), missing };
+  };
   let order = routeDay(pick.picks.flatMap((scored) => toDayStop(scored, 'visit') ?? []), exactTravel, options.stay);
   if (pool.rainy) order = preferRainCover(order, weekday, options.stay);
-  const foods = [...pool.scored.values()].filter(({ place }) => servesCategory(place, 'food')).sort(byScore);
   for (;;) {
-    order = repairHours(order, weekday);
-    if (order.length < MIN_VISITS_PER_DAY) return { stops: order, times: timeStops(order, weekday), missingMeals: [] };
-    const { stops, missing } = insertMeals(order, foods, weekday, options.used);
-    const times = timeStops(stops, weekday);
-    if (!times.lateFinish) return { stops, times, missingMeals: missing };
-    const worst = [...order].sort(byScore).at(-1)!;
-    order = order.filter((stop) => stop !== worst);
+    const day = settle(order);
+    if (day.order.length < MIN_VISITS_PER_DAY || !day.times.lateFinish) return { stops: day.stops, times: day.times, missingMeals: day.missing };
+    // Trễ có thể do điểm buổi tối mở muộn hay bữa tối đẩy điểm sau: bỏ điểm thấp nhất nhưng phải làm ngày ngắn lại.
+    const lowestFirst = [...day.order].sort(byScore).reverse();
+    const shorter = lowestFirst.find((stop) => dayEnd(settle(day.order.filter((s) => s !== stop)).times) < dayEnd(day.times));
+    const drop = shorter ?? lowestFirst[0]!;
+    order = day.order.filter((stop) => stop !== drop);
   }
 }
