@@ -3,6 +3,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { EVENT_METRIC_FIELD, METRIC_FIELDS, MetricDaily, emptyMetricCounts, type MetricCounts, type PlaceEvent } from '@ranhduong/contracts';
 import { Redis } from 'ioredis';
 import { REDIS } from '../../shared/redis/redis.module';
+import { slidingWindowAllowed } from '../../shared/http/sliding-window';
 
 const RETENTION = 8 * 86400;
 const COUNT = `
@@ -13,12 +14,6 @@ redis.call('EXPIRE', KEYS[1], ${RETENTION})
 redis.call('SADD', KEYS[3], ARGV[2])
 redis.call('EXPIRE', KEYS[3], ${RETENTION})
 redis.call('ZADD', KEYS[4], ARGV[3], ARGV[4])
-return 1`;
-const RATE = `
-redis.call('ZREMRANGEBYSCORE', KEYS[1], '-inf', ARGV[1] - 60000)
-if redis.call('ZCARD', KEYS[1]) >= 120 then return 0 end
-redis.call('ZADD', KEYS[1], ARGV[1], ARGV[2])
-redis.call('EXPIRE', KEYS[1], 60)
 return 1`;
 
 @Injectable()
@@ -36,7 +31,7 @@ export class MetricsStore {
     return { visitor: hash([ip, userAgent]), ip: createHash('sha256').update(JSON.stringify([rateSalt, ip])).digest('hex') };
   }
   async rateAllowed(ipHash: string, now = Date.now()): Promise<boolean> {
-    return Number(await this.redis.eval(RATE, 1, `pm:rate:${ipHash}`, now, randomBytes(16).toString('hex'))) === 1;
+    return slidingWindowAllowed(this.redis, [{ key: `pm:rate:${ipHash}`, limit: 120 }], 60000, now);
   }
   async count(event: PlaceEvent, day: string, visitor: string, cityId: string): Promise<number> {
     return Number(await this.redis.eval(COUNT, 4, `pm:${event.placeId}:${day}`, `seen:${visitor}:${event.placeId}:${day}`, `pm:index:${day}`, 'pm:days', EVENT_METRIC_FIELD[event.type], event.placeId, Date.parse(`${day}T00:00:00Z`), day, cityId));

@@ -96,6 +96,11 @@ const api = createServer((req, res) => {
 });
 
 describe('S20 static legal pages production SSR', () => {
+  it('S37 explains the guest cookie and approximate private accommodation in SSR', async () => {
+    const html = await (await fetch(`${base}/quyen-rieng-tu`)).text();
+    for (const text of ['gid', '1 năm', '0,005°', 'nơi ở', 'không công khai']) expect(html).toContain(text);
+    expect(html).toContain('21/10/2026');
+  });
   it.each([
     { path: '/dieu-khoan', title: 'Điều khoản sử dụng' },
     { path: '/quyen-rieng-tu', title: 'Quyền riêng tư' },
@@ -128,7 +133,8 @@ describe('S20 static legal pages production SSR', () => {
     for (const kind of ['pages', 'places', 'lists', 'itineraries']) {
       const xml = await (await fetch(`${base}/sitemap-${kind}.xml`)).text();
       for (const path of ['/dieu-khoan', '/quyen-rieng-tu', '/ghi-nguon']) {
-        const entry = `<url><loc>https://ranhduong.vn${path}</loc><lastmod>2026-10-12T00:00:00.000Z</lastmod></url>`;
+        const lastmod = path === '/quyen-rieng-tu' ? '2026-10-21T00:00:00.000Z' : '2026-10-12T00:00:00.000Z';
+        const entry = `<url><loc>https://ranhduong.vn${path}</loc><lastmod>${lastmod}</lastmod></url>`;
         if (kind === 'pages') expect(xml).toContain(entry);
         else expect(xml).not.toContain(`<loc>https://ranhduong.vn${path}</loc>`);
       }

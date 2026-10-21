@@ -51,6 +51,17 @@ describe('ItinerarySchema và ItinerariesRepository', () => {
     });
   });
 
+  it('S37 creates a unique partial shareId index and persists version and detours', async () => {
+    const byName = new Map((await model.listIndexes()).map((index) => [index.name, index]));
+    expect(byName.get('shareId_1')).toMatchObject({ key: { shareId: 1 }, unique: true, partialFilterExpression: { shareId: { $type: 'string' } } });
+    const placeId = new Types.ObjectId();
+    const key = '00000000-0000-4000-8000-000000000001';
+    const saved = await insert(fakeItinerary({ kind: 'user', shareId: 'Ab01'.repeat(5), days: [{ day: 1, stops: [{ placeId, key, start: '07:00', end: '08:00' }], detours: [{ afterKey: key, placeId, detourMin: 5 }], issues: ['missing_lunch'] }] }));
+    expect(saved.toObject()).toMatchObject({ version: 1, days: [{ detours: [{ afterKey: key, placeId, detourMin: 5 }], issues: ['missing_lunch'] }] });
+    expect(saved.toObject()).not.toHaveProperty('paramsHash');
+    await expect(insert(fakeItinerary({ kind: 'user', shareId: 'Ab01'.repeat(5) }))).rejects.toMatchObject({ code: 11000 });
+  });
+
   it('chặn hai lịch trình mẫu trùng slug trong một thành phố; nhiều bản không có slug vẫn được', async () => {
     const cityId = new Types.ObjectId();
     await insert(fakeItinerary({ cityId, slug: 'lich-trinh-gia-lap' }));

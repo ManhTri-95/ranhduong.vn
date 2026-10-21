@@ -94,6 +94,11 @@ export class CitiesRepository {
     return { id: doc._id.toString(), slug: doc.slug, name: doc.name, accent: doc.accent, center: doc.center, mapBounds: doc.mapBounds };
   }
 
+  async findActiveById(id: string) {
+    const doc = await this.cities.findOne({ _id: new Types.ObjectId(id), active: true }, { slug: 1, name: 1 }).lean();
+    return doc ? { id: doc._id.toString(), slug: doc.slug, name: doc.name } : null;
+  }
+
   /** Các cụm của thành phố theo thứ tự tạo, tức thứ tự trong file seed. */
   async listZones(cityId: string): Promise<{ id: string; slug: string; name: string }[]> {
     const docs = await this.zones.find({ cityId: new Types.ObjectId(cityId) }, { slug: 1, name: 1 }).sort({ _id: 1 }).lean();

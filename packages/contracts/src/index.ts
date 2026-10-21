@@ -14,6 +14,7 @@ export * from './itinerary-narrative.js';
 export * from './itinerary-plan.js';
 export * from './itinerary-public.js';
 export * from './itinerary-request.js';
+export * from './itinerary-user.js';
 export * from './itinerary-schedule.js';
 export * from './labels.js';
 export * from './media.js';

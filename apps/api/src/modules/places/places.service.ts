@@ -7,6 +7,7 @@ import { toPlaceDetail } from './place-detail';
 import { placeNotFound } from './place-errors';
 import { ENV, type Env } from '../../config/env';
 import { GeoPoint, ItineraryPlace, ItineraryStopPlace, OpeningSlot, PlacePhoto, TemplatePlace } from '@ranhduong/contracts';
+import { PlanningSnapshot } from './planning-snapshot';
 
 @Injectable()
 export class PlacesService {
@@ -17,6 +18,7 @@ export class PlacesService {
     private readonly repo: PlacesRepository,
     private readonly cities: CitiesService,
     @Optional() @Inject(ENV) private readonly env?: Env,
+    @Optional() private readonly snapshot?: PlanningSnapshot,
   ) {}
 
   /** Dùng cho lệnh seed và khởi tạo môi trường mới; CRUD địa điểm thêm ở S05. */
@@ -81,6 +83,10 @@ export class PlacesService {
   }
 
   /** Complete city-scoped facts for S34–S36, retaining all scoring fields and rejecting malformed records. */
+  planningSnapshot(cityId: string): Promise<ItineraryPlace[]> {
+    return this.snapshot ? this.snapshot.get(cityId, () => this.planningPlaces(cityId)) : this.planningPlaces(cityId);
+  }
+
   async planningPlaces(cityId: string): Promise<ItineraryPlace[]> {
     const rows = await this.repo.templatePlaces(cityId);
     return rows.flatMap((row) => {

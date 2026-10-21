@@ -29,13 +29,19 @@ const config = useRuntimeConfig().public;
       <p>Bản nháp nhập liệu quản trị có thể được giữ trong bộ nhớ trình duyệt để khôi phục. Các cơ chế này phục vụ quản trị, không yêu cầu khách xem cẩm nang phải đăng nhập.</p>
     </section>
     <section>
-      <h2>4. Yêu cầu tới nhà cung cấp bên ngoài</h2>
+      <h2>4. Khi bạn tạo lịch trình</h2>
+      <p>Lần đầu bạn gửi yêu cầu tạo lịch trình, API đặt cookie <code>gid</code> có thời hạn 1 năm để nhận biết người tạo và cho phép bạn sửa lịch trình trên trình duyệt đó. Cookie có thuộc tính HttpOnly, không được mã JavaScript trên trang đọc; cơ chế giới hạn lượt tạo dùng mã băm của mã khách và IP trong cửa sổ trượt 1 giờ.</p>
+      <p>Nơi ở là lựa chọn tuỳ ý: bạn có thể ghim vị trí, chọn cụm hoặc bỏ qua. Nếu bạn cung cấp nơi ở, máy chủ làm tròn mỗi trục toạ độ tới 0,005° (khoảng 550 m ở Đà Lạt) trước khi xếp tuyến và lưu lịch trình. Vị trí gần đúng này chỉ giúp sắp tuyến, không công khai trong phản hồi lịch trình, trang chia sẻ hay ảnh vé.</p>
+      <p>Lịch trình được mở bằng đường dẫn chia sẻ riêng; ai có đường dẫn đều có thể xem các điểm ghé, nhưng không nhận mã khách hoặc vị trí nơi ở. Bản chép cho người xem không mang theo nơi ở của người chia sẻ. Xoá cookie hoặc đổi trình duyệt sẽ khiến bạn mất quyền sửa bằng mã khách cũ; đường dẫn chia sẻ vẫn mở được.</p>
+    </section>
+    <section>
+      <h2>5. Yêu cầu tới nhà cung cấp bên ngoài</h2>
       <p>Trình duyệt tải phông chữ từ Google Fonts, ảnh từ máy chủ ảnh và dữ liệu nền bản đồ từ OpenFreeMap khi bạn mở bản đồ. Các nhà cung cấp nhận thông tin kỹ thuật như IP để trả nội dung. Hạ tầng phục vụ website cũng xử lý thông tin kết nối để vận hành và bảo vệ dịch vụ.</p>
       <p>Máy chủ Rành Đường gọi WeatherAPI.com bằng tọa độ tâm thành phố để lấy thời tiết. Lời gọi này không gửi IP, vị trí thiết bị hay thông tin cá nhân của khách xem cẩm nang tới nhà cung cấp thời tiết.</p>
       <p>Khi bấm Google Maps, fanpage hoặc website của địa điểm, bạn chuyển tới dịch vụ bên ngoài và chính sách của dịch vụ đó áp dụng. Rành Đường không kiểm soát cách những bên này lưu dữ liệu truy cập.</p>
     </section>
     <section>
-      <h2>5. Yêu cầu về dữ liệu và thay đổi chính sách</h2>
+      <h2>6. Yêu cầu về dữ liệu và thay đổi chính sách</h2>
       <p>Bạn có thể hỏi về việc sử dụng dữ liệu, yêu cầu kiểm tra hoặc sửa thông tin cá nhân liên quan đến bạn. Không cần gửi giấy tờ hay thông tin nhạy cảm trong yêu cầu ban đầu. Rành Đường sẽ trao đổi thêm khi cần xác định dữ liệu và người yêu cầu.</p>
       <p>Ngày ở đầu trang cho biết lần cập nhật nội dung gần nhất. Khi có tính năng thu thập dữ liệu mới, chính sách sẽ được cập nhật để mô tả cách sử dụng và lựa chọn tương ứng.</p>
     </section>

@@ -6,8 +6,10 @@ import type { TemplateSummary } from './itinerary-card';
 import { ITINERARY_MODEL, type ItineraryDoc, type ItineraryModel } from './schemas/itinerary.schema';
 import { sitemapSources, type SitemapSource } from '@ranhduong/contracts';
 import type { PlanTemplate } from './planner/plan-context';
+import type { UserItineraryInput } from './guest/user-itinerary-record';
 
 type EditorRow = ItineraryDoc & { _id: Types.ObjectId };
+export type UserItineraryRow = EditorRow;
 export type TemplateRecord = Omit<AdminTemplate, 'analysis'>;
 function editorSlug(row: EditorRow): string { return Slug.safeParse(row.slug).success ? row.slug! : `lich-trinh-${row._id}`; }
 function toEditor(row: EditorRow): TemplateRecord | null {
@@ -56,6 +58,22 @@ interface TemplateRow {
 /** Lớp dữ liệu của module itineraries: chỉ file này import model Itinerary. */
 @Injectable()
 export class ItinerariesRepository {
+  async insertUser(input: UserItineraryInput, shareId: string): Promise<UserItineraryRow> {
+    const row = await this.itineraries.create({
+      ...input, cityId: new Types.ObjectId(input.cityId), kind: 'user', visibility: 'unlisted', status: 'published', shareId, version: 1,
+      templateId: input.templateId ? new Types.ObjectId(input.templateId) : undefined,
+      days: input.days.map((day) => ({ ...day, zoneIds: day.zoneIds.map((id) => new Types.ObjectId(id)),
+        stops: day.stops.map((stop) => ({ ...stop, placeId: new Types.ObjectId(stop.placeId) })),
+        detours: day.detours.map((detour) => ({ ...detour, placeId: new Types.ObjectId(detour.placeId) })),
+      })),
+    });
+    return row.toObject();
+  }
+
+  userByShareId(shareId: string): Promise<UserItineraryRow | null> {
+    return this.itineraries.findOne({ shareId, kind: 'user', visibility: 'unlisted', status: 'published' }).lean<UserItineraryRow>().exec();
+  }
+
   async planningTemplates(cityId: string): Promise<PlanTemplate[]> {
     const rows = await this.itineraries.find({ cityId: new Types.ObjectId(cityId), kind: 'template', status: 'published' }).sort({ _id: 1 }).lean<EditorRow[]>();
     return rows.flatMap((row) => {

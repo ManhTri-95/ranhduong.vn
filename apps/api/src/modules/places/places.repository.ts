@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import type { BBox, GeoPoint, LngLat, OpeningSlot, Place, PlaceCategory, PlaceStatus, VerifySource } from '@ranhduong/contracts';
 import { Types } from 'mongoose';
@@ -10,6 +10,7 @@ import { atlasSearchStage } from './place-search';
 import { sitemapSources, type SitemapSource } from '@ranhduong/contracts';
 import { MetricPlaceRef } from '@ranhduong/contracts';
 import type { CsvImportCandidate } from './place-csv-import';
+import { PlanningSnapshot } from './planning-snapshot';
 
 /** Trường của thẻ địa điểm; ảnh chỉ lấy tấm đầu. */
 const CARD_FIELDS = {
@@ -95,7 +96,7 @@ export class PlacesRepository {
   async sitemapSources(cityId: string): Promise<SitemapSource[]> {
     return sitemapSources(await this.places.find({ cityId: new Types.ObjectId(cityId), status: { $in: ['active', 'closed'] } }, { slug: 1, updatedAt: 1 }).sort({ slug: 1 }).lean());
   }
-  constructor(@InjectModel(PLACE_MODEL) private readonly places: PlaceModel) {}
+  constructor(@InjectModel(PLACE_MODEL) private readonly places: PlaceModel, @Optional() private readonly snapshot?: PlanningSnapshot) {}
 
   /** Tạo index khai báo trong schema; không xoá index lạ (khác syncIndexes). */
   async ensureIndexes(): Promise<void> {
@@ -165,6 +166,7 @@ export class PlacesRepository {
       { $setOnInsert: { ...input, cityId, createdAt: now, updatedAt: now } },
       { upsert: true, runValidators: true, timestamps: false },
     );
+    if (result.upsertedCount === 1) this.snapshot?.invalidate();
     return result.upsertedCount === 1;
   }
 
@@ -236,11 +238,13 @@ export class PlacesRepository {
   }
 
   async attachPhoto(id: string, photo: import('@ranhduong/contracts').PlacePhoto): Promise<EditRow | null> {
-    return this.places.findOneAndUpdate(
+    const row = await this.places.findOneAndUpdate(
       { _id: new Types.ObjectId(id), status: { $ne: 'merged' }, 'photos.key': { $ne: photo.key } },
       { $push: { photos: photo } },
       { returnDocument: 'after', runValidators: true },
     ).lean<EditRow>();
+    if (row) this.snapshot?.invalidate();
+    return row;
   }
 
   /** Địa điểm chưa gộp của thành phố cho danh sách admin (S07); đọc hết, admin lọc trong trình duyệt (vài trăm điểm). */
@@ -251,6 +255,7 @@ export class PlacesRepository {
   /** Tạo nháp từ form admin; trùng slug thì Mongo ném E11000 để service tính lại slug. */
   async insertDraft(cityId: string, fields: Record<string, unknown>): Promise<string> {
     const doc = await new this.places({ ...fields, cityId: new Types.ObjectId(cityId), status: 'draft', source: 'admin' }).save();
+    this.snapshot?.invalidate();
     return doc._id.toString();
   }
 
@@ -278,13 +283,15 @@ export class PlacesRepository {
   /** PUT: thay các trường form, chỉ khi trạng thái vẫn là `expectedStatus`; trạng thái đã đổi thì null. */
   async replaceEditable(id: string, expectedStatus: PlaceStatus, update: PlaceUpdate): Promise<EditRow | null> {
     const { $set, $unset } = update;
-    return this.places
+    const row = await this.places
       .findOneAndUpdate(
         { _id: new Types.ObjectId(id), status: expectedStatus },
         Object.keys($unset).length > 0 ? { $set, $unset } : { $set },
         { returnDocument: 'after', runValidators: true },
       )
       .lean<EditRow>();
+    if (row) this.snapshot?.invalidate();
+    return row;
   }
 
   /**
@@ -292,13 +299,15 @@ export class PlacesRepository {
    * chưa có updatedAt hoặc updatedAt null); đã đổi thì null. lastVerifiedAt là lúc kích hoạt.
    */
   async activate(id: string, expectedUpdatedAt: Date | null, now: Date): Promise<EditRow | null> {
-    return this.places
+    const row = await this.places
       .findOneAndUpdate(
         { _id: new Types.ObjectId(id), status: 'draft', updatedAt: expectedUpdatedAt },
         { $set: { status: 'active', lastVerifiedAt: now } },
         { returnDocument: 'after' },
       )
       .lean<EditRow>();
+    if (row) this.snapshot?.invalidate();
+    return row;
   }
 
   /**
@@ -306,18 +315,21 @@ export class PlacesRepository {
    * (null khớp document chèn thẳng chưa có updatedAt hoặc updatedAt null). Đã đổi thì null.
    */
   async transition(id: string, expected: { status: PlaceStatus; updatedAt: Date | null }, set: Record<string, unknown>): Promise<EditRow | null> {
-    return this.places
+    const row = await this.places
       .findOneAndUpdate(
         { _id: new Types.ObjectId(id), status: expected.status, updatedAt: expected.updatedAt },
         { $set: set },
         { returnDocument: 'after', runValidators: true },
       )
       .lean<EditRow>();
+    if (row) this.snapshot?.invalidate();
+    return row;
   }
 
   /** Xoá hẳn, chỉ khi còn là nháp; false khi không có hoặc không còn là nháp. */
   async deleteDraft(id: string): Promise<boolean> {
     const { deletedCount } = await this.places.deleteOne({ _id: new Types.ObjectId(id), status: 'draft' });
+    if (deletedCount === 1) this.snapshot?.invalidate();
     return deletedCount === 1;
   }
 

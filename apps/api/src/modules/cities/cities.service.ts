@@ -72,6 +72,12 @@ export class CitiesService {
     return { id: city.id, slug: city.slug, name: city.name };
   }
 
+  async resolveCityById(id: string): Promise<CityRef> {
+    const city = await this.repo.findActiveById(id);
+    if (!city) throw cityNotFound();
+    return city;
+  }
+
   /** Cụm theo slug trong thành phố; không có thì 404 NOT_FOUND. */
   async resolveZone(cityId: string, slug: string): Promise<ZoneRef> {
     const zone = await this.repo.findZone(cityId, slug);

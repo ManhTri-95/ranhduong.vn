@@ -1,4 +1,4 @@
-import { ItineraryKind, ItineraryPace, ItineraryStatus, ItineraryTransport, ItineraryVisibility, StopKind } from '@ranhduong/contracts';
+import { ItineraryDayIssue, ItineraryKind, ItineraryPace, ItineraryStatus, ItineraryTransport, ItineraryVisibility, StopKind } from '@ranhduong/contracts';
 import { Schema, type InferSchemaType, type Model } from 'mongoose';
 import { PointSchema } from '../../../shared/db/geojson.schema';
 
@@ -28,6 +28,12 @@ const DaySchema = new Schema(
     startTime: { type: String, default: '07:00' },
     zoneIds: { type: [Schema.Types.ObjectId], default: [] },
     stops: { type: [StopSchema], default: [] },
+    detours: { type: [new Schema({
+      afterKey: { type: String, required: true },
+      placeId: { type: Schema.Types.ObjectId, required: true },
+      detourMin: { type: Number, required: true, min: 0 },
+    }, { _id: false })], default: [] },
+    issues: { type: [String], enum: ItineraryDayIssue.options, default: [] },
   },
   { _id: false },
 );
@@ -64,11 +70,11 @@ export const ItinerarySchema = new Schema(
     ownerId: { type: Schema.Types.ObjectId },
     guestId: { type: String },
     params: { type: ParamsSchema, required: true },
-    paramsHash: { type: String },
     templateId: { type: Schema.Types.ObjectId },
     days: { type: [DaySchema], default: [] },
     narrative: { type: String },
     shareId: { type: String },
+    version: { type: Number, default: 1, min: 1 },
     /** S30: khoá R2 `tickets/{hash}` của ảnh vé hiện tại, để xoá ảnh cũ khi nội dung đổi. Không trả ra API công khai. */
     ticketKey: { type: String },
     /** Khoá ảnh cũ chờ xoá, giữ lại qua lỗi R2 và lần retry của worker. */
@@ -80,8 +86,8 @@ export const ItinerarySchema = new Schema(
 );
 
 // URL /{city}/lich-trinh/{slug} (ADR 0010). Lịch trình của khách không có slug nên không bị ràng buộc.
-// Index {paramsHash} và {shareId} thêm ở lát 2, khi có tạo và chia sẻ lịch trình.
 ItinerarySchema.index({ cityId: 1, kind: 1, slug: 1 }, { unique: true, partialFilterExpression: { slug: { $type: 'string' } } });
+ItinerarySchema.index({ shareId: 1 }, { unique: true, partialFilterExpression: { shareId: { $type: 'string' } } });
 
 export type ItineraryDoc = InferSchemaType<typeof ItinerarySchema>;
 export type ItineraryModel = Model<ItineraryDoc>;
