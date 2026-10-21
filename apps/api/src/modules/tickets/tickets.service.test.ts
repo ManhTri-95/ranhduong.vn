@@ -46,11 +46,17 @@ describe('S30 TicketsService phục vụ ảnh vé', () => {
     expect(t.queue.request).not.toHaveBeenCalled();
   });
   it('chưa có: xếp đúng một TicketJob có utm_source=ticket, rồi ready khi worker giả ghi ảnh', async () => {
-    const t = setup();
-    t.queue.request.mockImplementation(async (job: TicketJob) => { setTimeout(() => t.files.set(key('story', job.hash), Buffer.from('moi')), 10); });
-    expect(await t.service.templateTicket('da-lat', 'lich-trinh-gia-lap', 'story')).toEqual({ status: 'ready', body: Buffer.from('moi') });
-    expect(t.queue.request).toHaveBeenCalledTimes(1);
-    expect(t.queue.request).toHaveBeenCalledWith({ itineraryId: ID, hash, data: expect.objectContaining({ qrUrl: 'https://ranhduong.vn/da-lat/lich-trinh/lich-trinh-gia-lap?utm_source=ticket' }) });
+    // Keep the worker's 10ms completion ahead of the 40ms deadline even under full-suite CPU contention.
+    vi.useFakeTimers();
+    try {
+      const t = setup();
+      t.queue.request.mockImplementation(async (job: TicketJob) => { setTimeout(() => t.files.set(key('story', job.hash), Buffer.from('moi')), 10); });
+      const response = t.service.templateTicket('da-lat', 'lich-trinh-gia-lap', 'story');
+      await vi.advanceTimersByTimeAsync(15);
+      expect(await response).toEqual({ status: 'ready', body: Buffer.from('moi') });
+      expect(t.queue.request).toHaveBeenCalledTimes(1);
+      expect(t.queue.request).toHaveBeenCalledWith({ itineraryId: ID, hash, data: expect.objectContaining({ qrUrl: 'https://ranhduong.vn/da-lat/lich-trinh/lich-trinh-gia-lap?utm_source=ticket' }) });
+    } finally { vi.useRealTimers(); }
   });
   it('hết giờ chờ: og dùng ảnh mặc định, story pending', async () => {
     const t = setup();

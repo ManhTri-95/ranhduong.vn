@@ -34,6 +34,7 @@ export const NAV_GROUPS: readonly NavGroup[] = [
     label: 'Vận hành',
     items: [
       { label: 'Báo cáo', path: '/bao-cao' },
+      { label: 'Độ phủ lịch trình', path: '/do-phu-lich-trinh' },
       { label: 'Mùa & giao diện', path: '/mua' },
     ],
   },

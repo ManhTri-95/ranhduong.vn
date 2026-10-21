@@ -32,6 +32,16 @@ describe('ItinerarySchema và ItinerariesRepository', () => {
     await model.deleteMany({});
   });
 
+  it('S36 planning templates include only published same-city templates and retain legacy audience', async () => {
+    const cityId = new Types.ObjectId();
+    await insert(fakeItinerary({ cityId, slug: 'mau-gia-lap', status: 'published', style: 'family', params: { days: 1, transport: 'motorbike', pace: 'relaxed', tags: ['chill_cafe'] }, days: [{ day: 1, stops: [] }] }));
+    await insert(fakeItinerary({ cityId, slug: 'nhap-gia-lap', status: 'draft' }));
+    await insert(fakeItinerary({ slug: 'khac-thanh-pho-gia-lap', status: 'published' }));
+    await insert(fakeItinerary({ cityId, kind: 'user', status: 'published' }));
+    expect(await repo.planningTemplates(cityId.toString())).toMatchObject([{ tags: ['chill_cafe'], with: 'family', days: [{ stops: [] }] }]);
+    expect((await repo.planningTemplates(cityId.toString())).length).toBe(1);
+  });
+
   it('ensureIndexes tạo index {cityId, kind, slug} unique cho bản có slug', async () => {
     const byName = new Map((await model.listIndexes()).map((i) => [i.name, i]));
     expect(byName.get('cityId_1_kind_1_slug_1')).toMatchObject({

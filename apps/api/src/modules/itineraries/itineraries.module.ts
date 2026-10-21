@@ -13,6 +13,6 @@ import { TemplateEditorService } from './template-editor.service';
   imports: [MongooseModule.forFeature([{ name: ITINERARY_MODEL, schema: ItinerarySchema }]), CitiesModule, PlacesModule],
   controllers: [ItinerariesController],
   providers: [ItinerariesRepository, ItinerariesService, TemplateEditorService],
-  exports: [ItinerariesService, TemplateEditorService],
+  exports: [ItinerariesService, TemplateEditorService, ItinerariesRepository],
 })
 export class ItinerariesModule {}

@@ -5,6 +5,7 @@ import { Slug, TemplateEditInput, TripDays, TripWith, type AdminTemplate, type T
 import type { TemplateSummary } from './itinerary-card';
 import { ITINERARY_MODEL, type ItineraryDoc, type ItineraryModel } from './schemas/itinerary.schema';
 import { sitemapSources, type SitemapSource } from '@ranhduong/contracts';
+import type { PlanTemplate } from './planner/plan-context';
 
 type EditorRow = ItineraryDoc & { _id: Types.ObjectId };
 export type TemplateRecord = Omit<AdminTemplate, 'analysis'>;
@@ -55,6 +56,14 @@ interface TemplateRow {
 /** Lớp dữ liệu của module itineraries: chỉ file này import model Itinerary. */
 @Injectable()
 export class ItinerariesRepository {
+  async planningTemplates(cityId: string): Promise<PlanTemplate[]> {
+    const rows = await this.itineraries.find({ cityId: new Types.ObjectId(cityId), kind: 'template', status: 'published' }).sort({ _id: 1 }).lean<EditorRow[]>();
+    return rows.flatMap((row) => {
+      const template = toEditor(row);
+      return template ? [{ id: template.id, tags: template.tags, with: template.with, days: template.days }] : [];
+    });
+  }
+
   async featuredTemplate(cityId: string, id: string): Promise<(ItineraryDoc & { _id: Types.ObjectId }) | null> {
     return this.itineraries.findOne({ _id: new Types.ObjectId(id), cityId: new Types.ObjectId(cityId), kind: 'template', status: 'published', visibility: 'public' }).lean();
   }

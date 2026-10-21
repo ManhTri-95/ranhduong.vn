@@ -6,7 +6,7 @@ import { PlacesRepository } from './places.repository';
 import { toPlaceDetail } from './place-detail';
 import { placeNotFound } from './place-errors';
 import { ENV, type Env } from '../../config/env';
-import { GeoPoint, ItineraryStopPlace, OpeningSlot, PlacePhoto, TemplatePlace } from '@ranhduong/contracts';
+import { GeoPoint, ItineraryPlace, ItineraryStopPlace, OpeningSlot, PlacePhoto, TemplatePlace } from '@ranhduong/contracts';
 
 @Injectable()
 export class PlacesService {
@@ -78,6 +78,23 @@ export class PlacesService {
     }
     const page = pageByFeatured(filtered, query.cursor, query.limit);
     return { items: page.items.map(toCard), nextCursor: page.nextCursor, tags };
+  }
+
+  /** Complete city-scoped facts for S34–S36, retaining all scoring fields and rejecting malformed records. */
+  async planningPlaces(cityId: string): Promise<ItineraryPlace[]> {
+    const rows = await this.repo.templatePlaces(cityId);
+    return rows.flatMap((row) => {
+      // Popularity is normalized before per-day eligibility; inactive records must not change its maximum.
+      if (row.status !== 'active') return [];
+      // Validate the complete opening-hours array: dropping bad slots could make invalid hours eligible.
+      const parsed = ItineraryPlace.safeParse({
+        id: row._id.toString(), slug: row.slug, name: row.name, category: row.category, alsoCategories: row.alsoCategories ?? [], status: row.status,
+        zoneId: row.zoneId?.toString(), location: row.location ?? undefined, openingHours: row.openingHours ?? [],
+        visitDurationMin: row.visitDurationMin ?? undefined, lastVerifiedAt: row.lastVerifiedAt?.toISOString(), validPhoto: (row.photos ?? []).some((photo) => PlacePhoto.safeParse(photo).success),
+        tags: row.tags ?? [], bestTime: row.bestTime ?? [], cover: row.cover ?? undefined, transport: row.transport ?? [], priceLevel: row.priceLevel ?? undefined,
+      });
+      return parsed.success ? [parsed.data] : [];
+    });
   }
 
   /** City-scoped scheduling facts for the admin template editor, including unavailable-place diagnostics. */

@@ -9,6 +9,24 @@ import { MetricsRepository } from './metrics.repository';
 @Injectable()
 export class MetricsService {
   constructor(private readonly store: MetricsStore, private readonly repo: MetricsRepository, private readonly cities: CitiesService, private readonly places: PlacesService) {}
+  /** Last 30 Vietnam dates, including live views today. Reading the report never rolls up or writes metrics. */
+  async itineraryPopularity(cityId: string, ids: readonly string[], now: Date): Promise<Map<string, number>> {
+    const today = metricsDayKey(now);
+    const saved = await this.repo.weekly(cityId, shiftMetricDay(today, -29), today);
+    const totals = new Map(ids.map((id) => [id, 0]));
+    const persistedToday = new Map<string, number>();
+    for (const row of saved) {
+      if (!totals.has(row.placeId)) continue;
+      if (row.dayKey === today) persistedToday.set(row.placeId, row.counts.views);
+      else totals.set(row.placeId, (totals.get(row.placeId) ?? 0) + row.counts.views);
+    }
+    await Promise.all(ids.map(async (id) => {
+      const live = await this.store.counts(id, today);
+      totals.set(id, (totals.get(id) ?? 0) + Math.max(persistedToday.get(id) ?? 0, live.views));
+    }));
+    return totals;
+  }
+
   async record(raw: EventBatch, identity: { ip: string; userAgent: string }, now = new Date()): Promise<EventReceipt> {
     const batch = EventBatch.parse(raw);
     const day = metricsDayKey(now);

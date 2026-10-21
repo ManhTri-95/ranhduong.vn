@@ -29,6 +29,7 @@ export const router = createRouter({
     { path: '/lich-trinh', component: () => import('@/pages/TemplatesPage.vue'), meta: { title: 'Lịch trình mẫu' } },
     { path: '/lich-trinh/:id', component: () => import('@/pages/TemplateEditPage.vue'), meta: { title: 'Lịch trình mẫu' } },
     { path: '/bao-cao', component: () => import('@/pages/MetricsPage.vue'), meta: { title: 'Báo cáo' } },
+    { path: '/do-phu-lich-trinh', component: () => import('@/pages/ItineraryCoveragePage.vue'), meta: { title: 'Độ phủ lịch trình' } },
     { path: '/mua', component: () => import('@/pages/SeasonsPage.vue'), meta: { title: 'Mùa & giao diện' } },
     { path: '/:pathMatch(.*)*', redirect: '/dia-diem' },
   ],

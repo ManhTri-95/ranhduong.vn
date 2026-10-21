@@ -29,3 +29,4 @@ export * from './ticket.js';
 export * from './trip.js';
 export * from './metrics.js';
 export * from './weather.js';
+export * from './itinerary-coverage.js';
