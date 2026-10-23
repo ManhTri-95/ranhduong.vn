@@ -18,7 +18,9 @@ async function share(): Promise<void> {
     catch (error) { if (error instanceof Error && error.name === 'AbortError') return; }
   }
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  document.getElementById('itinerary-share-title')?.scrollIntoView({ block: 'start', behavior: reduced ? 'instant' : 'smooth' });
+  const heading = document.getElementById('itinerary-share-title');
+  heading?.focus({ preventScroll: true });
+  heading?.scrollIntoView({ block: 'start', behavior: reduced ? 'instant' : 'smooth' });
 }
 </script>
 

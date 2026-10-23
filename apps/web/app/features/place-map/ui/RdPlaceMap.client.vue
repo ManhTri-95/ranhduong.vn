@@ -1,19 +1,18 @@
 <script setup lang="ts">
 import type { BBox, CityPublic, PlaceCard } from '@ranhduong/contracts';
 import type { GeoJSONSource, Map as MapLibreMap, Marker, Popup } from 'maplibre-gl';
-import mapWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue';
 import { intersectMapBounds } from '~/entities/place/lib/map-places';
 import { placePinSvg } from '~/entities/place/lib/map-pin';
 import RdPlaceCard from '~/entities/place/ui/RdPlaceCard.vue';
 import { useClientNow } from '~/shared/lib/use-client-now';
 import { resolveMapStyleSprites } from '~/shared/lib/map-style';
-import { MAP_MIN_ZOOM, needsPan, type MapInsets, type MapView } from '~/shared/lib/map-camera';
+import { MAP_MIN_ZOOM, needsPan, pointBounds, type MapInsets, type MapView } from '~/shared/lib/map-camera';
 import { addPlaceLayers, CLUSTERS, PLACE_SOURCE, POINTS, selectPlaceLayer, updatePlaceLayers } from '../lib/map-layers';
 
 /** initialView: khung nhìn khôi phục khi quay lại trang; insets: phần header và sheet đang che bản đồ (px). */
-const props = defineProps<{ city: CityPublic; places: PlaceCard[]; selectedSlug: string | null; initialView?: MapView; insets?: MapInsets }>();
-const emit = defineEmits<{ viewport: [bbox: BBox]; select: [slug: string]; camera: [view: MapView]; ready: []; error: [] }>();
+const props = defineProps<{ city: CityPublic; places: PlaceCard[]; selectedSlug: string | null; initialView?: MapView; insets?: MapInsets; fitInitialPlaces?: boolean; journal?: boolean; focusKey?: number }>();
+const emit = defineEmits<{ viewport: [bbox: BBox, interactive: boolean]; select: [slug: string]; camera: [view: MapView]; ready: []; error: [] }>();
 const styleUrl = useRuntimeConfig().public.mapStyleUrl;
 const container = ref<HTMLDivElement | null>(null);
 const failed = ref(false);
@@ -34,6 +33,7 @@ let closeTimer: ReturnType<typeof setTimeout> | undefined;
 let disposed = false;
 let generation = 0;
 let startupTimer: ReturnType<typeof setTimeout> | undefined;
+let containerResize: ResizeObserver | undefined;
 const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const padding = () => ({ top: props.insets?.top ?? 0, bottom: props.insets?.bottom ?? 0, left: 0, right: 0 });
 
@@ -136,17 +136,19 @@ function syncSelectedMarker(): void {
   selectedMarker.setLngLat(place.location.coordinates);
 }
 
-function emitViewport(): void {
+function emitViewport(interactive = false): void {
   if (!map) return;
   const center = map.getCenter();
   emit('camera', { center: [center.lng, center.lat], zoom: map.getZoom() });
   const bounds = map.getBounds();
   const clipped = intersectMapBounds([bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()], props.city.mapBounds);
-  if (clipped) emit('viewport', clipped);
+  if (clipped) emit('viewport', clipped, interactive);
 }
 
 async function start(): Promise<void> {
   const currentGeneration = ++generation;
+  const previous = props.journal && map ? { center: [map.getCenter().lng, map.getCenter().lat] as [number, number], zoom: map.getZoom() } : undefined;
+  const startView = previous ?? props.initialView;
   closePreview();
   hoveredSlug = null;
   selectedMarker?.remove(); selectedMarker = undefined;
@@ -158,21 +160,26 @@ async function start(): Promise<void> {
   assetsFailed.value = false;
   let assetsLoaded = false;
   try {
-    const [library] = await Promise.all([import('maplibre-gl'), import('maplibre-gl/dist/maplibre-gl.css')]);
+    const [library, , worker] = await Promise.all([
+      import('maplibre-gl'), import('maplibre-gl/dist/maplibre-gl.css'), import('maplibre-gl/dist/maplibre-gl-worker.mjs?url'),
+    ]);
     assetsLoaded = true;
     if (disposed || currentGeneration !== generation || !container.value) return;
     maplibre = library;
-    library.setWorkerUrl(mapWorkerUrl);
+    library.setWorkerUrl(worker.default);
     const element = container.value;
     const instance = new library.Map({
-      container: element, center: props.initialView?.center ?? props.city.center.coordinates, zoom: props.initialView?.zoom ?? 12,
+      container: element, center: startView?.center ?? props.city.center.coordinates, zoom: startView?.zoom ?? 12,
       minZoom: MAP_MIN_ZOOM, maxBounds: props.city.mapBounds, attributionControl: false,
       dragRotate: false, pitchWithRotate: false,
       locale: { 'NavigationControl.ZoomIn': 'Phóng to', 'NavigationControl.ZoomOut': 'Thu nhỏ' },
     });
     map = instance;
     instance.touchZoomRotate.disableRotation();
+    if (props.journal) instance.keyboard.disableRotation();
     instance.addControl(new library.NavigationControl({ showCompass: false }), 'top-right');
+    if (props.journal) instance.addControl(new library.ScaleControl({ unit: 'metric', maxWidth: 100 }), 'bottom-left');
+    let viewportReady = false;
     const reportError = () => {
       if (disposed || instance !== map) return;
       closePreview();
@@ -188,13 +195,18 @@ async function start(): Promise<void> {
       syncSelectedMarker();
       const chosen = props.places.find((place) => place.slug === props.selectedSlug);
       // Khung nhìn khôi phục đã chứa ghim đang chọn; chỉ canh giữa khi mở mới.
-      if (chosen?.location && !props.initialView) instance.jumpTo({ center: chosen.location.coordinates, padding: padding() });
+      if (chosen?.location && !startView) instance.jumpTo({ center: chosen.location.coordinates, padding: padding() });
+      else if (props.fitInitialPlaces && !startView) {
+        const bounds = pointBounds(props.places.flatMap(place => place.location ? [place.location.coordinates] : []), props.city.mapBounds);
+        if (bounds) instance.fitBounds(bounds, { padding: { top: padding().top + 48, bottom: padding().bottom + 48, left: 48, right: 48 }, maxZoom: 14, duration: 0 });
+      }
+      viewportReady = true;
       loading.value = false;
       // MapLibre may emit load after a sprite failure; retain the notice until retry.
       if (!failed.value) emit('ready');
       emitViewport();
     });
-    instance.on('moveend', emitViewport);
+    instance.on('moveend', event => { if (viewportReady) emitViewport(Boolean(event.originalEvent)); });
     instance.on('movestart', () => { closePreview(); hoveredSlug = null; });
     instance.getCanvas().addEventListener('mouseleave', () => hoverPlace(null));
     instance.on('click', async (event) => {
@@ -213,7 +225,7 @@ async function start(): Promise<void> {
         const zoom = await (instance.getSource(PLACE_SOURCE) as GeoJSONSource).getClusterExpansionZoom(cluster.properties.cluster_id as number);
         if (disposed || instance !== map) return;
         const [lng, lat] = cluster.geometry.coordinates;
-        if (lng !== undefined && lat !== undefined) instance.easeTo({ center: [lng, lat], zoom, padding: padding(), duration: reducedMotion() ? 0 : 300 });
+        if (lng !== undefined && lat !== undefined) instance.easeTo({ center: [lng, lat], zoom, padding: padding(), duration: reducedMotion() ? 0 : 300 }, { originalEvent: event.originalEvent });
       } catch { reportError(); }
     });
     instance.on('mousemove', (event) => {
@@ -252,7 +264,7 @@ watch(() => props.places, (places) => {
   updatePlaceLayers(map, places, props.selectedSlug);
   syncSelectedMarker();
 });
-watch(() => props.selectedSlug, (slug) => {
+watch(() => [props.selectedSlug, props.focusKey] as const, ([slug]) => {
   closePreview();
   if (!map?.getLayer(POINTS)) return;
   syncSelectedMarker();
@@ -269,18 +281,23 @@ onMounted(() => {
   previewMedia = window.matchMedia('(min-width: 1024px) and (hover: hover) and (pointer: fine)');
   previewMedia.addEventListener('change', closePreview);
   document.addEventListener('keydown', dismissPreview);
+  if (props.journal && typeof ResizeObserver === 'function') {
+    containerResize = new ResizeObserver(() => { if (container.value?.clientWidth && container.value.clientHeight) map?.resize(); });
+    if (container.value) containerResize.observe(container.value);
+  }
   void start();
 });
 onBeforeUnmount(() => {
   disposed = true; generation++; clearTimeout(startupTimer); closePreview();
   previewMedia?.removeEventListener('change', closePreview);
   document.removeEventListener('keydown', dismissPreview);
+  containerResize?.disconnect();
   selectedMarker?.remove(); map?.remove();
 });
 </script>
 
 <template>
-  <div class="rd-map-canvas">
+  <div class="rd-map-canvas" :class="{ 'rd-map-canvas--journal': journal }">
     <div ref="container" class="rd-map-canvas__surface" role="region" :aria-label="`Bản đồ địa điểm ${city.name}`" />
     <Teleport v-if="previewPlace && previewHost" :to="previewHost">
       <div class="rd-map-preview__card" :aria-label="`Xem nhanh: ${previewPlace.name}`" @mouseenter="keepPreview" @mouseleave="schedulePreviewClose" @focusin="keepPreview" @focusout="schedulePreviewClose">
@@ -315,6 +332,8 @@ onBeforeUnmount(() => {
 .rd-map-canvas :deep(.rd-map-preview.maplibregl-popup-anchor-right .maplibregl-popup-tip) { border-left-color: var(--ink); }
 /* Nút zoom nằm dưới header nổi của trang bản đồ (--map-controls-top do trang đặt). */
 .rd-map-canvas :deep(.maplibregl-ctrl-top-right) { top: var(--map-controls-top, 0px); }
+.rd-map-canvas :deep(.maplibregl-ctrl-bottom-left) { bottom: var(--map-controls-bottom, 0px); }
+.rd-map-canvas :deep(.maplibregl-ctrl-scale) { color: var(--ink); border-color: var(--ink); background: var(--paper-raised); font-family: var(--font-coordinate); font-size: 10px; }
 .rd-map-canvas :deep(.maplibregl-ctrl button) { width: var(--tap-min); height: var(--tap-min); }
 .rd-map-canvas :deep(.maplibregl-ctrl-group) { background: var(--paper-raised); border: var(--border-ink); border-radius: var(--radius-chip); box-shadow: none; }
 .rd-map-canvas :deep(.rd-map-pin) { width: 45px; height: 55px; padding: 0; border: 0; background: transparent; cursor: pointer; z-index: 1; }
@@ -327,6 +346,8 @@ onBeforeUnmount(() => {
   70% { transform: translateY(4px); }
   100% { transform: translateY(0); }
 }
+.rd-map-canvas--journal :deep(.rd-map-pin__graphic) { animation: rd-map-discover var(--dur-reveal) var(--ease-route) both; }
+@keyframes rd-map-discover { from { opacity: 0.5; transform: translate(-6px, -12px) rotate(-6deg); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) {
   .rd-map-canvas :deep(.rd-map-pin__graphic) { animation: none; }
 }

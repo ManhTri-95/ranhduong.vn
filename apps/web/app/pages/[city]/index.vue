@@ -6,12 +6,10 @@ import { useCuratedLists } from '~/entities/curated-list/api/curated-lists';
 import { useTemplateList } from '~/entities/itinerary/api/itineraries';
 import { promoteItinerary } from '~/entities/itinerary/lib/promote-itinerary';
 import { usePlaceList } from '~/entities/place/api/places';
-import RdSearchForm from '~/features/place-search/ui/RdSearchForm.vue';
 import { markUnavailableOnServer, throwIfNotFound } from '~/shared/api/page-status';
 import { useClientNow } from '~/shared/lib/use-client-now';
 import { usePageSeo } from '~/shared/lib/use-page-seo';
 import RdErrorBanner from '~/shared/ui/RdErrorBanner.vue';
-import RdCategoryChips from '~/widgets/category-chips/ui/RdCategoryChips.vue';
 import RdCityHeader from '~/widgets/city-header/ui/RdCityHeader.vue';
 import RdCuratedListStrip from '~/widgets/curated-list-strip/ui/RdCuratedListStrip.vue';
 import { FEATURED_QUERY } from '~/widgets/featured-places/model/query';
@@ -20,9 +18,17 @@ import RdItineraryStrip from '~/widgets/itinerary-strip/ui/RdItineraryStrip.vue'
 import RdSeasonBanner from '~/widgets/season-banner/ui/RdSeasonBanner.vue';
 import RdCityWeather from '~/widgets/city-weather/ui/RdCityWeather.vue';
 import RdZoneLinks from '~/widgets/zone-links/ui/RdZoneLinks.vue';
+import RdHomeHero from '~/widgets/home-discovery/ui/RdHomeHero.vue';
+import RdHomeInterests from '~/widgets/home-discovery/ui/RdHomeInterests.vue';
+import RdHomeRouteStory from '~/widgets/home-discovery/ui/RdHomeRouteStory.vue';
+import RdJourneyFrame from '~/widgets/home-discovery/ui/RdJourneyFrame.vue';
+import RdHomeMap from '~/widgets/home-discovery/ui/RdHomeMap.vue';
+import RdHomeItineraryIntro from '~/widgets/home-discovery/ui/RdHomeItineraryIntro.vue';
+import RdHomeClosing from '~/widgets/home-discovery/ui/RdHomeClosing.vue';
+import '~/assets/home.css';
 
 // Đường dẫn lạ (ví dụ /wp-login.php) bị chặn ngay, không gọi API; thành phố có hay không do API quyết định.
-definePageMeta({ validate: (route) => Slug.safeParse(route.params.city).success });
+definePageMeta({ validate: (route) => Slug.safeParse(route.params.city).success, key: (route) => String(route.params.city) });
 
 const citySlug = String(useRoute().params.city);
 const [city, featured, templates, curated] = await Promise.all([
@@ -40,16 +46,13 @@ const loadFailed = computed(() => Boolean(city.error.value) || Boolean(city.now.
 markUnavailableOnServer(loadFailed.value);
 
 const cityName = computed(() => city.data.value?.name ?? '');
-const featuredPlaces = computed(() => featured.data.value?.items ?? []);
+const featuredPlaces = computed(() => (featured.data.value?.items ?? []).slice(0, FEATURED_QUERY.limit));
 const templateCards = computed(() => promoteItinerary(templates.data.value?.items ?? [], city.currentNow.value?.featuredItinerary ?? null));
 const now = useClientNow();
 
 async function retry(): Promise<void> {
   await Promise.all([city.refresh(), city.now.refresh(), featured.refresh(), templates.refresh(), curated.refresh()]);
 }
-
-// Nút nổi "Xem bản đồ": body chừa chỗ ở cuối trang để thẻ và footer cuối không bị che.
-useHead({ bodyAttrs: { 'data-rd-bottom': 'float' } });
 
 usePageSeo({
   path: `/${citySlug}`,
@@ -61,43 +64,47 @@ usePageSeo({
 </script>
 
 <template>
-  <div class="home">
-    <RdCityHeader :city-slug="citySlug" :city-name="cityName" />
-    <main class="home__main">
-      <RdErrorBanner v-if="loadFailed" message="Chưa tải được hết dữ liệu, có thể mạng đang chập chờn." @retry="retry" />
-      <div class="home__hero">
-        <section class="home__intro">
-          <h1 class="page-title">{{ cityName ? `${cityName} hôm nay` : 'Hôm nay' }}<br>ghé đâu?</h1>
-          <p class="home__lead">Quán nào cũng được hỏi lại trước khi lên đây.</p>
-          <RdSearchForm :action="`/${citySlug}/tim-kiem`" :city-slug="citySlug" />
-          <RdCategoryChips :city-slug="citySlug" />
+  <div class="rd-home">
+    <a class="rd-home-skip" href="#home-content">Đến nội dung chính</a>
+    <RdCityHeader :city-slug="citySlug" :city-name="cityName" editorial />
+    <main id="home-content">
+      <RdJourneyFrame>
+        <div v-if="loadFailed" class="rd-home-container rd-home__error">
+          <RdErrorBanner message="Chưa tải được hết dữ liệu, có thể mạng đang chập chờn." @retry="retry" />
+        </div>
+        <RdHomeHero :city-slug="citySlug" :city-name="cityName" :center="city.data.value?.center" />
+        <div class="rd-home-manifesto rd-home-container">
+          <p>Đi một vòng,<span>biết thêm một nơi.</span></p>
+          <span class="rd-home-manifesto__note">MỘT CUỐN SỔ MỞ. NHIỀU CÁCH LÊN ĐƯỜNG.</span>
+        </div>
+        <div class="rd-home-container">
+          <RdHomeRouteStory :city-slug="citySlug" :places="featuredPlaces" />
+          <RdHomeInterests :city-slug="citySlug" />
+          <div id="dia-diem" class="rd-home-section">
+            <RdFeaturedPlaces :city-slug="citySlug" :places="featuredPlaces" :failed="featuredFailed" :now="now" />
+          </div>
+          <RdCityWeather :city-slug="citySlug" :city-name="cityName" :weather="city.currentNow.value?.weather" />
+          <RdHomeMap :city-slug="citySlug" :city="city.data.value ?? null" :places="featuredPlaces" :failed="featuredFailed" />
+          <div class="rd-home__zones">
+            <RdZoneLinks :city-slug="citySlug" :zones="city.data.value?.zones ?? []" />
+          </div>
+        </div>
+        <section id="lich-trinh" class="rd-home__itineraries" data-rd-route-scene aria-label="Lịch trình cho chuyến đi">
+          <div class="rd-home-container">
+            <RdHomeItineraryIntro :city-slug="citySlug" :itinerary="templateCards[0] ?? null" />
+            <RdItineraryStrip :city-slug="citySlug" :itineraries="templateCards" :failed="templatesFailed">
+              <template v-if="city.currentNow.value?.season" #lead>
+                <RdSeasonBanner :city-slug="citySlug" :current="city.currentNow.value" />
+              </template>
+            </RdItineraryStrip>
+          </div>
         </section>
-        <RdCityWeather :city-slug="citySlug" :city-name="cityName" :weather="city.currentNow.value?.weather" />
-      </div>
-      <RdItineraryStrip :city-slug="citySlug" :itineraries="templateCards" :failed="templatesFailed">
-        <template v-if="city.currentNow.value?.season" #lead><RdSeasonBanner :city-slug="citySlug" :current="city.currentNow.value" /></template>
-      </RdItineraryStrip>
-      <RdFeaturedPlaces :city-slug="citySlug" :places="featuredPlaces" :failed="featuredFailed" :now="now" />
-      <RdZoneLinks :city-slug="citySlug" :zones="city.data.value?.zones ?? []" />
-      <RdCuratedListStrip :city-slug="citySlug" :lists="curated.data.value?.items ?? []" :failed="curatedFailed" />
+        <div id="cam-hung" class="rd-home-container rd-home-section">
+          <p class="rd-home-kicker">MANG THEO MỘT CHÚT CẢM HỨNG</p>
+          <RdCuratedListStrip :city-slug="citySlug" :lists="curated.data.value?.items ?? []" :failed="curatedFailed" />
+        </div>
+        <RdHomeClosing :city-slug="citySlug" />
+      </RdJourneyFrame>
     </main>
-    <NuxtLink class="rd-btn rd-btn--float home__map" :to="`/${citySlug}/ban-do${city.currentNow.value?.weather?.state === 'rain' ? '?rainSafe=true' : ''}`">
-      <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2z" />
-        <path d="M9 4v14M15 6v14" />
-      </svg>
-      Xem bản đồ
-    </NuxtLink>
   </div>
 </template>
-
-<style scoped>
-.home__main { max-width: 1200px; margin: 0 auto; padding: var(--space-2) var(--space-5) var(--space-7); display: flex; flex-direction: column; gap: var(--space-6); }
-.home__intro { display: flex; flex-direction: column; gap: var(--space-3); min-width: 0; }
-.home__lead { margin: 0; font-size: 14px; line-height: 1.5; color: var(--ink-soft); }
-.home__hero { display: grid; gap: var(--space-5); }
-@media (min-width: 1024px) {
-  .home__hero:has(.rd-city-weather) { grid-template-columns: minmax(0, 1.4fr) minmax(320px, 1fr); align-items: start; gap: var(--space-7); }
-}
-.home__map { position: fixed; left: 50%; bottom: calc(var(--space-6) + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 10; }
-</style>

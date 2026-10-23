@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { PlaceCategory, Slug } from '@ranhduong/contracts';
+import { Slug } from '@ranhduong/contracts';
 import { computed } from 'vue';
 import { useCity } from '~/entities/city/api/city';
 import { usePlaceList } from '~/entities/place/api/places';
-import { mapFilterQuery, rainFilterSelected } from '~/entities/place/lib/map-query';
+import { mapFilterQuery, parseMapFilters, type MapFilters } from '~/entities/place/lib/map-query';
 import { markUnavailableOnServer, throwIfNotFound } from '~/shared/api/page-status';
 import { usePageSeo } from '~/shared/lib/use-page-seo';
 import RdErrorBanner from '~/shared/ui/RdErrorBanner.vue';
@@ -15,35 +15,33 @@ definePageMeta({ validate: (route) => Slug.safeParse(route.params.city).success,
 const route = useRoute();
 const router = useRouter();
 const citySlug = String(route.params.city);
-const rainSafe = computed(() => rainFilterSelected(route.query.rainSafe));
-const category = computed(() => {
-  const parsed = PlaceCategory.safeParse(route.query.category);
-  return parsed.success ? parsed.data : undefined;
-});
 const city = await useCity(citySlug);
 throwIfNotFound(city.error.value);
+const filters = computed(() => {
+  const parsed = parseMapFilters(route.query);
+  if (parsed.zone && city.data.value && !city.data.value.zones.some(zone => zone.slug === parsed.zone)) parsed.zone = undefined;
+  return parsed;
+});
+const filterQuery = computed(() => mapFilterQuery(filters.value.category, filters.value.rainSafe, filters.value));
 const places = await usePlaceList(citySlug, {
-  bbox: city.data.value?.mapBounds.join(','), category: category.value, limit: 50, rainSafe: rainSafe.value ? 'true' : undefined,
-}, `map-initial:${citySlug}:${category.value ?? 'all'}:${rainSafe.value}`, Boolean(city.data.value));
+  bbox: city.data.value?.mapBounds.join(','), ...filterQuery.value, limit: 50,
+}, `map-initial:${citySlug}:${new URLSearchParams(filterQuery.value).toString()}`, Boolean(city.data.value));
 markUnavailableOnServer(Boolean(city.error.value || places.error.value));
 
-async function changeCategory(value: PlaceCategory | undefined): Promise<void> {
-  await router.replace({ path: `/${citySlug}/ban-do`, query: mapFilterQuery(value, rainSafe.value) });
-}
-async function changeRainSafe(value: boolean): Promise<void> {
-  await router.replace({ path: `/${citySlug}/ban-do`, query: mapFilterQuery(category.value, value) });
+async function changeFilters(value: MapFilters): Promise<void> {
+  await router.replace({ path: `/${citySlug}/ban-do`, query: mapFilterQuery(value.category, value.rainSafe, value) });
 }
 async function retryCity(): Promise<void> {
   await city.refresh();
   throwIfNotFound(city.error.value);
 }
 usePageSeo({ path: `/${citySlug}/ban-do`, title: () => `Bản đồ ${city.data.value?.name ?? 'địa điểm'} · Rành Đường`, description: 'Tìm quán cà phê, chỗ ăn và chỗ chơi trong vùng bạn đang xem. Ghi chép của người rành đường.',
-  breadcrumbs: () => [{ name: city.data.value?.name || 'Thành phố', path: `/${citySlug}` }, { name: 'Bản đồ', path: `/${citySlug}/ban-do` }], noindex: () => Boolean(city.error.value || places.error.value),
+  breadcrumbs: () => [{ name: city.data.value?.name || 'Thành phố', path: `/${citySlug}` }, { name: 'Bản đồ', path: `/${citySlug}/ban-do` }], noindex: () => Boolean(city.error.value || places.error.value || Object.keys(filterQuery.value).length),
 });
 </script>
 
 <template>
-  <RdMapExplorer v-if="city.data.value" :key="citySlug" :city="city.data.value" :initial-page="places.data.value ?? null" :category="category" :rain-safe="rainSafe" :failed="Boolean(places.error.value)" @category="changeCategory" @rain-safe="changeRainSafe">
+  <RdMapExplorer v-if="city.data.value" :key="citySlug" :city="city.data.value" :initial-page="places.data.value ?? null" :filters="filters" :failed="Boolean(places.error.value)" @filters="changeFilters">
     <template #footer><RdSiteFooter /></template>
   </RdMapExplorer>
   <main v-else class="rd-map-unavailable">

@@ -8,7 +8,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 const city = {
   slug: 'da-lat', name: 'Thành phố Giả Lập', accent: '#f4bd33',
   center: { type: 'Point', coordinates: [0.5, 0.5] }, mapBounds: [0, 0, 1, 1],
-  zones: [{ slug: 'trung-tam', name: 'Trung tâm Giả Lập' }],
+  zones: [{ slug: 'trung-tam', name: 'Trung tâm Giả Lập' }, { slug: 'phia-nam', name: 'Phía Nam Giả Lập' }],
 };
 const items = Array.from({ length: 25 }, (_, i) => ({
   slug: `quan-gia-lap-${i + 1}`, name: `Quán Giả Lập ${i + 1}`, category: 'cafe',
@@ -31,6 +31,13 @@ let templateFailed = false;
 let seasonMode: 'flower' | 'rain' | 'sunflower' | 'none' = 'none';
 let seasonFailed = false;
 let weatherMode: 'fog' | 'sun' | 'cloud' | 'rain' | 'expired' | 'none' = 'none';
+let homeEmpty = false;
+let homePlacesFailed = false;
+let geographicRequests = 0;
+let templatePreviewRequests = 0;
+let areaWithPhotos = false;
+const areaQueries: URLSearchParams[] = [];
+const mapQueries: URLSearchParams[] = [];
 const templateStop = (number: number, day: number, available = true) => ({
   key: `${day}-${number}`, number, start: number === 1 ? '08:00' : '10:15', end: number === 1 ? '09:00' : '11:45', travelMinFromPrev: number === 1 ? 0 : 15,
   kind: 'visit', note: 'Ghi chú lịch trình Giả Lập',
@@ -55,39 +62,48 @@ const api = createServer((req, res) => {
     // Exact freshness boundaries are covered by contracts/weather.test.ts.
     res.end(JSON.stringify({ accent: accents[seasonMode], season: seasonMode === 'none' ? null : { key: `mua-${seasonMode}`, kind: seasonMode === 'rain' ? 'rain' : 'flower', from: '01-01', to: '12-31', accent: accents[seasonMode], title: 'Banner mùa Giả Lập', sub: 'Mô tả mùa Giả Lập', illustration: seasonMode === 'flower' ? 'cherry-blossom' : seasonMode === 'sunflower' ? 'wild-sunflower' : 'rain' }, featuredItinerary: seasonMode === 'none' ? null : { slug: 'noi-bat-gia-lap', title: 'Lịch trình mùa Giả Lập', days: 1, transport: 'motorbike', pace: 'relaxed' }, weather: weatherMode === 'none' ? null : { state: weatherMode === 'expired' ? 'rain' : weatherMode, temperatureC: 18.4, isDay: true, rainSoon: false, observedAt: new Date(Date.now() - 60_000).toISOString(), expiresAt: new Date(Date.now() + (weatherMode === 'expired' ? -60_000 : 840_000)).toISOString() }, expiresAt: new Date(Date.now() + 900_000).toISOString() }));
   } else if (url.pathname === '/v1/cities/da-lat/places') {
+    const areaRequest = url.searchParams.has('zone') && !url.searchParams.has('bbox');
+    if (areaRequest) areaQueries.push(new URLSearchParams(url.searchParams));
+    if (url.searchParams.has('bbox')) { geographicRequests++; mapQueries.push(new URLSearchParams(url.searchParams)); }
+    if (homePlacesFailed) return res.writeHead(503).end(JSON.stringify({ code: 'INTERNAL_ERROR', message: 'Lỗi địa điểm Giả Lập' }));
     if (url.searchParams.get('limit') === '6' && url.searchParams.has('q')) suggestionRequests++;
     if (url.searchParams.has('bbox') && mapFailed) return res.writeHead(503).end(JSON.stringify({ code: 'INTERNAL_ERROR', message: 'Lỗi bản đồ Giả Lập' }));
     res.end(JSON.stringify({
-      items: url.searchParams.has('bbox') ? items.map((place) => ({ ...place, location: { type: 'Point', coordinates: [0.5, 0.5] } })) : url.searchParams.has('cursor') ? items.slice(20) : url.searchParams.has('tags') ? items.slice(0, 5) : items.slice(0, 20),
-      nextCursor: url.searchParams.has('cursor') || url.searchParams.has('tags') ? undefined : cursor,
-      tags: [{ slug: 'chill', count: 25 }],
+      items: (homeEmpty ? [] : url.searchParams.has('bbox') ? items.map((place) => ({ ...place, location: { type: 'Point', coordinates: [0.5, 0.5] } })) : url.searchParams.has('cursor') ? items.slice(20) : url.searchParams.has('tags') ? items.slice(0, 5) : items.slice(0, 20)).map((place, index) => areaWithPhotos && areaRequest && index === 0 ? { ...place, coverKey: 'fake/area-photo' } : place),
+      nextCursor: homeEmpty || url.searchParams.has('q') || url.searchParams.has('cursor') || url.searchParams.has('tags') ? undefined : cursor,
+      tags: areaRequest ? homeEmpty ? [] : [{ slug: 'chill', count: 25 }, { slug: 'an-sang', count: 8 }, { slug: 'gia-dinh', count: 6 }] : [{ slug: 'chill', count: 25 }],
     }));
   } else if (url.pathname === '/v1/cities/da-lat/itineraries/templates') {
-    res.end(JSON.stringify({ items: [{ slug: 'lich-trinh-gia-lap', title: 'Lịch trình Giả Lập', days: 2, transport: 'motorbike', pace: 'relaxed', stopCount: 4, season: 'Mùa lịch Giả Lập' }] }));
+    res.end(JSON.stringify({ items: homeEmpty ? [] : [{ slug: 'lich-trinh-gia-lap', title: 'Lịch trình Giả Lập', days: 2, transport: 'motorbike', pace: 'relaxed', stopCount: 4, season: 'Mùa lịch Giả Lập' }] }));
   } else if (url.pathname.startsWith('/v1/cities/da-lat/itineraries/templates/')) {
+    templatePreviewRequests++;
     if (templateFailed) return res.writeHead(503).end(JSON.stringify({ code: 'INTERNAL_ERROR', message: 'Lỗi lịch trình Giả Lập' }));
     const slug = url.pathname.split('/').at(-1);
-    if (!['lich-trinh-gia-lap', 'rong-gia-lap'].includes(slug ?? '')) return res.writeHead(404).end(JSON.stringify({ code: 'NOT_FOUND', message: 'Không tìm thấy lịch trình' }));
+    if (!['lich-trinh-gia-lap', 'rong-gia-lap', 'anh-lich-trinh-gia-lap'].includes(slug ?? '')) return res.writeHead(404).end(JSON.stringify({ code: 'NOT_FOUND', message: 'Không tìm thấy lịch trình' }));
     res.end(JSON.stringify({
       slug, title: 'Lịch trình Giả Lập', description: 'Mô tả lịch trình Giả Lập', seoTitle: 'Lịch trình Google Giả Lập', seoDescription: 'Mô tả Google Giả Lập',
       season: 'Mùa Giả Lập', style: 'Đi chậm', transport: 'motorbike', pace: 'relaxed',
-      days: [{ day: 1, stops: slug === 'rong-gia-lap' ? [] : [templateStop(1, 1), templateStop(2, 1), templateStop(3, 1, false)] }, { day: 2, stops: slug === 'rong-gia-lap' ? [] : [templateStop(1, 2)] }],
+      days: [{ day: 1, stops: slug === 'rong-gia-lap' ? [] : [templateStop(1, 1), slug === 'anh-lich-trinh-gia-lap' ? { ...templateStop(2, 1), place: { ...templateStop(2, 1).place, coverKey: 'fake/journey-photo' } } : templateStop(2, 1), templateStop(3, 1, false)] }, { day: 2, stops: slug === 'rong-gia-lap' ? [] : [templateStop(1, 2)] }],
     }));
   } else if (url.pathname.startsWith('/v1/cities/da-lat/curated-lists')) {
     if (curatedFailed) return res.writeHead(503).end(JSON.stringify({ code: 'INTERNAL_ERROR', message: 'Lỗi danh sách Giả Lập' }));
     const list = { slug: 'danh-sach-gia-lap', title: 'Danh sách Giả Lập', description: 'Mô tả Giả Lập theo thứ tự đã chọn.' };
-    if (url.pathname === '/v1/cities/da-lat/curated-lists') res.end(JSON.stringify({ items: [{ ...list, placeCount: 3 }] }));
+    if (url.pathname === '/v1/cities/da-lat/curated-lists') res.end(JSON.stringify({ items: homeEmpty ? [] : [{ ...list, placeCount: 3 }] }));
     else if (url.pathname.endsWith('/danh-sach-gia-lap')) res.end(JSON.stringify({ ...list, places: [items[2], items[0], items[1]] }));
     else if (url.pathname.endsWith('/rong-gia-lap')) res.end(JSON.stringify({ ...list, slug: 'rong-gia-lap', places: [] }));
+    else if (url.pathname.endsWith('/nhat-ky-dai-gia-lap')) res.end(JSON.stringify({ ...list, slug: 'nhat-ky-dai-gia-lap', title: 'Tiêu đề tiếng Việt rất dài Giả Lập '.repeat(5), description: 'Mô tả biên tập Giả Lập chỉ hiển thị một lần. '.repeat(8), places: items.slice(0, 22) }));
+    else if (url.pathname.endsWith('/mot-diem-gia-lap')) res.end(JSON.stringify({ ...list, slug: 'mot-diem-gia-lap', title: 'Giả Lập', description: '', places: [items[2]] }));
     else res.writeHead(404).end(JSON.stringify({ code: 'NOT_FOUND', message: 'Không tìm thấy danh sách' }));
   } else if (url.pathname === '/v1/cities/da-lat/places/old-slug') {
     res.writeHead(301, { location: '/v1/cities/da-lat/places/quan-gia-lap-1' }).end();
-  } else if (['quan-gia-lap-1', 'closed', 'with-photo'].some((slug) => url.pathname === `/v1/cities/da-lat/places/${slug}`)) {
+  } else if (['quan-gia-lap-1', 'closed', 'with-photo', 'missing-info'].some((slug) => url.pathname === `/v1/cities/da-lat/places/${slug}`)) {
     if (detailFailed) return res.writeHead(503).end(JSON.stringify({ code: 'INTERNAL_ERROR', message: 'Lỗi chi tiết Giả Lập' }));
     const slug = url.pathname.split('/').at(-1);
     res.end(JSON.stringify({
       place: { ...detailPlace, slug, status: slug === 'closed' ? 'closed' : 'active',
-        photos: slug === 'with-photo' ? [{ key: 'fake/photo', source: 'self', credit: 'Người Chụp Giả Lập', license: 'Giấy phép Giả Lập', sourceUrl: 'https://example.com/fake' }] : [] },
+        photos: slug === 'with-photo' ? Array.from({ length: 3 }, (_, index) => ({ key: index === 0 ? 'fake/photo' : `fake/photo-${index + 1}`, source: 'self', credit: 'Người Chụp Giả Lập', license: 'Giấy phép Giả Lập', sourceUrl: 'https://example.com/fake' })) : [],
+        ...(slug === 'with-photo' ? { bestTime: ['morning', 'sunset'], transport: ['motorbike'], cover: 'partial', priceLevel: 2 } : {}),
+        ...(slug === 'missing-info' ? { category: 'attraction', unconfirmed: false, location: undefined, address: undefined, practicalNotes: undefined, contact: {}, openingHours: [], lastVerifiedAt: undefined } : {}) },
       nearby: items.slice(1, 7),
     }));
   } else {
@@ -133,7 +149,7 @@ describe('S20 static legal pages production SSR', () => {
     for (const kind of ['pages', 'places', 'lists', 'itineraries']) {
       const xml = await (await fetch(`${base}/sitemap-${kind}.xml`)).text();
       for (const path of ['/dieu-khoan', '/quyen-rieng-tu', '/ghi-nguon']) {
-        const lastmod = path === '/quyen-rieng-tu' ? '2026-10-21T00:00:00.000Z' : '2026-10-12T00:00:00.000Z';
+        const lastmod = path === '/ghi-nguon' ? '2026-10-22T00:00:00.000Z' : path === '/quyen-rieng-tu' ? '2026-10-21T00:00:00.000Z' : '2026-10-12T00:00:00.000Z';
         const entry = `<url><loc>https://ranhduong.vn${path}</loc><lastmod>${lastmod}</lastmod></url>`;
         if (kind === 'pages') expect(xml).toContain(entry);
         else expect(xml).not.toContain(`<loc>https://ranhduong.vn${path}</loc>`);
@@ -219,6 +235,37 @@ describe('S30 itinerary ticket production SSR', () => {
   });
 });
 
+describe('Journey Atlas production SSR', () => {
+  it('keeps every chapter, genuine schedule and share action accessible without loading a map', async () => {
+    const html = await (await fetch(`${base}/da-lat/lich-trinh/lich-trinh-gia-lap?audit=journey-atlas`)).text();
+    expect(html.match(/<h1(?:\s|>)/g)).toHaveLength(1);
+    expect(html).toContain('Cuốn bản đồ hành trình');
+    expect(html).toContain('aria-label="Tổng quan từng ngày"');
+    expect(html).toContain('href="#day-2"');
+    expect(html).toMatch(/<section[^>]*class="rd-atlas-day"[^>]*>/);
+    expect(html).not.toMatch(/<section[^>]*class="rd-atlas-day"[^>]*display:\s*none/);
+    expect(html.indexOf('id="itinerary-share-title"')).toBeLessThan(html.indexOf('id="journey-chapters"'));
+    expect(html.match(/id="itinerary-share-title"/g)).toHaveLength(1);
+    expect(html).toContain('Ảnh điểm đến · Thành phố Giả Lập');
+    expect(html).toContain('Ảnh đang cập nhật');
+    expect(html).toContain('(dự kiến)');
+    expect(html).not.toContain('<canvas');
+    expect(html).not.toContain('Đã hoàn thành');
+    expect(html).toContain('href="/da-lat#kham-pha"');
+  });
+
+  it('uses supplied stop photography for cover and postcard instead of substituting a destination image', async () => {
+    const html = await (await fetch(`${base}/da-lat/lich-trinh/anh-lich-trinh-gia-lap?audit=atlas-photo`)).text();
+    expect(html).toContain('fake/journey-photo');
+    expect(html).toContain('Trong hành trình · Quán Giả Lập 2');
+    expect(html).toMatch(/<img[^>]*fake\/journey-photo[^>]*loading="eager"[^>]*fetchpriority="high"/);
+    expect(html).toMatch(/<img[^>]*fake\/journey-photo[^>]*loading="lazy"/);
+    expect(html).not.toContain('/images/home/city-');
+    expect(html).toContain('id="stop-1-3"');
+    expect(html).toContain('Điểm ghé đang cập nhật');
+  });
+});
+
 describe('S24 weather production SSR', () => {
   it.each([['fog', 'Có sương'], ['sun', 'Nắng đẹp'], ['cloud', 'Nhiều mây'], ['rain', 'Mưa']] as const)('renders fresh %s weather and keeps source/disclaimer visible', async (mode, label) => {
     weatherMode = mode;
@@ -299,6 +346,24 @@ describe('S23 seasonal production SSR', () => {
 });
 
 describe('S14 curated lists production SSR', () => {
+  it('renders a one-place journal without inventing introductory copy or photographs', async () => {
+    const html = await (await fetch(`${base}/da-lat/top/mot-diem-gia-lap`)).text();
+    const main = html.match(/<main\b[\s\S]*?<\/main>/)?.[0] ?? '';
+    expect(main).toContain('1 địa điểm');
+    expect(main).toContain('Ảnh đang cập nhật');
+    expect(main).not.toContain('collection-intro-title');
+    expect(main.match(/class="rd-curated-page__rank"/g)).toHaveLength(1);
+    expect(main).toContain('Sao chép liên kết');
+    expect(main).not.toContain('maplibregl-canvas');
+  });
+  it('keeps a long description in one introduction and all 22 entries crawlable', async () => {
+    const html = await (await fetch(`${base}/da-lat/top/nhat-ky-dai-gia-lap`)).text();
+    const main = html.match(/<main\b[\s\S]*?<\/main>/)?.[0] ?? '';
+    expect(main).toContain('collection-intro-title');
+    expect(main.match(/Mô tả biên tập Giả Lập chỉ hiển thị một lần\./g)).toHaveLength(8);
+    expect(main.match(/class="rd-curated-page__rank"/g)).toHaveLength(22);
+    expect(main).toContain('/da-lat/dia-diem/quan-gia-lap-22');
+  });
   it('renders title, description and numbered cards in saved order, canonical and SWR 15min', async () => {
     const response = await fetch(`${base}/da-lat/top/danh-sach-gia-lap`);
     expect(response.status).toBe(200);
@@ -353,6 +418,40 @@ describe('S13 search production SSR', () => {
 });
 
 describe('S12 map production SSR', () => {
+  it('Living Map renders a journal discovery panel and keyboard alternatives to all three sheet levels', async () => {
+    const html = await (await fetch(`${base}/da-lat/ban-do?audit=living-map`)).text();
+    for (const text of ['THE LIVING MAP', 'Bản đồ biết kể chuyện.', 'Đến danh sách địa điểm', 'Chiều cao danh sách', 'Bản đồ', 'Nửa màn', 'Danh sách', 'Lọc thêm', 'Ghi chép ban đầu của thành phố', 'OpenStreetMap', 'OpenMapTiles', 'OpenFreeMap']) expect(html.includes(text), text).toBe(true);
+    expect(html.match(/<h1(?:\s|>)/g)).toHaveLength(1);
+    expect(html.includes('role="search"')).toBe(true);
+    expect(html.includes('id="map-results"')).toBe(true);
+    expect(html.includes('href="/da-lat#lich-trinh"')).toBe(true);
+    expect(html.includes('aria-label="Xem ghim Quán Giả Lập 1 trên bản đồ"')).toBe(true);
+    expect(html.includes('<canvas')).toBe(false);
+  });
+  it('Living Map preserves supported search/category/zone/tag/rain filters in GET forms and real API queries', async () => {
+    const html = await (await fetch(`${base}/da-lat/ban-do?q=c%C3%A0%20ph%C3%AA&category=cafe&zone=trung-tam&tags=chill&rainSafe=true&audit=living-filters`)).text();
+    const query = mapQueries.at(-1);
+    expect(query?.get('q')).toBe('cà phê');
+    for (const [key, value] of [['category', 'cafe'], ['zone', 'trung-tam'], ['tags', 'chill'], ['rainSafe', 'true'], ['bbox', '0,0,1,1']] as const) expect(query?.get(key)).toBe(value);
+    for (const text of ['value="cà phê"', 'name="category" value="cafe"', 'name="tags" value="chill"', 'name="zone"', 'Trung tâm Giả Lập', 'Đặc điểm địa điểm', 'Xóa bộ lọc']) expect(html.includes(text), text).toBe(true);
+    expect(html.includes('rel="canonical" href="https://ranhduong.vn/da-lat/ban-do"')).toBe(true);
+    expect(html.includes('name="robots" content="noindex, follow"')).toBe(true);
+    expect(html.includes('name="priceLevel"')).toBe(false);
+    expect(html.includes('name="bestTime"')).toBe(false);
+  });
+  it('Living Map keeps empty states and GET tag-checkbox arrays usable without JavaScript', async () => {
+    homeEmpty = true;
+    try {
+      const response = await fetch(`${base}/da-lat/ban-do?tags=chill&tags=view-doi&audit=living-empty`);
+      const html = await response.text();
+      expect(response.status).toBe(200);
+      expect(mapQueries.at(-1)?.get('tags')).toBe('chill,view-doi');
+      expect(html.includes('Chưa gặp nơi hợp gu?')).toBe(true);
+      expect(html.includes('0 địa điểm')).toBe(true);
+      expect(html.includes('0+ địa điểm')).toBe(false);
+      expect(html.includes('method="get"')).toBe(true);
+    } finally { homeEmpty = false; }
+  });
   it('renders category filters, an accessible place list and visible map attribution', async () => {
     const response = await fetch(`${base}/da-lat/ban-do?category=food`);
     expect(response.status).toBe(200);
@@ -369,7 +468,9 @@ describe('S12 map production SSR', () => {
       const response = await fetch(`${base}/da-lat/ban-do?audit=map-down`);
       expect(response.status).toBe(503);
       expect(response.headers.get('cache-control')).toBe('no-store');
-      expect(await response.text()).toContain('Thử lại');
+      const html = await response.text();
+      expect(html).toContain('Thử lại');
+      expect(html.includes('Chưa tải được địa điểm')).toBe(true);
     } finally { mapFailed = false; }
   });
 });
@@ -391,7 +492,7 @@ describe('S11 detail production SSR', () => {
     expect(res.status).toBe(200);
     expect(res.headers.get('cache-control')).toContain('s-maxage=900');
     const html = await res.text();
-    for (const text of ['Quán Giả Lập 1', 'Ghi chú Giả Lập', 'Địa chỉ Giả Lập', 'Ảnh đang cập nhật', 'Thông tin chưa được quán xác nhận', '07:00–22:00', 'Tiện đường ghé thêm', 'Quán Giả Lập 7', 'tel:+84912345678', 'https://facebook.com/fake']) expect(html).toContain(text);
+    for (const text of ['Quán Giả Lập 1', 'Ghi chú Giả Lập', 'Địa chỉ Giả Lập', 'Ảnh đang cập nhật', 'Thông tin chưa được quán xác nhận', '07:00–22:00', 'Đi tiếp', 'Quán Giả Lập 7', 'tel:+84912345678', 'https://facebook.com/fake']) expect(html).toContain(text);
     expect(html).toContain('https://www.google.com/maps/dir/?api=1');
     expect(html).toContain('rel="canonical" href="https://ranhduong.vn/da-lat/dia-diem/quan-gia-lap-1"');
     expect(html).not.toContain('>Đang mở<');
@@ -409,13 +510,53 @@ describe('S11 detail production SSR', () => {
     expect(html).toContain('Giấy phép Giả Lập');
   });
 
+  it('Place Story keeps eight real chapters, one H1, deferred maps and an honest upcoming itinerary action', async () => {
+    const geographicBefore = geographicRequests;
+    const html = await (await fetch(`${base}/da-lat/dia-diem/with-photo?story=chapters`)).text();
+    const chapters = ['place-reveal', 'first-impression', 'photo-journal', 'before-you-go', 'right-moment', 'find-your-way', 'make-it-your-journey', 'next-turn'];
+    expect(chapters.every(id => html.includes(`id="${id}"`))).toBe(true);
+    const positions = chapters.map(id => html.indexOf(`id="${id}"`));
+    expect(positions).toEqual([...positions].sort((a, b) => a - b));
+    expect(html.match(/<h1(?:\s|>)/g)).toHaveLength(1);
+    expect(html.includes('0.3000° B / 0.2000° Đ')).toBe(true);
+    expect(html.includes('Tính năng thêm địa điểm vào lịch trình cá nhân chưa được mở.')).toBe(true);
+    expect(/<button[^>]*disabled[^>]*>Thêm vào lịch trình/.test(html)).toBe(true);
+    expect(html.includes('href="/da-lat#lich-trinh"')).toBe(true);
+    expect(html.includes('Sao chép địa chỉ')).toBe(true);
+    for (const anchor of ['kham-pha', 'lich-trinh', 'cam-hung']) expect(html.includes(`href="/da-lat#${anchor}"`)).toBe(true);
+    expect(html.match(/<canvas|<link[^>]*maplibre[^>]*>/g) ?? []).toEqual([]);
+    expect(geographicRequests).toBe(geographicBefore);
+  });
+
+  it('Place Story renders only actual photographs, credits and stored visiting moments', async () => {
+    const html = await (await fetch(`${base}/da-lat/dia-diem/with-photo?story=photos`)).text();
+    expect(html.match(/class="rd-gallery__card(?:\s|"|--)/g)).toHaveLength(3);
+    expect(html.includes('loading="lazy"')).toBe(true);
+    expect(/href="[^"]*\/fake\/photo\/1200\.webp"/.test(html)).toBe(true);
+    expect(html.includes('Nguồn ảnh (3)')).toBe(true);
+    expect(html.match(/class="is-recommended"/g)).toHaveLength(2);
+    expect(html.includes('Mức 2 / 4')).toBe(true);
+    expect(html.includes('Có chỗ che mưa và ngoài trời')).toBe(true);
+    expect(html.includes('Đây không phải giờ mở cửa hay dự báo thời tiết.')).toBe(true);
+  });
+
+  it('Place Story keeps missing information honest and omits unsupported timing and map controls', async () => {
+    const html = await (await fetch(`${base}/da-lat/dia-diem/missing-info`)).text();
+    for (const text of ['Câu chuyện của nơi này đang được bổ sung.', 'Chưa rõ mức giá', 'Chưa rõ mái che', 'Giờ mở cửa đang cập nhật', 'Địa chỉ đang cập nhật', 'Chưa có ngày xác minh', 'Thông tin liên hệ đang cập nhật']) expect(html.includes(text), text).toBe(true);
+    expect(html.includes('id="right-moment"')).toBe(false);
+    expect(html.includes('>Xem vị trí trên bản đồ<')).toBe(false);
+    expect(html.includes('https://www.google.com/maps/dir/')).toBe(false);
+    expect(html.includes('Ghi chép đã được địa điểm xác nhận')).toBe(false);
+  });
+
   it('closed places keep 200 without directions', async () => {
     const res = await fetch(`${base}/da-lat/dia-diem/closed`);
     expect(res.status).toBe(200);
     const html = await res.text();
     expect(html).toContain('Đã đóng cửa');
-    expect(html).toContain('Chỗ tương tự gần đây');
+    expect(html).toContain('Đi tiếp');
     expect(html).not.toContain('https://www.google.com/maps/dir/');
+    for (const id of ['right-moment', 'find-your-way', 'make-it-your-journey']) expect(html.includes(`id="${id}"`)).toBe(false);
   });
 
   it('historical URL redirects 301 to canonical URL', async () => {
@@ -605,6 +746,74 @@ afterAll(async () => {
   await new Promise<void>((resolve, reject) => api.close((error) => error ? reject(error) : resolve()));
 });
 
+describe('Local Field Guide production SSR', () => {
+  const hrefs = (html: string) => [...html.matchAll(/href="([^"]+)"/g)].map(match => match[1]!.replaceAll('&amp;', '&'));
+  it('renders a single area identity, top navigation, genuine tag moments and an honest visual-first collection', async () => {
+    const geographicBefore = geographicRequests;
+    const html = await (await fetch(`${base}/da-lat/khu-vuc/trung-tam?audit=field-guide`)).text();
+    expect(geographicRequests).toBe(geographicBefore);
+    expect(html.match(/<h1(?:\s|>)/g)).toHaveLength(1);
+    expect(html).toContain('SỔ TAY ĐỊA PHƯƠNG');
+    expect(html.indexOf('aria-label="Khám phá theo khu vực"')).toBeLessThan(html.indexOf('id="place-listing-title"'));
+    expect(html).toContain('Đang hiển thị 20 địa điểm');
+    expect(html).toContain('Ảnh đang cập nhật');
+    expect(html).toContain('id="field-moments-title"');
+    expect(html).toContain('HỌA TIẾT TRANG TRÍ · CHƯA TẢI BẢN ĐỒ');
+    expect(html).toContain('name="q"');
+    expect(html).not.toContain('<canvas');
+    expect(html).not.toContain('Đang mở');
+    expect(html).not.toMatch(/<link[^>]*maplibre-gl-worker/);
+    expect(hrefs(html)).toContain('/da-lat/khu-vuc/phia-nam');
+    expect(html).not.toContain('chỗ nào cũng được hỏi lại');
+  });
+  it('passes supported search filters to the existing API and preserves them across area and map links', async () => {
+    const html = await (await fetch(`${base}/da-lat/khu-vuc/trung-tam?q=cafe&category=food&tags=chill&rainSafe=true&cursor=${cursor}&audit=field-query`)).text();
+    const query = areaQueries.at(-1)!;
+    for (const [key, value] of [['q', 'cafe'], ['category', 'food'], ['tags', 'chill'], ['rainSafe', 'true'], ['zone', 'trung-tam']] as const) expect(query.get(key)).toBe(value);
+    expect(query.has('cursor')).toBe(false);
+    expect(html).toContain('name="robots" content="noindex, follow"');
+    expect(html).toContain('rel="canonical" href="https://ranhduong.vn/da-lat/khu-vuc/trung-tam"');
+    const other = new URL(hrefs(html).find(href => href.startsWith('/da-lat/khu-vuc/phia-nam?'))!, base);
+    expect(Object.fromEntries(other.searchParams)).toEqual({ q: 'cafe', tags: 'chill', category: 'food', rainSafe: 'true' });
+    const map = new URL(hrefs(html).find(href => href.startsWith('/da-lat/ban-do?'))!, base);
+    expect(map.searchParams.get('zone')).toBe('trung-tam');
+    expect(map.searchParams.get('q')).toBe('cafe');
+    expect(map.searchParams.get('rainSafe')).toBe('true');
+    expect(map.searchParams.has('cursor')).toBe(false);
+    expect(html).toContain('tối đa 20 nơi');
+  });
+  it('retains category and shelter context in crawlable next-page links', async () => {
+    const html = await (await fetch(`${base}/da-lat/khu-vuc/trung-tam?category=cafe&rainSafe=true&audit=field-page`)).text();
+    const next = new URL(hrefs(html).find(href => href.includes('cursor='))!, base);
+    expect(Object.fromEntries(next.searchParams)).toEqual({ category: 'cafe', rainSafe: 'true', cursor });
+  });
+  it('uses only actual place covers with reserved priority/lazy images and preserves result order', async () => {
+    areaWithPhotos = true;
+    try {
+      const html = await (await fetch(`${base}/da-lat/khu-vuc/trung-tam?audit=field-photo`)).text();
+      expect(html).toContain('Một nơi trong khu · Quán Giả Lập 1');
+      expect(html).toMatch(/<img[^>]*fake\/area-photo[^>]*loading="eager"[^>]*fetchpriority="high"/);
+      expect(html).toMatch(/<img[^>]*fake\/area-photo[^>]*loading="lazy"/);
+      expect(html).toContain('rd-field-grid__wide');
+      const grid = html.slice(html.indexOf('class="rd-field-grid"'));
+      expect(grid.indexOf('/dia-diem/quan-gia-lap-1')).toBeLessThan(grid.indexOf('/dia-diem/quan-gia-lap-2'));
+      expect(grid.indexOf('/dia-diem/quan-gia-lap-2')).toBeLessThan(grid.indexOf('/dia-diem/quan-gia-lap-3'));
+      expect(html).not.toContain('/images/home/');
+    } finally { areaWithPhotos = false; }
+  });
+  it('omits unsupported moments for an empty area and retains real alternative navigation', async () => {
+    homeEmpty = true;
+    try {
+      const html = await (await fetch(`${base}/da-lat/khu-vuc/trung-tam?audit=field-empty`)).text();
+      expect(html).toContain('Đang hiển thị 0 địa điểm');
+      expect(html).toContain('Khu này mình chưa ghi chép chỗ nào');
+      expect(html).not.toContain('id="field-moments-title"');
+      expect(html).toContain('Xem trước vị trí');
+      expect(hrefs(html)).toContain('/da-lat/khu-vuc/phia-nam');
+    } finally { homeEmpty = false; }
+  });
+});
+
 describe('SSR trang danh mục và khu vực trên bản production', () => {
   it.each([
     '/da-lat/ca-phe', '/da-lat/an-uong', '/da-lat/tham-quan', '/da-lat/hoat-dong',
@@ -670,6 +879,73 @@ describe('SSR trang danh mục và khu vực trên bản production', () => {
 });
 
 describe('UX home and itinerary SSR', () => {
+  it('renders the seven journal scenes, real city coordinates and deferred authentic previews', async () => {
+    const initialTemplateRequests = templatePreviewRequests;
+    const html = await (await fetch(`${base}/da-lat?audit=living-route`)).text();
+    const scenes = ['home-title', 'route-story-title', 'interests-title', 'featured-places-title', 'map-preview-title', 'lich-trinh', 'closing-title'];
+    const positions = scenes.map(id => html.indexOf(`id="${id}"`));
+    expect(positions.every(position => position >= 0)).toBe(true);
+    expect(positions).toEqual([...positions].sort((a, b) => a - b));
+    expect(html.match(/class="rd-chapter__number"/g)).toHaveLength(7);
+    for (const text of ['Rẽ một chút.', 'Hay cả chuyến đi.', 'Tự tạo lịch trình', 'Sắp có', '0.5000° B / 0.5000° Đ', 'không phải tuyến chỉ đường', 'Đi khám phá thôi']) expect(html).toContain(text);
+    expect(html).toContain('href="/da-lat/tham-quan?tags=view-doi"');
+    expect(html).toContain('href="/da-lat/tham-quan?tags=song-ao"');
+    expect(html).toMatch(/<button(?=[^>]*disabled)(?=[^>]*aria-describedby="journal-coming-note")[^>]*>/);
+    expect(templatePreviewRequests).toBe(initialTemplateRequests);
+    expect(html).not.toContain('draggable="true"');
+  });
+  it('keeps discovery, real place details and available itineraries crawlable without initializing a map', async () => {
+    const initialGeographicRequests = geographicRequests;
+    const response = await fetch(`${base}/da-lat?audit=editorial-discovery`);
+    expect(response.status).toBe(200);
+    const html = await response.text();
+    expect(html.match(/<h1\b/g)).toHaveLength(1);
+    for (const path of ['/da-lat/ca-phe', '/da-lat/an-uong', '/da-lat/tham-quan', '/da-lat/hoat-dong', '/da-lat/dia-diem/quan-gia-lap-1', '/da-lat/lich-trinh/lich-trinh-gia-lap', '/da-lat/ban-do?rainSafe=true']) {
+      expect(html).toContain(`href="${path}"`);
+    }
+    expect(html).toMatch(/<img(?=[^>]*loading="eager")(?=[^>]*fetchpriority="high")(?=[^>]*srcset="[^"]*city-1280.webp)[^>]*>/);
+    expect(html).toContain('href="/ghi-nguon#anh-trang-chu"');
+    expect(html).toContain('Vị trí từ dữ liệu địa điểm');
+    expect(html).toContain('Xem trước vị trí');
+    expect(html).not.toMatch(/<button[^>]*rd-home-map__pin/);
+    expect(html).toContain('Tính năng tự tạo và lưu địa điểm chưa mở trên web');
+    expect(html).not.toContain('href="/da-lat/tao-lich-trinh"');
+    expect(html).not.toContain('<canvas');
+    expect(html.match(/<link[^>]*maplibre[^>]*>/g) ?? []).toEqual([]);
+    expect(geographicRequests).toBe(initialGeographicRequests);
+  });
+
+  it('shows useful empty states without fabricating places, articles or map pins', async () => {
+    homeEmpty = true;
+    try {
+      const response = await fetch(`${base}/da-lat?audit=editorial-empty`);
+      expect(response.status).toBe(200);
+      const html = await response.text();
+      expect(html).toContain('Mình chưa ghi chép quán nào ở đây');
+      expect(html).toContain('Mình đang soạn mấy lịch trình đầu tiên');
+      expect(html).toContain('Những ghi chép đầu tiên đang được biên soạn');
+      expect(html).not.toMatch(/<button[^>]*rd-home-map__pin/);
+      expect(html).not.toContain('href="/da-lat/dia-diem/quan-gia-lap-1"');
+      expect(html).toContain('href="/da-lat/ban-do"');
+    } finally { homeEmpty = false; }
+  });
+
+  it('preserves partial content and retry on a place-data failure, then recovers', async () => {
+    const path = '/da-lat?audit=editorial-place-failure';
+    homePlacesFailed = true;
+    try {
+      const response = await fetch(`${base}${path}`);
+      expect(response.status).toBe(503);
+      expect(response.headers.get('cache-control')).toBe('no-store');
+      const html = await response.text();
+      expect(html).toContain('Chưa tải được hết dữ liệu');
+      expect(html).toContain('Thử lại');
+      expect(html).toContain('href="/da-lat/lich-trinh/lich-trinh-gia-lap"');
+      expect(html).not.toMatch(/<button[^>]*rd-home-map__pin/);
+    } finally { homePlacesFailed = false; }
+    expect((await fetch(`${base}${path}`)).status).toBe(200);
+  });
+
   it('shows the overview line, day spans and compact stops without the client-only action bar', async () => {
     const html = await (await fetch(`${base}/da-lat/lich-trinh/lich-trinh-gia-lap?audit=ux-itinerary`)).text();
     expect(html).toMatch(/class="rd-itinerary-detail__summary"[^>]*>4 điểm</);
@@ -697,7 +973,11 @@ describe('UX home and itinerary SSR', () => {
   });
   it('summarises a curated list and keeps ranked places in an ordered list', async () => {
     const html = await (await fetch(`${base}/da-lat/top/danh-sach-gia-lap?audit=ux-curated`)).text();
-    expect(html).toMatch(/class="rd-curated-page__summary"[^>]*>3 địa điểm · Cà phê</);
+    expect(html).toMatch(/class="rd-curated-page__summary"/);
+    expect(html).toContain('3 địa điểm');
+    expect(html).toContain('Mỗi nơi, một lý do để ghé.');
+    expect(html).toContain('Những nơi này nằm đâu?');
+    expect(html).toContain('Có người cũng sẽ thích những nơi này.');
     expect(html).toMatch(/class="rd-curated-page__rank"[^>]*>01</);
     expect(html.indexOf('/da-lat/dia-diem/quan-gia-lap-3')).toBeLessThan(html.indexOf('/da-lat/dia-diem/quan-gia-lap-1'));
   });
@@ -711,14 +991,53 @@ describe('UX home and itinerary SSR', () => {
   });
 });
 
+describe('Discovery Collection production SSR', () => {
+  it('renders category identity and crawlable discovery alternatives without initializing a map', async () => {
+    const initialGeographicRequests = geographicRequests;
+    const response = await fetch(`${base}/da-lat/ca-phe?audit=collection-cover`);
+    const html = await response.text();
+    expect(response.status).toBe(200);
+    expect(html.match(/<h1\b/g)).toHaveLength(1);
+    expect(html).toContain('Cà phê ở Thành phố Giả Lập');
+    expect(html).toContain('aria-label="Khám phá theo danh mục"');
+    expect(html).toContain('Tìm địa điểm trong danh mục');
+    expect(html).toContain('href="/da-lat/ban-do?category=cafe"');
+    for (const path of ['an-uong', 'tham-quan', 'hoat-dong']) expect(html).toContain(`href="/da-lat/${path}"`);
+    expect(html).toContain('Ảnh địa điểm đang cập nhật');
+    expect(html).not.toContain('<canvas');
+    expect(html).not.toContain('href="/da-lat/tao-lich-trinh"');
+    expect(geographicRequests).toBe(initialGeographicRequests);
+  });
+  it('preserves category, area and shelter context in filtered SSR links and metadata', async () => {
+    const html = await (await fetch(`${base}/da-lat/ca-phe?q=Yen&zone=trung-tam&rainSafe=true&tags=chill&audit=collection-context`)).text();
+    expect(html).toContain('name="robots" content="noindex, follow"');
+    expect(html).toContain('rel="canonical" href="https://ranhduong.vn/da-lat/ca-phe"');
+    expect(html).toContain('name="zone" value="trung-tam"');
+    expect(html).toContain('name="rainSafe" value="true"');
+    expect(html).toContain('href="/da-lat/ban-do?category=cafe&amp;rainSafe=true&amp;q=Yen&amp;zone=trung-tam&amp;tags=chill"');
+    expect(html).toContain('href="/da-lat/an-uong?zone=trung-tam&amp;rainSafe=true"');
+  });
+  it('uses an actual supplied cover eagerly and preserves order in the lazy place collection', async () => {
+    areaWithPhotos = true;
+    try {
+      const html = await (await fetch(`${base}/da-lat/ca-phe?zone=trung-tam&audit=collection-photo`)).text();
+      expect(html).toMatch(/<img(?=[^>]*loading="eager")(?=[^>]*fetchpriority="high")(?=[^>]*src="[^"]*fake\/area-photo)[^>]*>/);
+      expect(html).toMatch(/<img(?=[^>]*loading="lazy")(?=[^>]*src="[^"]*fake\/area-photo)[^>]*>/);
+      const grid = html.slice(html.indexOf('class="rd-field-grid"'));
+      expect(grid.indexOf('/dia-diem/quan-gia-lap-1')).toBeLessThan(grid.indexOf('/dia-diem/quan-gia-lap-2'));
+    } finally { areaWithPhotos = false; }
+  });
+});
+
 describe('UX category tabs and tag filter SSR', () => {
   it('shows categories as navigation tabs and tags as labelled filter chips with counts and a clear link', async () => {
     const html = await (await fetch(`${base}/da-lat/ca-phe?tags=chill&audit=ux-tags`)).text();
-    expect(html).toMatch(/<nav[^>]*class="rd-tabs"/);
-    expect(html).toMatch(/<a(?=[^>]*aria-current="page")(?=[^>]*\brd-tab\b)[^>]*>Cà phê</);
-    expect(html).toContain('Lọc theo thẻ');
-    expect(html).toMatch(/class="rd-chip__count"[^>]*>25</);
-    expect(html).toMatch(/class="rd-tag-filter__status"[^>]*>Đang lọc: Chill/);
+    expect(html).toContain('aria-label="Khám phá theo danh mục"');
+    expect(html).toMatch(/<a(?=[^>]*aria-current="page")(?=[^>]*href="\/da-lat\/ca-phe")[^>]*>/);
+    expect(html).toContain('aria-label="Lọc theo sở thích"');
+    expect(html).toMatch(/<button(?=[^>]*data-slug="chill")(?=[^>]*aria-pressed="true")[^>]*>/);
+    expect(html).toContain('<small>25');
+    expect(html).toMatch(/class="rd-field-filters__active"[^>]*>Đang lọc/);
     expect(html).toContain('href="/da-lat/ca-phe"');
   });
 });

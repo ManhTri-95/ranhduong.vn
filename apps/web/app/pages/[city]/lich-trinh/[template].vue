@@ -45,7 +45,7 @@ usePageSeo({ path, title, description, image: () => template.data.value && !fail
 
 <template>
   <div>
-    <RdCityHeader :city-slug="citySlug" :city-name="city.data.value?.name ?? ''" />
+    <RdCityHeader :city-slug="citySlug" :city-name="city.data.value?.name ?? ''" editorial :section-base="`/${citySlug}`" />
     <main class="rd-itinerary-page">
       <nav aria-label="Đường dẫn trang"><NuxtLink class="rd-itinerary-page__back" :to="`/${citySlug}`">← {{ city.data.value?.name || 'Về trang thành phố' }}</NuxtLink></nav>
       <RdErrorBanner v-if="failed" message="Chưa tải được lịch trình, có thể mạng đang chập chờn." @retry="retry" />
@@ -57,7 +57,7 @@ usePageSeo({ path, title, description, image: () => template.data.value && !fail
 </template>
 
 <style scoped>
-.rd-itinerary-page { max-width: 1200px; margin: 0 auto; padding: var(--space-2) var(--space-5) var(--space-7); display: grid; gap: var(--space-5); }
-.rd-itinerary-page__back { display: inline-flex; align-items: center; min-height: var(--tap-min); text-decoration: none; font-weight: 600; }
+.rd-itinerary-page { max-width: var(--content-max); margin: 0 auto; padding: var(--space-2) var(--space-5) var(--space-12); display: grid; gap: var(--space-3); }
+.rd-itinerary-page__back { display: inline-flex; align-items: center; min-height: var(--tap-min); text-decoration: none; font: 500 11px var(--font-body); color: var(--ink-soft); }
 .rd-itinerary-page__loading { min-height: 400px; background: var(--mist); border-radius: var(--radius-card); }
 </style>

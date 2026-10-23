@@ -13,7 +13,7 @@ const todayRow = computed(() => rows.value.find((row) => row.day === today.value
 
 <template>
   <section class="rd-hours" aria-labelledby="opening-hours-title">
-    <h2 id="opening-hours-title" class="section-title">Giờ mở cửa</h2>
+    <h3 id="opening-hours-title" class="section-title">Giờ mở cửa</h3>
     <template v-if="rows.length">
       <p class="rd-hours__today">
         <template v-if="todayRow"><span class="rd-hours__today-label">Hôm nay, {{ todayRow.label }}</span><strong>{{ todayRow.text }}</strong></template>

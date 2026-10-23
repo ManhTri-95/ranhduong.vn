@@ -1,0 +1,22 @@
+{
+  "date": "2026-10-23",
+  "workspaceTasks": 20,
+  "webUnit": {
+    "files": 40,
+    "passed": 187
+  },
+  "productionSSR": 102,
+  "widths": [
+    320,
+    375,
+    390,
+    430,
+    768,
+    1024,
+    1280,
+    1440,
+    1920
+  ],
+  "mapBackground": "OpenFreeMap tile/font blocked by QA network; canvas/markers/error/list verified",
+  "applicationDependenciesAdded": 0
+}

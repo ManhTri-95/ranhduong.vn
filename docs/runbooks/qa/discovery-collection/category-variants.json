@@ -1,0 +1,182 @@
+[
+  {
+    "viewport": 320,
+    "document": 320,
+    "category": "food"
+  },
+  {
+    "viewport": 375,
+    "document": 375,
+    "category": "food"
+  },
+  {
+    "viewport": 390,
+    "document": 390,
+    "category": "food"
+  },
+  {
+    "viewport": 430,
+    "document": 430,
+    "category": "food"
+  },
+  {
+    "viewport": 768,
+    "document": 768,
+    "category": "food"
+  },
+  {
+    "viewport": 1024,
+    "document": 1024,
+    "category": "food"
+  },
+  {
+    "viewport": 1280,
+    "document": 1280,
+    "category": "food"
+  },
+  {
+    "viewport": 1440,
+    "document": 1440,
+    "category": "food"
+  },
+  {
+    "viewport": 1920,
+    "document": 1920,
+    "category": "food"
+  },
+  {
+    "viewport": 320,
+    "document": 320,
+    "category": "attraction"
+  },
+  {
+    "viewport": 375,
+    "document": 375,
+    "category": "attraction"
+  },
+  {
+    "viewport": 390,
+    "document": 390,
+    "category": "attraction"
+  },
+  {
+    "viewport": 430,
+    "document": 430,
+    "category": "attraction"
+  },
+  {
+    "viewport": 768,
+    "document": 768,
+    "category": "attraction"
+  },
+  {
+    "viewport": 1024,
+    "document": 1024,
+    "category": "attraction"
+  },
+  {
+    "viewport": 1280,
+    "document": 1280,
+    "category": "attraction"
+  },
+  {
+    "viewport": 1440,
+    "document": 1440,
+    "category": "attraction"
+  },
+  {
+    "viewport": 1920,
+    "document": 1920,
+    "category": "attraction"
+  },
+  {
+    "viewport": 320,
+    "document": 320,
+    "category": "activity"
+  },
+  {
+    "viewport": 375,
+    "document": 375,
+    "category": "activity"
+  },
+  {
+    "viewport": 390,
+    "document": 390,
+    "category": "activity"
+  },
+  {
+    "viewport": 430,
+    "document": 430,
+    "category": "activity"
+  },
+  {
+    "viewport": 768,
+    "document": 768,
+    "category": "activity"
+  },
+  {
+    "viewport": 1024,
+    "document": 1024,
+    "category": "activity"
+  },
+  {
+    "viewport": 1280,
+    "document": 1280,
+    "category": "activity"
+  },
+  {
+    "viewport": 1440,
+    "document": 1440,
+    "category": "activity"
+  },
+  {
+    "viewport": 1920,
+    "document": 1920,
+    "category": "activity"
+  },
+  {
+    "viewport": 320,
+    "document": 320,
+    "category": "cafe"
+  },
+  {
+    "viewport": 375,
+    "document": 375,
+    "category": "cafe"
+  },
+  {
+    "viewport": 390,
+    "document": 390,
+    "category": "cafe"
+  },
+  {
+    "viewport": 430,
+    "document": 430,
+    "category": "cafe"
+  },
+  {
+    "viewport": 768,
+    "document": 768,
+    "category": "cafe"
+  },
+  {
+    "viewport": 1024,
+    "document": 1024,
+    "category": "cafe"
+  },
+  {
+    "viewport": 1280,
+    "document": 1280,
+    "category": "cafe"
+  },
+  {
+    "viewport": 1440,
+    "document": 1440,
+    "category": "cafe"
+  },
+  {
+    "viewport": 1920,
+    "document": 1920,
+    "category": "cafe"
+  }
+]

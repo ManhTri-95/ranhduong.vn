@@ -1,4 +1,5 @@
 import { PlaceDetailResponse, PlaceListResponse, type PlaceCard } from '@ranhduong/contracts';
+import type { MaybeRefOrGetter } from 'vue';
 import { API_TIMEOUT_MS, useApiBase } from '~/shared/api/client';
 
 /** Query của GET /cities/:city/places; category, tags là chuỗi cách nhau bằng dấu phẩy. */
@@ -16,7 +17,7 @@ export interface PlaceListParams {
 }
 
 /** GET /cities/:city/places. `immediate: false` khi chưa cần gọi (trang tìm kiếm chưa có từ khoá). */
-export function usePlaceList(citySlug: string, params: PlaceListParams, key: string, immediate = true) {
+export function usePlaceList(citySlug: string, params: MaybeRefOrGetter<PlaceListParams>, key: MaybeRefOrGetter<string>, immediate = true) {
   return useFetch<PlaceListResponse>(`/cities/${citySlug}/places`, {
     baseURL: useApiBase(),
     query: params,
@@ -27,8 +28,8 @@ export function usePlaceList(citySlug: string, params: PlaceListParams, key: str
 }
 
 /** Tải một trang trên trình duyệt (nút "Xem thêm"); apiBase lấy bằng useApiBase() lúc setup của component. */
-export function fetchPlacePage(apiBase: string, citySlug: string, params: PlaceListParams): Promise<PlaceListResponse> {
-  return $fetch<PlaceListResponse>(`/cities/${citySlug}/places`, { baseURL: apiBase, query: params, timeout: API_TIMEOUT_MS });
+export function fetchPlacePage(apiBase: string, citySlug: string, params: PlaceListParams, signal?: AbortSignal): Promise<PlaceListResponse> {
+  return $fetch<PlaceListResponse>(`/cities/${citySlug}/places`, { baseURL: apiBase, query: params, timeout: API_TIMEOUT_MS, signal });
 }
 
 export async function fetchPlaceSuggestions(apiBase: string, citySlug: string, q: string, signal: AbortSignal): Promise<PlaceCard[]> {

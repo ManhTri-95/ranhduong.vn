@@ -1,10 +1,17 @@
-import type { BBox, PlaceCard, PlaceCategory } from '@ranhduong/contracts';
+import { PlaceListResponse, type BBox, type PlaceCard } from '@ranhduong/contracts';
 import { API_TIMEOUT_MS } from '~/shared/api/client';
 import { loadMapPlaces } from '../lib/map-places';
+import { mapFilterQuery, type MapFilters } from '../lib/map-query';
 
-export function fetchMapPlaces(apiBase: string, city: string, bbox: BBox, category: PlaceCategory | undefined, signal: AbortSignal, rainSafe = false): Promise<PlaceCard[]> {
-  return loadMapPlaces((cursor) => $fetch(`/cities/${city}/places`, {
-    baseURL: apiBase, query: { bbox: bbox.join(','), category, cursor, limit: 50, rainSafe: rainSafe ? 'true' : undefined },
-    timeout: API_TIMEOUT_MS, signal, retry: 0,
-  }), signal);
+export async function fetchMapPlaces(apiBase: string, city: string, bbox: BBox, filters: MapFilters, signal: AbortSignal): Promise<{ places: PlaceCard[]; tags: PlaceListResponse['tags'] }> {
+  let tags: PlaceListResponse['tags'] = [];
+  const places = await loadMapPlaces(async cursor => {
+    const page = PlaceListResponse.parse(await $fetch(`/cities/${city}/places`, {
+      baseURL: apiBase, query: { ...mapFilterQuery(filters.category, filters.rainSafe, filters), bbox: bbox.join(','), cursor, limit: 50 },
+      timeout: API_TIMEOUT_MS, signal, retry: 0,
+    }));
+    tags = page.tags;
+    return page;
+  }, signal);
+  return { places, tags };
 }

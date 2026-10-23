@@ -1,0 +1,105 @@
+[
+  {
+    "check": "Load more",
+    "before": 20,
+    "after": 28,
+    "focus": "rd-place rd-field-card",
+    "unique": 28
+  },
+  {
+    "check": "Place detail",
+    "url": "http://localhost:3100/da-lat/dia-diem/iem-ca-phe-phia-tay-mat-troi-specialty-coffee-roastery",
+    "h1": "Tiệm cà phê phía tây mặt trời"
+  },
+  {
+    "check": "Back restores appended results",
+    "count": 28,
+    "scrollBefore": 11848,
+    "scrollAfter": 11848
+  },
+  {
+    "check": "Search",
+    "url": "http://localhost:3100/da-lat/ca-phe?q=Y%C3%AAn",
+    "names": [
+      "Yên Cafe"
+    ],
+    "document": 390
+  },
+  {
+    "check": "Tag selection",
+    "pressed": "true",
+    "focus": "tag:chill"
+  },
+  {
+    "check": "Area and rain shelter",
+    "url": "http://localhost:3100/da-lat/ca-phe?tags=chill&zone=trung-tam&rainSafe=true",
+    "areas": [
+      "Cà phê / Trung tâm",
+      "Cà phê / Trung tâm",
+      "Cà phê / Trung tâm",
+      "Cà phê / Trung tâm",
+      "Cà phê / Trung tâm",
+      "Cà phê / Trung tâm",
+      "Cà phê / Trung tâm",
+      "Cà phê / Trung tâm",
+      "Cà phê / Trung tâm",
+      "Cà phê / Trung tâm",
+      "Cà phê / Trung tâm",
+      "Cà phê / Trung tâm",
+      "Cà phê / Trung tâm",
+      "Cà phê / Trung tâm",
+      "Cà phê / Trung tâm"
+    ],
+    "selectedRegion": "trung-tam",
+    "focus": "advanced"
+  },
+  {
+    "check": "Category transition retains area/shelter, resets interests",
+    "url": "http://localhost:3100/da-lat/an-uong?zone=trung-tam&rainSafe=true",
+    "focus": "page"
+  },
+  {
+    "check": "Map entry carries category and filters",
+    "href": "/da-lat/ban-do?category=food&rainSafe=true&zone=trung-tam",
+    "url": "http://localhost:3100/da-lat/ban-do?category=food&rainSafe=true&zone=trung-tam"
+  },
+  {
+    "check": "JavaScript-disabled GET filters/search preserve context",
+    "url": "http://localhost:3100/da-lat/ca-phe?zone=trung-tam&tags=chill%2Cgia-dinh&q=Y%C3%AAn",
+    "document": 375,
+    "viewport": 375
+  },
+  {
+    "check": "Empty results",
+    "message": "Chưa có địa điểm khớp bộ lọc này. Thử bỏ bớt một điều kiện nhé.\n\nBỏ lọc",
+    "document": 320
+  },
+  {
+    "check": "Controlled pagination failure after hydration",
+    "requests": 2,
+    "count": 20,
+    "message": "Chưa tải thêm được, có thể mạng đang chập chờn. Bấm Xem thêm lần nữa nhé."
+  },
+  {
+    "check": "Final pagination retry",
+    "count": 28,
+    "url": "http://localhost:3100/da-lat/ca-phe?collection-qa=final-hydration",
+    "focus": "rd-place rd-field-card"
+  },
+  {
+    "check": "Slow network duplicate click",
+    "requestCount": 1,
+    "busy": "true",
+    "document": 320
+  },
+  {
+    "check": "Category-to-area context",
+    "url": "http://localhost:3100/da-lat/khu-vuc/trung-tam?category=cafe",
+    "category": "cafe"
+  },
+  {
+    "check": "Shared area load-more and responsive regression",
+    "count": 31,
+    "widths": 9
+  }
+]

@@ -15,6 +15,8 @@
   --accent: #E9B824;
 
   --font-display: 'Lora', Georgia, serif;
+  /* Windows Georgia can advance Vietnamese composed accents as separate glyphs when web fonts are unavailable. */
+  --font-display-vietnamese: 'Lora', 'Times New Roman', serif;
   --font-body: 'Be Vietnam Pro', system-ui, sans-serif;
   --font-hand: 'Patrick Hand', 'Be Vietnam Pro', cursive;
 
@@ -42,6 +44,31 @@
   --stop-dot: 36px;
   --shadow-note: 0 2px 0 var(--note-edge);
   --shadow-float: 0 6px 16px rgba(30, 58, 47, 0.25);
+  /* Editorial destination pages; keep the established city/season palette. */
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+  --content-max: 1200px;
+  --editorial-gutter: clamp(20px, 5vw, 72px);
+  --editorial-section: clamp(56px, 8vw, 104px);
+  --editorial-overlay: linear-gradient(90deg, rgba(12, 30, 24, 0.82), rgba(12, 30, 24, 0.2));
+  --editorial-shade: linear-gradient(0deg, rgba(12, 30, 24, 0.84), rgba(12, 30, 24, 0) 80%);
+  --shadow-card: 0 12px 32px rgba(30, 58, 47, 0.09);
+  --dur-reveal: 420ms;
+  /* The Living Route: travel-journal surfaces and a directional motion signature. */
+  --route-rust: #943F2C;
+  --route-highlight: #FCEFB4;
+  --font-coordinate: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  --radius-postcard: 4px;
+  --shadow-postcard: 0 12px 26px rgba(30, 58, 47, 0.12), 0 2px 4px rgba(30, 58, 47, 0.06);
+  --paper-grain: radial-gradient(color-mix(in srgb, var(--ink) 8%, transparent) 0.5px, transparent 0.5px);
+  --cartographic-grid: linear-gradient(color-mix(in srgb, var(--ink) 7%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--ink) 7%, transparent) 1px, transparent 1px);
+  --dur-route: 650ms;
+  --dur-route-image: 1200ms;
+  --ease-route: cubic-bezier(0.16, 1, 0.3, 1);
   --page-gutter: 20px;
   /* Chuyển động (ui-spec mục 8): phản hồi bấm, đổi trạng thái, panel/bottom sheet. Chỉ animate transform và opacity. */
   --dur-micro: 140ms;

@@ -1,0 +1,40 @@
+/* Homepage-only editorial system. Other routes keep their established presentation. */
+.rd-home { overflow-wrap: break-word; background-color: var(--paper); background-image: var(--paper-grain); background-size: 4px 4px; }
+.rd-home *, .rd-home *::before, .rd-home *::after { box-sizing: border-box; }
+.rd-home-container { width: 100%; max-width: calc(var(--content-max) + 2 * var(--editorial-gutter)); margin-inline: auto; padding-inline: var(--editorial-gutter); }
+.rd-home-section { padding-block: var(--editorial-section); }
+.rd-home [id] { scroll-margin-top: var(--space-5); }
+.rd-home h2 { font: 700 clamp(32px, 4.4vw, 62px)/1.16 var(--font-display); letter-spacing: -0.045em; margin: 0; }
+.rd-home h2 em { color: var(--route-rust); }
+.rd-home h2.section-title { font-size: clamp(32px, 4.4vw, 62px); }
+.rd-home-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-5); margin-bottom: var(--space-8); }
+.rd-home-heading > p { display: none; margin: 0; font-size: 12px; line-height: 1.8; color: var(--ink-soft); }
+.rd-home-kicker { display: block; margin: 0 0 var(--space-4); font: 600 10px/1.8 var(--font-body); letter-spacing: 0.12em; color: var(--ink-soft); }
+.rd-home-text-link { display: inline-flex; align-items: center; gap: var(--space-5); min-height: var(--tap-min); font-size: 13px; font-weight: 600; text-decoration: none; }
+.rd-home-text-link:hover { text-decoration: underline; text-underline-offset: 5px; }
+.rd-home-skip { position: absolute; top: var(--space-2); left: var(--space-5); transform: translateY(-180%); z-index: 50; background: var(--paper-raised); padding: var(--space-4); border-radius: var(--radius-chip); }
+.rd-home-skip:focus { transform: none; }
+.rd-home__error { padding-block: var(--space-5); }
+.rd-home-manifesto { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); padding-block: var(--space-7); border-bottom: 1px solid var(--line); }
+.rd-home-manifesto p { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-3); font: 22px/1.3 var(--font-hand); margin: 0; }
+.rd-home-manifesto p span { color: var(--ink-soft); }
+.rd-home-manifesto__note { font-size: 10px; color: var(--ink-soft); }
+.rd-home #dia-diem { padding-top: 0; }
+.rd-home__zones { padding-bottom: var(--editorial-section); }
+.rd-home__zones .section-title { font: 600 12px/1.6 var(--font-body); letter-spacing: 0; }
+.rd-home__itineraries { padding-block: var(--editorial-section); background-color: var(--mist); background-image: var(--cartographic-grid); background-size: 48px 48px; }
+.rd-home__itineraries .section > .section-title { font: 600 16px/1.6 var(--font-body); letter-spacing: 0; }
+.rd-home__itineraries .strip { gap: var(--space-5); }
+.rd-home__itineraries .rd-itin { background: var(--paper-raised); border-color: transparent; }
+.rd-home__itineraries .rd-itin__body { padding: var(--space-5); }
+.rd-home__itineraries .rd-itin__top { height: 155px; }
+.rd-home__itineraries .rd-itin__top--stub { background: var(--paper); }
+.rd-home__itineraries .rd-itin__days { font-size: 22px; }
+.rd-home__itineraries .rd-itin__top--stub .rd-itin__days { font-family: var(--font-display); }
+@media (min-width: 768px) { .rd-home-heading > p { display: block; } .rd-home-manifesto p { font-size: 26px; } }
+/* Static final compositions are the baseline, including when JavaScript or motion APIs are absent. */
+.rd-home [data-rd-route-scene] { --rd-route-progress: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .rd-home [data-rd-route-scene], .rd-home .rd-journey { --rd-route-progress: 1 !important; }
+  .rd-home .rd-postcard, .rd-home .rd-journal-preview, .rd-home .rd-interests > li { transform: none; }
+}

@@ -1,51 +1,75 @@
 <script setup lang="ts">
-import { CATEGORY_LABEL, PlaceCategory, type BBox, type CityPublic, type PlaceCard, type PlaceListResponse } from '@ranhduong/contracts';
+import { type BBox, type CityPublic, type PlaceCard, type PlaceListResponse } from '@ranhduong/contracts';
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { fetchMapPlaces } from '~/entities/place/api/place-map';
 import RdPlaceCard from '~/entities/place/ui/RdPlaceCard.vue';
-import { restorableView, type MapInsets, type MapView } from '~/shared/lib/map-camera';
+import { mapFilterQuery, type MapFilters } from '~/entities/place/lib/map-query';
+import { restorableView, viewportAction, type MapInsets, type MapView } from '~/shared/lib/map-camera';
+import RdCompass from '~/shared/ui/RdCompass.vue';
 import RdPlaceMap from '~/features/place-map/ui/RdPlaceMap.client.vue';
 import { useApiBase } from '~/shared/api/client';
 import { useClientNow } from '~/shared/lib/use-client-now';
 import { usePlaceTracking } from '~/shared/lib/use-place-tracking';
 import { resistDrag, settleSnap, sheetHeights, type SheetHeights, type SheetSnap } from '../lib/map-sheet';
+import RdMapToolbar from './RdMapToolbar.vue';
+import RdMapPostcard from './RdMapPostcard.vue';
 
-const props = defineProps<{ city: CityPublic; initialPage: PlaceListResponse | null; category?: PlaceCategory; rainSafe: boolean; failed: boolean }>();
-const emit = defineEmits<{ category: [value: PlaceCategory | undefined]; rainSafe: [value: boolean] }>();
+const props = defineProps<{ city: CityPublic; initialPage: PlaceListResponse | null; filters: MapFilters; failed: boolean }>();
+const emit = defineEmits<{ filters: [value: MapFilters] }>();
 
 /** Giữ khung nhìn, ghim đang chọn và mức sheet khi khách mở địa điểm rồi bấm Back (điều hướng trong app, không cần URL). */
-interface MapSession { view?: MapView; selectedSlug: string | null; snap: SheetSnap; showing: 'list' | 'place'; listScroll: number }
+interface MapSession { view?: MapView; selectedSlug: string | null; snap: SheetSnap; showing: 'list' | 'place'; listScroll: number; filtersKey?: string; results?: PlaceCard[] }
 const session = useState<MapSession>(`map-session:${props.city.slug}`, () => ({ selectedSlug: null, snap: 'half', showing: 'list', listScroll: 0 }));
+const filtersKey = computed(() => JSON.stringify(mapFilterQuery(props.filters.category, props.filters.rainSafe, props.filters)));
+const hasFilters = computed(() => filtersKey.value !== '{}');
+const restoring = session.value.filtersKey === filtersKey.value;
 
 const apiBase = useApiBase();
 const now = useClientNow();
-const places = ref<PlaceCard[]>(props.initialPage?.items ?? []);
-const selectedSlug = ref<string | null>(session.value.selectedSlug);
+const places = ref<PlaceCard[]>(restoring && session.value.results ? session.value.results : props.initialPage?.items ?? []);
+const tags = ref(props.initialPage?.tags ?? []);
+const selectedSlug = ref<string | null>(restoring ? session.value.selectedSlug : null);
+const focusKey = ref(0);
 const selected = computed(() => places.value.find((place) => place.slug === selectedSlug.value));
 usePlaceTracking(() => selected.value?.id, 'map');
-const showing = ref<'list' | 'place'>(session.value.showing);
+const showing = ref<'list' | 'place'>(restoring ? session.value.showing : 'list');
 const showingPlace = computed(() => showing.value === 'place' && Boolean(selected.value));
 const loading = ref(false);
 const loadFailed = ref(props.failed);
 const selectedHeading = ref<HTMLElement | null>(null);
 const initialView = restorableView(session.value.view, props.city.mapBounds);
+const mapReady = ref(false);
+const mapFailed = ref(false);
+const areaDirty = ref(false);
+const editing = ref(false);
+const hasMore = ref(!restoring && Boolean(props.initialPage?.nextCursor));
+const searched = ref(false);
+const resultCaption = computed(() => areaDirty.value ? 'Ghi chép của vùng đã tìm' : searched.value ? 'Trong khung nhìn đã tìm' : 'Ghi chép ban đầu của thành phố');
 let bounds: BBox = props.city.mapBounds;
+let searchedBounds: BBox | undefined;
+let viewportInitialized = false;
 let controller: AbortController | undefined;
-let timer: ReturnType<typeof setTimeout> | undefined;
 let disposed = false;
 
 async function load(): Promise<void> {
-  clearTimeout(timer);
   controller?.abort();
   const request = new AbortController();
   controller = request;
   loading.value = true;
-  loadFailed.value = false;
+  const trigger = document.activeElement instanceof HTMLElement && document.activeElement.hasAttribute('data-rd-discovery-trigger') ? document.activeElement : undefined;
+  const requestBounds: BBox = [...bounds];
+  const requestFilters = filtersKey.value;
   try {
-    const result = await fetchMapPlaces(apiBase, props.city.slug, bounds, props.category, request.signal, props.rainSafe);
-    if (disposed || controller !== request) return;
-    places.value = result;
-    if (!result.some((place) => place.slug === selectedSlug.value)) selectedSlug.value = null;
+    const result = await fetchMapPlaces(apiBase, props.city.slug, requestBounds, props.filters, request.signal);
+    if (disposed || controller !== request || request.signal.aborted || filtersKey.value !== requestFilters) return;
+    const moveFocus = trigger && document.activeElement === trigger;
+    places.value = result.places; tags.value = result.tags;
+    session.value.results = result.places; session.value.filtersKey = requestFilters;
+    searchedBounds = requestBounds; areaDirty.value = false; searched.value = true; hasMore.value = false;
+    if (!result.places.some((place) => place.slug === selectedSlug.value)) selectedSlug.value = null;
+    loadFailed.value = false; loading.value = false;
+    await nextTick();
+    if (!disposed && moveFocus) document.getElementById('map-places-title')?.focus({ preventScroll: true });
   } catch {
     if (!disposed && controller === request && !request.signal.aborted) loadFailed.value = true;
   } finally {
@@ -53,21 +77,15 @@ async function load(): Promise<void> {
   }
 }
 
-function viewport(next: BBox): void {
+function viewport(next: BBox, interactive: boolean): void {
   bounds = next;
-  // Huỷ ngay khi viewport đổi; phản hồi vùng cũ không có cơ hội ghi đè trong lúc debounce.
-  controller?.abort();
-  clearTimeout(timer);
-  timer = setTimeout(load, 200);
+  if (interactive) { controller?.abort(); controller = undefined; loading.value = false; }
+  const action = viewportAction(viewportInitialized, interactive, searchedBounds, next);
+  viewportInitialized = true;
+  if (action === 'load') void load();
+  else if (interactive) areaDirty.value = action === 'offer';
 }
-
-function filter(event: SubmitEvent): void {
-  event.preventDefault();
-  const button = event.submitter;
-  if (button instanceof HTMLButtonElement) {
-    emit('category', PlaceCategory.safeParse(button.value).success ? button.value as PlaceCategory : undefined);
-  }
-}
+function onMapReady(): void { mapReady.value = true; mapFailed.value = false; viewportInitialized = false; }
 
 // ---- Bottom sheet (điện thoại): kéo theo tay, thả thì về mức gần nhất hoặc mức kế tiếp khi vuốt nhanh (ui-spec mục 4, 8).
 const root = ref<HTMLElement | null>(null);
@@ -75,6 +93,7 @@ const header = ref<HTMLElement | null>(null);
 const sheet = ref<HTMLElement | null>(null);
 const sheetTop = ref<HTMLElement | null>(null);
 const content = ref<HTMLElement | null>(null);
+const attribution = ref<HTMLElement | null>(null);
 const snap = ref<SheetSnap>(session.value.snap);
 const mobile = ref(false);
 const insets = ref<MapInsets>({ top: 0, bottom: 0 });
@@ -83,6 +102,8 @@ let topHeight = 0;
 let safeBottom = 0;
 let media: MediaQueryList | undefined;
 let resize: ResizeObserver | undefined;
+let visual: VisualViewport | null | undefined;
+let readyFrame: number | undefined;
 let drag: { id: number; startY: number; startVisible: number; lastY: number; lastT: number; velocity: number; moved: boolean } | undefined;
 let visible = 0;
 /** Kéo bằng chuột vẫn phát click ngay sau khi thả; chỉ bỏ qua click trong khoảnh khắc đó, không giữ cờ cho lần bấm sau. */
@@ -98,6 +119,8 @@ function layout(): void {
   const el = root.value;
   if (!el || !header.value || !sheet.value || !sheetTop.value) return;
   mobile.value = media?.matches ?? false;
+  el.classList.toggle('rd-map-explorer--compact', mobile.value && el.clientHeight < 500);
+  el.style.setProperty('--map-header-h', `${header.value.offsetHeight}px`);
   if (!mobile.value) {
     insets.value = { top: 0, bottom: 0 };
     return;
@@ -105,10 +128,15 @@ function layout(): void {
   // Phần đầu sheet tính cả viền trên 2px, để danh sách kết thúc đúng mép dưới màn hình.
   topHeight = Math.round(sheetTop.value.getBoundingClientRect().bottom - sheet.value.getBoundingClientRect().top);
   safeBottom = Number.parseFloat(getComputedStyle(sheet.value).paddingBottom) || 0;
-  heights = sheetHeights(el.clientHeight, header.value.offsetHeight, topHeight + safeBottom);
-  el.style.setProperty('--map-header-h', `${header.value.offsetHeight}px`);
+  heights = sheetHeights(el.clientHeight, header.value.offsetHeight, topHeight + safeBottom, Math.max(56, (attribution.value?.offsetHeight ?? 0) + 8));
   el.style.setProperty('--sheet-h', `${heights.expanded}px`);
   settle(snap.value);
+}
+
+function viewportResize(): void {
+  if (visual && visual.scale === 1) root.value?.style.setProperty('--map-viewport-h', `${visual.height}px`);
+  else root.value?.style.removeProperty('--map-viewport-h');
+  layout();
 }
 
 function settle(next: SheetSnap): void {
@@ -122,7 +150,7 @@ function settle(next: SheetSnap): void {
 
 function dragStart(event: PointerEvent): void {
   if (!mobile.value || !heights || event.button !== 0) return;
-  if (event.target instanceof Element && event.target.closest('a, button:not(.rd-map-explorer__handle)')) return;
+  if (event.target instanceof Element && event.target.closest('a, input, select, summary, button:not(.rd-map-explorer__handle)')) return;
   drag = { id: event.pointerId, startY: event.clientY, startVisible: visible, lastY: event.clientY, lastT: event.timeStamp, velocity: 0, moved: false };
   (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
 }
@@ -170,11 +198,14 @@ function stepSnap(event: KeyboardEvent): void {
 
 // ---- Chọn địa điểm: từ ghim hoặc từ danh sách; thẻ hiện trong sheet, bản đồ chỉ dịch khi ghim bị che.
 async function select(slug: string, from: 'map' | 'list' = 'map'): Promise<void> {
+  if (!places.value.some(place => place.slug === slug)) return;
   if (showing.value === 'list' && content.value) session.value.listScroll = content.value.scrollTop;
   selectedSlug.value = slug;
+  focusKey.value++;
   showing.value = 'place';
   if (mobile.value && (snap.value === 'collapsed' || (from === 'list' && snap.value === 'expanded'))) settle('half');
   await nextTick();
+  if (disposed) return;
   if (content.value) content.value.scrollTop = 0;
   selectedHeading.value?.focus({ preventScroll: true });
 }
@@ -183,15 +214,22 @@ async function showList(): Promise<void> {
   showing.value = 'list';
   await nextTick();
   if (content.value) content.value.scrollTop = session.value.listScroll;
-  content.value?.querySelector<HTMLElement>('[aria-current="true"]')?.scrollIntoView({ block: 'nearest' });
+  const button = content.value?.querySelector<HTMLElement>('[aria-current="true"] button');
+  button?.scrollIntoView({ block: 'nearest' }); button?.focus({ preventScroll: true });
+}
+
+async function openResults(event: MouseEvent): Promise<void> {
+  event.preventDefault(); settle('expanded'); await nextTick();
+  document.getElementById('map-places-title')?.focus({ preventScroll: true });
 }
 
 const sheetTitle = computed(() => {
   if (showingPlace.value && selected.value) return selected.value.name;
-  return `${places.value.length} địa điểm trong vùng`;
+  if (loadFailed.value && !loading.value && !places.value.length) return 'Chưa tải được địa điểm';
+  return loading.value && !places.value.length ? 'Đang tìm địa điểm…' : `${places.value.length}${hasMore.value ? '+' : ''} địa điểm`;
 });
 
-watch(() => [props.category, props.rainSafe], () => { selectedSlug.value = null; showing.value = 'list'; places.value = []; void load(); });
+watch(filtersKey, () => { selectedSlug.value = null; showing.value = 'list'; places.value = []; session.value.listScroll = 0; hasMore.value = false; loadFailed.value = false; void load(); });
 watch(selectedSlug, (slug) => { session.value.selectedSlug = slug; if (!slug) showing.value = 'list'; });
 watch(showing, (value) => { session.value.showing = value; });
 
@@ -200,10 +238,15 @@ onMounted(async () => {
   media.addEventListener('change', layout);
   resize = new ResizeObserver(layout);
   if (root.value) resize.observe(root.value);
+  if (header.value) resize.observe(header.value);
+  if (sheetTop.value) resize.observe(sheetTop.value);
+  if (attribution.value) resize.observe(attribution.value);
+  visual = window.visualViewport;
+  visual?.addEventListener('resize', viewportResize);
+  viewportResize();
   layout();
   // Bật hiệu ứng trượt sau khung hình đầu, để sheet không trượt từ vị trí SSR sang mức đã lưu.
-  requestAnimationFrame(() => root.value?.classList.add('rd-map-explorer--ready'));
-  await load();
+  readyFrame = requestAnimationFrame(() => root.value?.classList.add('rd-map-explorer--ready'));
   await nextTick();
   if (showing.value === 'list' && content.value) content.value.scrollTop = session.value.listScroll;
 });
@@ -211,167 +254,46 @@ onBeforeUnmount(() => {
   disposed = true;
   if (showing.value === 'list' && content.value) session.value.listScroll = content.value.scrollTop;
   controller?.abort();
-  clearTimeout(timer);
+  if (readyFrame !== undefined) cancelAnimationFrame(readyFrame);
+  visual?.removeEventListener('resize', viewportResize);
   media?.removeEventListener('change', layout);
   resize?.disconnect();
 });
 </script>
 
 <template>
-  <main ref="root" class="rd-map-explorer" :data-snap="snap">
-    <header ref="header" class="rd-map-explorer__header">
-      <div class="rd-map-explorer__title">
-        <NuxtLink :to="`/${city.slug}`" class="rd-map-explorer__back" aria-label="Về trang thành phố">
-          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7" /></svg>
-        </NuxtLink>
-        <h1 class="rd-map-explorer__heading">Bản đồ {{ city.name }}</h1>
-      </div>
-      <!-- Một hàng chip cuộn ngang; "Trú mưa được" đứng đầu để khi được chọn sẵn từ chế độ mưa vẫn luôn thấy. -->
-      <div class="rd-map-explorer__filters">
-        <form class="rd-map-explorer__form" method="get" :action="`/${city.slug}/ban-do`" aria-label="Lọc mái che" @submit.prevent="emit('rainSafe', !rainSafe)">
-          <input v-if="category" type="hidden" name="category" :value="category">
-          <button type="submit" name="rainSafe" :value="rainSafe ? 'false' : 'true'" class="rd-chip rd-chip--filter" :aria-pressed="rainSafe">Trú mưa được</button>
-        </form>
-        <span class="rd-map-explorer__divider" aria-hidden="true" />
-        <form class="rd-map-explorer__form" method="get" :action="`/${city.slug}/ban-do`" aria-label="Lọc danh mục" @submit="filter">
-          <input v-if="rainSafe" type="hidden" name="rainSafe" value="true">
-          <button type="submit" name="category" value="" class="rd-chip rd-chip--filter" :aria-pressed="!category">Tất cả</button>
-          <button v-for="item in PlaceCategory.options" :key="item" type="submit" name="category" :value="item" class="rd-chip rd-chip--filter" :aria-pressed="category === item">{{ CATEGORY_LABEL[item] }}</button>
-        </form>
-      </div>
-    </header>
-
+  <main ref="root" class="rd-map-explorer" :class="{ 'rd-map-explorer--editing': editing }" :data-snap="snap">
+    <a class="rd-map-explorer__skip" href="#map-places-title" @click="openResults">Đến danh sách địa điểm</a>
+    <header ref="header" class="rd-map-explorer__header"><RdMapToolbar :city="city" :filters="filters" :tags="tags" @filters="emit('filters', $event)" @editing="editing = $event" /></header>
     <section class="rd-map-explorer__map" aria-label="Khung nhìn bản đồ">
       <ClientOnly>
-        <RdPlaceMap :city="city" :places="places" :selected-slug="selectedSlug" :initial-view="initialView" :insets="insets" @viewport="viewport" @select="select" @camera="session.view = $event" />
-        <template #fallback><div class="rd-map-explorer__placeholder"><p>Đang mở bản đồ…</p><noscript>Bật JavaScript để kéo bản đồ. Bạn vẫn xem được danh sách bên dưới.</noscript></div></template>
+        <RdPlaceMap :city="city" :places="places" :selected-slug="selectedSlug" :initial-view="initialView" :insets="insets" :focus-key="focusKey" fit-initial-places journal @viewport="viewport" @select="select" @camera="session.view = $event" @ready="onMapReady" @error="mapFailed = true" />
+        <template #fallback><div class="rd-map-explorer__placeholder"><RdCompass /><p>Đang mở bản đồ…</p><span>Mỗi ghim, một nơi để khám phá.</span><noscript>Bật JavaScript để kéo bản đồ. Bạn vẫn xem được danh sách bên dưới.</noscript></div></template>
       </ClientOnly>
-      <nav class="rd-map-explorer__attribution" aria-label="Nguồn bản đồ">
-        <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors</a> ·
-        <a href="https://openmaptiles.org" target="_blank" rel="noopener noreferrer">© OpenMapTiles</a> ·
-        <a href="https://openfreemap.org" target="_blank" rel="noopener noreferrer">OpenFreeMap</a> ·
-        <NuxtLink to="/ghi-nguon#ban-do">Style và giấy phép</NuxtLink>
-      </nav>
+      <div v-if="mapReady && !mapFailed" class="rd-map-explorer__orientation" aria-label="Bản đồ luôn hướng Bắc"><RdCompass /><span>BẮC ↑</span></div>
+      <nav class="rd-map-explorer__city-links" aria-label="Khám phá thành phố"><NuxtLink :to="'/' + city.slug">Cẩm nang thành phố ↗</NuxtLink><NuxtLink :to="'/' + city.slug + '#lich-trinh'">Lịch trình gợi ý ↗</NuxtLink></nav>
+      <div v-if="areaDirty" class="rd-map-explorer__search-area"><button type="button" class="rd-btn rd-btn--primary" :aria-disabled="loading" data-rd-discovery-trigger @click="!loading && load()"><RdCompass />{{ loading ? 'Đang tìm trong vùng…' : 'Tìm trong khu vực này' }}</button><p v-if="!loading">Danh sách vẫn giữ vùng đã tìm trước đó.</p></div>
+      <nav ref="attribution" class="rd-map-explorer__attribution" aria-label="Nguồn bản đồ"><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors</a><span aria-hidden="true">·</span><a href="https://openmaptiles.org" target="_blank" rel="noopener noreferrer">© OpenMapTiles</a><span aria-hidden="true">·</span><a href="https://openfreemap.org" target="_blank" rel="noopener noreferrer">OpenFreeMap</a><span aria-hidden="true">·</span><NuxtLink to="/ghi-nguon#ban-do">Nguồn</NuxtLink></nav>
     </section>
-
     <section ref="sheet" class="rd-map-explorer__sheet" aria-labelledby="map-places-title">
       <div ref="sheetTop" class="rd-map-explorer__sheet-top" @pointerdown="dragStart" @pointermove="dragMove" @pointerup="dragEnd" @pointercancel="dragEnd">
-        <button type="button" class="rd-map-explorer__handle" :aria-label="handleLabel" @click="toggleSnap" @keydown="stepSnap"><span class="rd-map-explorer__grip" /></button>
-        <div class="rd-map-explorer__sheet-head">
-          <button v-if="showingPlace" type="button" class="rd-map-explorer__list-button" @click="showList">
-            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7" /></svg>
-            Danh sách
-          </button>
-          <h2 id="map-places-title" class="rd-map-explorer__count">{{ sheetTitle }}</h2>
-        </div>
+        <button type="button" class="rd-map-explorer__handle" :aria-label="handleLabel" :aria-expanded="snap !== 'collapsed'" aria-controls="map-results" @click="toggleSnap" @keydown="stepSnap"><span class="rd-map-explorer__grip" /></button>
+        <div class="rd-map-explorer__sheet-tools"><span class="rd-map-explorer__folio">GHI CHÉP KHÁM PHÁ / {{ city.name }}</span><div class="rd-map-explorer__snap-controls" role="group" aria-label="Chiều cao danh sách"><button type="button" :aria-pressed="snap === 'collapsed'" @click="settle('collapsed')">Bản đồ</button><button type="button" :aria-pressed="snap === 'half'" @click="settle('half')">Nửa màn</button><button type="button" :aria-pressed="snap === 'expanded'" @click="settle('expanded')">Danh sách</button></div></div>
+        <div class="rd-map-explorer__sheet-head"><button v-if="showingPlace" type="button" class="rd-map-explorer__list-button" @click="showList">← Danh sách</button><div><p class="rd-map-explorer__result-caption">{{ showingPlace ? 'MỘT NƠI VỪA MỞ TRÊN BẢN ĐỒ' : resultCaption }}</p><h2 id="map-places-title" tabindex="-1" class="rd-map-explorer__count">{{ sheetTitle }}</h2></div><span class="rd-map-explorer__count-mark" aria-hidden="true">⌖</span></div>
       </div>
-      <div ref="content" class="rd-map-explorer__content" :inert="(mobile && snap === 'collapsed') || undefined">
-        <p class="visually-hidden" role="status">{{ loading ? 'Đang tìm địa điểm trong vùng…' : '' }}</p>
-        <div v-if="loadFailed" role="status" class="rd-map-explorer__error">
-          <p>Chưa tải được địa điểm trong vùng này. Bạn vẫn xem được các ghi chép đã tải.</p>
-          <button class="rd-btn rd-btn--outline" type="button" @click="load">Thử lại</button>
-        </div>
-        <div v-if="showingPlace && selected" class="rd-map-explorer__selected">
-          <h3 ref="selectedHeading" tabindex="-1" class="visually-hidden">{{ selected.name }}</h3>
-          <RdPlaceCard :place="selected" :href="`/${city.slug}/dia-diem/${selected.slug}`" :now="now" />
-          <NuxtLink class="rd-btn rd-btn--primary" :to="`/${city.slug}/dia-diem/${selected.slug}`">Xem địa điểm</NuxtLink>
-        </div>
-        <ul v-else-if="places.length" class="rd-map-explorer__list" :aria-busy="loading">
-          <li v-for="place in places" :key="place.slug" class="rd-map-explorer__item" :aria-current="place.slug === selectedSlug ? 'true' : undefined">
-            <RdPlaceCard :place="place" :href="`/${city.slug}/dia-diem/${place.slug}`" :now="now" />
-            <button type="button" class="rd-map-explorer__pin-button" :aria-label="`Xem ghim ${place.name} trên bản đồ`" @click="select(place.slug, 'list')">
-              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z" /><circle cx="12" cy="9.5" r="2.5" /></svg>
-            </button>
-          </li>
-        </ul>
-        <ul v-else-if="loading" class="rd-map-explorer__list" aria-hidden="true">
-          <li v-for="n in 3" :key="n" class="rd-place rd-map-explorer__skeleton"><span class="rd-skeleton rd-map-explorer__skeleton-thumb" /><span class="rd-map-explorer__skeleton-lines"><span class="rd-skeleton" /><span class="rd-skeleton" /></span></li>
-        </ul>
-        <p v-else-if="!loadFailed" class="empty-note rd-map-explorer__empty">Khu này mình chưa ghi chép chỗ nào{{ category ? ` thuộc danh mục ${CATEGORY_LABEL[category].toLowerCase()}` : '' }}{{ rainSafe ? ' trú mưa được' : '' }}. Thử kéo bản đồ sang bên cạnh hoặc bỏ bớt bộ lọc nhé.</p>
-        <noscript>Danh sách hiển thị tối đa 50 địa điểm đầu tiên. Bật JavaScript để tải thêm theo vùng đang xem.</noscript>
-        <slot name="footer" />
+      <div id="map-results" ref="content" class="rd-map-explorer__content" :inert="(mobile && snap === 'collapsed') || undefined" :aria-busy="loading">
+        <button v-if="areaDirty" type="button" class="rd-btn rd-btn--primary rd-map-explorer__search-inline" :aria-disabled="loading" data-rd-discovery-trigger @click="!loading && load()">{{ loading ? 'Đang tìm trong vùng…' : 'Tìm trong khu vực mới' }}</button>
+        <p class="rd-map-explorer__load-status" role="status" aria-live="polite">{{ loading ? 'Đang tìm địa điểm trong vùng…' : filters.q && places.length === 50 ? 'Tối đa 50 kết quả tìm kiếm trong vùng. Thu hẹp từ khóa hoặc bộ lọc để tìm tiếp nhé.' : '' }}</p>
+        <div v-if="loadFailed" role="status" class="rd-map-explorer__error"><p>{{ loading ? 'Đang thử tải lại địa điểm…' : 'Chưa tải được địa điểm trong vùng này. Bạn vẫn xem được các ghi chép đã tải.' }}</p><button class="rd-btn rd-btn--outline" type="button" :aria-disabled="loading" data-rd-discovery-trigger @click="!loading && load()">Thử lại</button></div>
+        <div v-if="showingPlace && selected" :key="selected.slug" class="rd-map-explorer__selected"><h3 ref="selectedHeading" tabindex="-1" class="visually-hidden">{{ selected.name }}</h3><RdMapPostcard :place="selected" :city-slug="city.slug" :now="now" /></div>
+        <ul v-else-if="places.length" class="rd-map-explorer__list"><li v-for="(place, index) in places" :key="place.slug" class="rd-map-explorer__item" :aria-current="place.slug === selectedSlug ? 'true' : undefined"><span class="rd-map-explorer__item-number" aria-hidden="true">{{ String(index + 1).padStart(2, '0') }}</span><RdPlaceCard :place="place" :href="'/' + city.slug + '/dia-diem/' + place.slug" :now="now" compact /><button v-if="place.location" type="button" class="rd-map-explorer__pin-button" :aria-label="'Xem ghim ' + place.name + ' trên bản đồ'" :aria-pressed="place.slug === selectedSlug" @click="select(place.slug, 'list')"><span aria-hidden="true">⌖</span></button></li></ul>
+        <ul v-else-if="loading" class="rd-map-explorer__list" aria-hidden="true"><li v-for="n in 3" :key="n" class="rd-place rd-map-explorer__skeleton"><span class="rd-skeleton rd-map-explorer__skeleton-thumb" /><span class="rd-map-explorer__skeleton-lines"><span class="rd-skeleton" /><span class="rd-skeleton" /></span></li></ul>
+        <div v-else-if="!loadFailed" class="rd-map-explorer__empty"><RdCompass /><h3>Chưa gặp nơi hợp gu?</h3><p>Khu này mình chưa có ghi chép phù hợp. Thử kéo bản đồ sang bên cạnh hoặc bỏ bớt bộ lọc nhé.</p><a v-if="hasFilters" :href="'/' + city.slug + '/ban-do'" @click.prevent="emit('filters', { rainSafe: false, tags: [] })">Xóa bộ lọc ↗</a><NuxtLink v-else :to="'/' + city.slug">Khám phá thành phố ↗</NuxtLink></div>
+        <button v-if="mapFailed && hasMore" class="rd-btn rd-btn--outline rd-map-explorer__fallback-load" type="button" :aria-disabled="loading" data-rd-discovery-trigger @click="!loading && load()">Tải tiếp danh sách địa điểm</button>
+        <p class="rd-map-explorer__journal-note">Rẽ một chút. Hay cả chuyến đi.</p><noscript>Danh sách hiển thị tối đa 50 địa điểm đầu tiên. Bật JavaScript để tải thêm theo vùng đang xem.</noscript><slot name="footer" />
       </div>
     </section>
   </main>
 </template>
 
-<style scoped>
-/* Điện thoại: bản đồ chiếm trọn màn hình, header và sheet nổi phía trên (ui-spec mục 5). */
-.rd-map-explorer {
-  --map-header-h: 108px; --sheet-top: 80px;
-  --sheet-h: calc(100dvh - var(--map-header-h) - 40px); --sheet-visible: 50dvh; --sheet-content-h: calc(50dvh - var(--sheet-top));
-  --map-controls-top: var(--map-header-h);
-  position: fixed; inset: 0; overflow: hidden; background: var(--map-land);
-}
-.rd-map-explorer__header { position: absolute; z-index: 3; top: 0; left: 0; right: 0; padding: var(--space-2) var(--space-3) var(--space-2); background: var(--paper-raised); border-bottom: var(--border); }
-.rd-map-explorer__title { display: flex; align-items: center; gap: var(--space-1); }
-.rd-map-explorer__heading { margin: 0; font: 700 19px/1.2 var(--font-display); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.rd-map-explorer__back { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; width: var(--tap-min); height: var(--tap-min); margin-left: calc(-1 * var(--space-1)); border-radius: var(--radius-pill); color: var(--ink); }
-.rd-map-explorer__back svg { width: 24px; height: 24px; }
-.rd-map-explorer__filters { display: flex; align-items: center; gap: var(--space-2); margin: var(--space-1) calc(-1 * var(--space-3)) 0; padding: 0 var(--space-3); overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; }
-.rd-map-explorer__filters::-webkit-scrollbar { display: none; }
-.rd-map-explorer__form { display: contents; }
-.rd-map-explorer__filters button { flex-shrink: 0; font: inherit; cursor: pointer; }
-.rd-map-explorer__divider { flex: 0 0 1.5px; align-self: stretch; margin: var(--space-2) 0; background: var(--line); }
-.rd-map-explorer__map { position: absolute; inset: 0; }
-.rd-map-explorer__map > :first-child { width: 100%; height: 100%; }
-.rd-map-explorer__placeholder { height: 100%; box-sizing: border-box; padding: calc(var(--map-header-h) + var(--space-4)) var(--space-4) var(--space-4); background: var(--map-land); }
-/* Ghi nguồn OSM luôn thấy, nằm ngay trên mép sheet và đi theo sheet bằng transform (ui-spec mục 6). */
-.rd-map-explorer__attribution { position: absolute; z-index: 2; right: var(--space-2); bottom: var(--space-1); max-width: calc(100% - 2 * var(--space-2)); padding: 2px var(--space-2); border-radius: var(--radius-note); background: rgba(255, 253, 248, 0.92); font-size: 11px; line-height: 1.5; text-align: right; transform: translateY(calc(-1 * var(--sheet-visible))); }
-.rd-map-explorer__attribution a { color: var(--ink); }
-
-.rd-map-explorer__sheet {
-  position: absolute; z-index: 4; left: 0; right: 0; bottom: 0; height: var(--sheet-h); box-sizing: border-box;
-  display: flex; flex-direction: column; padding-bottom: env(safe-area-inset-bottom, 0px);
-  background: var(--paper-raised); border-top: var(--border-strong) solid var(--ink); border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
-  transform: translateY(calc(var(--sheet-h) - var(--sheet-visible)));
-}
-.rd-map-explorer--ready .rd-map-explorer__sheet, .rd-map-explorer--ready .rd-map-explorer__attribution { transition: transform var(--dur-panel) var(--ease-out); }
-.rd-map-explorer--dragging .rd-map-explorer__sheet, .rd-map-explorer--dragging .rd-map-explorer__attribution { transition: none; }
-/* Vùng kéo: trình duyệt không cuộn trang khi kéo ở đây; bản đồ và danh sách vẫn xử lý cử chỉ riêng. */
-.rd-map-explorer__sheet-top { flex: 0 0 auto; padding: 0 var(--space-3) var(--space-2); touch-action: none; cursor: grab; }
-.rd-map-explorer--dragging .rd-map-explorer__sheet-top { cursor: grabbing; }
-.rd-map-explorer__handle { display: flex; align-items: center; justify-content: center; width: 100%; height: 28px; padding: 0; border: 0; background: transparent; cursor: inherit; }
-.rd-map-explorer__handle:focus-visible { outline: 3px solid var(--ink); outline-offset: -3px; border-radius: var(--radius-chip); }
-.rd-map-explorer__grip { width: 44px; height: 5px; border-radius: var(--radius-pill); background: var(--line); }
-.rd-map-explorer__sheet-head { display: flex; align-items: center; gap: var(--space-2); min-height: var(--tap-min); }
-.rd-map-explorer__count { margin: 0; min-width: 0; font: 700 16px/1.3 var(--font-body); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.rd-map-explorer__list-button { flex: 0 0 auto; display: inline-flex; align-items: center; gap: var(--space-1); min-height: var(--tap-min); padding: 0 var(--space-3) 0 var(--space-1); border: var(--border-hair) solid var(--line); border-radius: var(--radius-pill); background: var(--paper-raised); color: var(--ink); font: 600 14px var(--font-body); cursor: pointer; }
-.rd-map-explorer__list-button svg { width: 18px; height: 18px; }
-.rd-map-explorer__content { box-sizing: border-box; height: var(--sheet-content-h); overflow-y: auto; overscroll-behavior: contain; padding: 0 var(--space-3) var(--space-3); touch-action: pan-y; }
-
-.rd-map-explorer__list { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--space-2); }
-.rd-map-explorer__item { position: relative; }
-.rd-map-explorer__item :deep(.rd-place) { height: auto; }
-.rd-map-explorer__item :deep(.rd-place__body) { padding-right: calc(var(--tap-min) - var(--space-2)); }
-.rd-map-explorer__item[aria-current='true'] :deep(.rd-place) { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
-.rd-map-explorer__pin-button { position: absolute; top: var(--space-1); right: var(--space-1); display: inline-flex; align-items: center; justify-content: center; width: var(--tap-min); height: var(--tap-min); padding: 0; border: 0; border-radius: var(--radius-pill); background: transparent; color: var(--ink); cursor: pointer; transition: scale var(--dur-micro) var(--ease-out); }
-.rd-map-explorer__pin-button svg { width: 22px; height: 22px; }
-.rd-map-explorer__pin-button:active { scale: 0.92; }
-.rd-map-explorer__pin-button:focus-visible { outline: 3px solid var(--ink); outline-offset: -3px; }
-.rd-map-explorer__selected { display: grid; gap: var(--space-3); animation: rd-fade-up var(--dur-standard) var(--ease-out); }
-.rd-map-explorer__skeleton { align-items: center; }
-.rd-map-explorer__skeleton-thumb { flex: 0 0 var(--thumb); height: var(--thumb); }
-.rd-map-explorer__skeleton-lines { flex: 1; display: grid; gap: var(--space-2); }
-.rd-map-explorer__skeleton-lines .rd-skeleton { height: 14px; }
-.rd-map-explorer__skeleton-lines .rd-skeleton + .rd-skeleton { width: 60%; }
-.rd-map-explorer__error { padding: var(--space-3); background: var(--note); border-radius: var(--radius-note); margin-bottom: var(--space-3); font-size: 14px; }
-.rd-map-explorer__error p { margin-top: 0; }
-.rd-map-explorer__empty { padding: var(--space-2) 0; animation: rd-fade-up var(--dur-standard) var(--ease-out); }
-.rd-map-explorer__content :deep(.rd-footer) { margin: var(--space-6) calc(-1 * var(--space-3)) 0; padding-bottom: var(--space-3); }
-
-/* Desktop: danh sách cột trái, bản đồ cột phải, không có sheet kéo (ui-spec mục 5). */
-@media (min-width: 1024px) {
-  .rd-map-explorer { --map-controls-top: 0px; display: grid; grid-template-columns: minmax(330px, 400px) minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); background: var(--paper); }
-  .rd-map-explorer__header { position: static; grid-column: 1 / -1; padding: var(--space-2) var(--space-5); }
-  .rd-map-explorer__filters { margin: var(--space-1) 0 0; padding: 0; flex-wrap: wrap; overflow: visible; }
-  .rd-map-explorer__map { position: relative; inset: auto; grid-column: 2; grid-row: 2; }
-  .rd-map-explorer__placeholder { padding-top: var(--space-4); }
-  .rd-map-explorer__attribution, .rd-map-explorer--ready .rd-map-explorer__attribution { transform: none; transition: none; }
-  .rd-map-explorer__sheet { position: static; grid-column: 1; grid-row: 2; height: auto; min-height: 0; transform: none; padding-bottom: 0; border-top: 0; border-right: var(--border); border-radius: 0; }
-  .rd-map-explorer--ready .rd-map-explorer__sheet { transition: none; }
-  .rd-map-explorer__sheet-top { padding: var(--space-2) var(--space-4); touch-action: auto; cursor: auto; }
-  .rd-map-explorer__handle { display: none; }
-  .rd-map-explorer__content { flex: 1; height: auto; min-height: 0; padding: 0 var(--space-4) var(--space-4); }
-}
-</style>
+<style src="../../../assets/living-map.css"></style>

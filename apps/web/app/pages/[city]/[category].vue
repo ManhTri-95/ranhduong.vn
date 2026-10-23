@@ -2,25 +2,18 @@
 import { CATEGORY_LABEL, categoryFromUrlSlug, Slug } from '@ranhduong/contracts';
 import { computed } from 'vue';
 import { useCity } from '~/entities/city/api/city';
-import { usePlaceList, type PlaceListParams } from '~/entities/place/api/places';
-import {
-  isIndexableListing,
-  LISTING_PAGE_SIZE,
-  listingApiParams,
-  parseListingQuery,
-  placeListKey,
-} from '~/entities/place/lib/listing-query';
-import RdTagFilter from '~/features/place-tag-filter/ui/RdTagFilter.vue';
+import { usePlaceList } from '~/entities/place/api/places';
+import { categoryApiParams, parseCategoryQuery } from '~/entities/place/lib/category-guide';
+import { discoveryIndexable } from '~/entities/place/lib/discovery-query';
+import { placeListKey } from '~/entities/place/lib/listing-query';
 import { markUnavailableOnServer, throwIfNotFound } from '~/shared/api/page-status';
 import { useClientNow } from '~/shared/lib/use-client-now';
 import { usePageSeo } from '~/shared/lib/use-page-seo';
 import { itemListJsonLd } from '~/shared/lib/seo';
 import { photoOgUrl } from '~/shared/lib/media';
 import RdErrorBanner from '~/shared/ui/RdErrorBanner.vue';
-import RdCategoryChips from '~/widgets/category-chips/ui/RdCategoryChips.vue';
 import RdCityHeader from '~/widgets/city-header/ui/RdCityHeader.vue';
-import RdPlaceListing from '~/widgets/place-listing/ui/RdPlaceListing.vue';
-import RdZoneLinks from '~/widgets/zone-links/ui/RdZoneLinks.vue';
+import RdCategoryGuide from '~/widgets/place-listing/ui/RdCategoryGuide.vue';
 
 definePageMeta({
   // Chỉ 4 danh mục công khai (CATEGORY_URL_SLUG); slug khác (luu-tru, cafe, khu-vuc, dia-diem…) là 404, không gọi API.
@@ -38,10 +31,13 @@ const category = categoryFromUrlSlug(categorySlug);
 if (!category) throw createError({ statusCode: 404, statusMessage: 'Not Found', fatal: true });
 
 const basePath = `/${citySlug}/${categorySlug}`;
-const filter = parseListingQuery(route.query);
-const params: PlaceListParams = { category, ...listingApiParams(filter), limit: LISTING_PAGE_SIZE };
-const [city, list] = await Promise.all([useCity(citySlug), usePlaceList(citySlug, params, placeListKey(citySlug, params))]);
+const categoryQuery = { ...route.query };
+// Validate optional area filters against real city membership before requesting places.
+const city = await useCity(citySlug);
 throwIfNotFound(city.error.value);
+const filter = computed(() => parseCategoryQuery(categoryQuery, city.data.value?.zones.map(zone => zone.slug) ?? []));
+const params = computed(() => categoryApiParams(category, filter.value));
+const list = await usePlaceList(citySlug, params, computed(() => `${placeListKey(citySlug, params.value)}:rain=${filter.value.rainSafe}`));
 throwIfNotFound(list.error.value);
 
 const listFailed = computed(() => Boolean(list.error.value));
@@ -52,12 +48,13 @@ const label = CATEGORY_LABEL[category];
 const cityName = computed(() => city.data.value?.name ?? '');
 const title = computed(() => (cityName.value ? `${label} ở ${cityName.value}` : label));
 const page = computed(() => list.data.value ?? null);
-const availableTags = computed(() => page.value?.tags ?? []);
-const zones = computed(() => city.data.value?.zones ?? []);
 const now = useClientNow();
 
 async function retry(): Promise<void> {
-  await Promise.all([city.refresh(), list.refresh()]);
+  await city.refresh();
+  throwIfNotFound(city.error.value);
+  await list.refresh();
+  throwIfNotFound(list.error.value);
 }
 
 const seoConfig = useRuntimeConfig().public;
@@ -66,9 +63,9 @@ usePageSeo({
   path: basePath,
   title: () => `${title.value} · Rành Đường`,
   description: () =>
-    `${title.value}: những chỗ người rành đường đã ghé, kèm giờ mở cửa, ghi chú thực tế và chỉ đường. Chỗ nào cũng được hỏi lại trước khi lên đây.`,
+    `${title.value}: tìm địa điểm hợp gu, lọc theo sở thích và khu vực, xem ghi chép thực tế rồi mở bản đồ để chọn nơi muốn ghé.`,
   // Trang lọc thẻ và trang sau không index (technical-design mục 11); bot vẫn đi theo link tới từng địa điểm.
-  noindex: () => !isIndexableListing(filter) || loadFailed.value,
+  noindex: () => !discoveryIndexable(filter.value) || loadFailed.value,
   image: () => cover.value ? photoOgUrl(seoConfig.mediaBase, cover.value) : undefined,
   breadcrumbs: () => [{ name: cityName.value || 'Thành phố', path: `/${citySlug}` }, { name: label, path: basePath }],
   jsonLd: () => page.value && !loadFailed.value ? [itemListJsonLd(seoConfig.siteUrl, citySlug, page.value.items, title.value)] : [],
@@ -77,35 +74,14 @@ usePageSeo({
 
 <template>
   <div>
-    <RdCityHeader :city-slug="citySlug" :city-name="cityName" />
-    <main class="main">
+    <RdCityHeader :city-slug="citySlug" :city-name="cityName" editorial :section-base="`/${citySlug}`" />
+    <main class="rd-category-page">
       <RdErrorBanner v-if="loadFailed" message="Chưa tải được hết dữ liệu, có thể mạng đang chập chờn." @retry="retry" />
-      <section class="intro">
-        <h1 class="page-title">{{ title }}</h1>
-        <p class="lead">Ghi chép của người rành đường. Chỗ nào cũng được hỏi lại trước khi lên đây.</p>
-      </section>
-      <RdCategoryChips :city-slug="citySlug" variant="tabs" />
-      <RdTagFilter :action="basePath" :tags="availableTags" :selected="filter.tags" />
-      <RdPlaceListing
-        :city-slug="citySlug"
-        :base-path="basePath"
-        :params="params"
-        :page="page"
-        :tags="filter.tags"
-        :paged="filter.cursor !== undefined"
-        :failed="listFailed"
-        :now="now"
-      >
-        <template #empty>
-          <p class="empty-note">Mục này mình chưa ghi chép chỗ nào. Ghé lại sau vài hôm nhé.</p>
-        </template>
-      </RdPlaceListing>
-      <RdZoneLinks :city-slug="citySlug" :zones="zones" />
+      <RdCategoryGuide :city="city.data.value ?? null" :city-slug="citySlug" :category="category" :base-path="basePath" :filter="filter" :params="params" :page="page" :failed="listFailed" :pending="list.pending.value" :now="now" />
     </main>
   </div>
 </template>
 
 <style scoped>
-.main { max-width: 1200px; margin: 0 auto; padding: var(--space-2) var(--space-5) var(--space-7); display: flex; flex-direction: column; gap: var(--space-6); }
-.intro { display: flex; flex-direction: column; gap: var(--space-3); }
+.rd-category-page { max-width: var(--content-max); margin: 0 auto; padding: var(--space-4) var(--space-5) var(--space-12); display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-5); }
 </style>

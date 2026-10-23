@@ -1,0 +1,452 @@
+{
+  "widths": [
+    {
+      "viewport": 320,
+      "width": 320,
+      "overflows": [
+        {
+          "tag": "path",
+          "class": {},
+          "width": 292.6000061035156
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 292.6000061035156
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 292.6000061035156
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 292.6000061035156
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 292.6000061035156
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 292.6000061035156
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 292.6000061035156
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 324.1333312988281
+        }
+      ]
+    },
+    {
+      "viewport": 375,
+      "width": 375,
+      "overflows": [
+        {
+          "tag": "path",
+          "class": {},
+          "width": 352.9166564941406
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 352.9166564941406
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 352.9166564941406
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 352.9166564941406
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 352.9166564941406
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 352.9166564941406
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 352.9166564941406
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 377.3999938964844
+        }
+      ]
+    },
+    {
+      "viewport": 390,
+      "width": 390,
+      "overflows": [
+        {
+          "tag": "path",
+          "class": {},
+          "width": 372.1666564941406
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 372.1666564941406
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 372.1666564941406
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 372.1666564941406
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 372.1666564941406
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 372.1666564941406
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 372.1666564941406
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 394.3999938964844
+        }
+      ]
+    },
+    {
+      "viewport": 430,
+      "width": 430,
+      "overflows": [
+        {
+          "tag": "path",
+          "class": {},
+          "width": 423.5
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 423.5
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 423.5
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 423.5
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 423.5
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 423.5
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 423.5
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 439.73333740234375
+        }
+      ]
+    },
+    {
+      "viewport": 768,
+      "width": 768,
+      "overflows": []
+    },
+    {
+      "viewport": 1024,
+      "width": 1024,
+      "overflows": []
+    },
+    {
+      "viewport": 1280,
+      "width": 1280,
+      "overflows": []
+    },
+    {
+      "viewport": 1440,
+      "width": 1440,
+      "overflows": []
+    },
+    {
+      "viewport": 1920,
+      "width": 1920,
+      "overflows": []
+    }
+  ],
+  "stress": [
+    {
+      "slug": "mot-diem-gia-lap",
+      "viewport": 320,
+      "width": 320,
+      "overflows": [
+        {
+          "tag": "path",
+          "class": {},
+          "width": 318.85345458984375
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 318.8954162597656
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 318.9731750488281
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 292.6000061035156
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 292.6000061035156
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 292.6000061035156
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 292.6000061035156
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 292.6000061035156
+        }
+      ]
+    },
+    {
+      "slug": "mot-diem-gia-lap",
+      "viewport": 768,
+      "width": 768,
+      "overflows": []
+    },
+    {
+      "slug": "mot-diem-gia-lap",
+      "viewport": 1440,
+      "width": 1440,
+      "overflows": []
+    },
+    {
+      "slug": "dai-gia-lap",
+      "viewport": 320,
+      "width": 320,
+      "overflows": [
+        {
+          "tag": "path",
+          "class": {},
+          "width": 318.85345458984375
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 318.8954162597656
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 318.9731750488281
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 292.6000061035156
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 292.6000061035156
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 292.6000061035156
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 292.6000061035156
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 292.6000061035156
+        }
+      ]
+    },
+    {
+      "slug": "dai-gia-lap",
+      "viewport": 768,
+      "width": 768,
+      "overflows": []
+    },
+    {
+      "slug": "dai-gia-lap",
+      "viewport": 1440,
+      "width": 1440,
+      "overflows": []
+    },
+    {
+      "slug": "rong-gia-lap",
+      "viewport": 320,
+      "width": 320,
+      "overflows": [
+        {
+          "tag": "path",
+          "class": {},
+          "width": 318.85345458984375
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 318.8954162597656
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 318.9731750488281
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 324.1333312988281
+        }
+      ]
+    },
+    {
+      "slug": "rong-gia-lap",
+      "viewport": 768,
+      "width": 768,
+      "overflows": []
+    },
+    {
+      "slug": "rong-gia-lap",
+      "viewport": 1440,
+      "width": 1440,
+      "overflows": []
+    },
+    {
+      "slug": "anh-loi-gia-lap",
+      "viewport": 320,
+      "width": 320,
+      "overflows": [
+        {
+          "tag": "path",
+          "class": {},
+          "width": 318.8954162597656
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 318.9731750488281
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 292.6000061035156
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 292.6000061035156
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 292.6000061035156
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 292.6000061035156
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 292.6000061035156
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 292.6000061035156
+        }
+      ]
+    },
+    {
+      "slug": "anh-loi-gia-lap",
+      "viewport": 768,
+      "width": 768,
+      "overflows": []
+    },
+    {
+      "slug": "anh-loi-gia-lap",
+      "viewport": 1440,
+      "width": 1440,
+      "overflows": []
+    }
+  ],
+  "screenshots": [
+    "docs/runbooks/qa/curated-journal/journal-375.png",
+    "docs/runbooks/qa/curated-journal/journal-430.png",
+    "docs/runbooks/qa/curated-journal/journal-768.png",
+    "docs/runbooks/qa/curated-journal/journal-1024.png",
+    "docs/runbooks/qa/curated-journal/journal-1440.png"
+  ],
+  "interactions": {
+    "mapApiFailure": "Chưa tải được vị trí. Danh sách địa điểm vẫn ở ngay bên trên.\n\nThử lại",
+    "mapSelection": "3 collection markers, original numbering, one map instance, card/marker/list/preview selection synchronized; fit-all works",
+    "share": "Canonical URL copied; clipboard denial reveals selectable link; native cancellation is reported",
+    "nativeShareSuccess": "Native share receives the real canonical URL and confirms success",
+    "missingCoordinates": "Missing coordinate keeps its numbered list entry and never shifts the remaining markers",
+    "mapStyleFailure": "Map style failure exposes retry, preserves the list, then recovers with a single canvas",
+    "motion": "Reading-progress route responds to scroll and finalizes when reduced motion changes",
+    "noJavaScript": "All ordered place links and editorial content present in SSR"
+  },
+  "mapBackground": "Deterministic local MapLibre test style; production remote tiles are not visually certified.",
+  "errors": [],
+  "hydration": [],
+  "mapRequests": 7
+}

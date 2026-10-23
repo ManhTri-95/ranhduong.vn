@@ -1,146 +1,100 @@
 <script setup lang="ts">
-import { BEST_TIME_LABEL, CATEGORY_LABEL, COVER_LABEL, openStatus, PLACE_TRANSPORT_LABEL, tagLabel, verificationStale, type PlaceDetailResponse } from '@ranhduong/contracts';
-import { computed } from 'vue';
+import { openStatus, tagLabel, verificationStale, type CityPublic, type PlaceDetailResponse } from '@ranhduong/contracts';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { placeStatusText } from '~/entities/place/lib/open-status-text';
 import { directionHref, verificationDate } from '~/entities/place/lib/place-detail';
+import { travelNotes, visitingMoments } from '~/entities/place/lib/place-story';
 import RdOpeningHours from '~/entities/place/ui/RdOpeningHours.vue';
 import RdPlaceGallery from '~/entities/place/ui/RdPlaceGallery.vue';
-import RdPlaceList from '~/entities/place/ui/RdPlaceList.vue';
+import RdPlaceCard from '~/entities/place/ui/RdPlaceCard.vue';
+import { observeLivingRoute } from '~/shared/lib/living-route';
 import { usePlaceTracking } from '~/shared/lib/use-place-tracking';
+import RdChapterLabel from '~/shared/ui/RdChapterLabel.vue';
+import RdCompass from '~/shared/ui/RdCompass.vue';
+import RdPlaceReveal from './RdPlaceReveal.vue';
+import RdPlaceDirections from './RdPlaceDirections.vue';
 
-const props = defineProps<{ detail: PlaceDetailResponse; citySlug: string; now: Date | null }>();
+const props = defineProps<{ detail: PlaceDetailResponse; citySlug: string; city?: CityPublic | null; now: Date | null }>();
 const place = computed(() => props.detail.place);
 usePlaceTracking(() => place.value.id);
 const closed = computed(() => place.value.status === 'closed');
 const directions = computed(() => directionHref(place.value));
-const phone = computed(() => (closed.value ? undefined : place.value.contact.phone));
+const phone = computed(() => closed.value ? undefined : place.value.contact.phone);
 const stale = computed(() => props.now ? verificationStale(place.value.lastVerifiedAt, props.now) : false);
 const verifiedOn = computed(() => verificationDate(place.value.lastVerifiedAt));
-const categories = computed(() => [place.value.category, ...place.value.alsoCategories].map((c) => CATEGORY_LABEL[c]).join(', '));
-// Trạng thái chỉ tính trên trình duyệt (HTML cache SWR); quán chưa xác nhận: chip trung tính kèm lời nhắc.
+// SWR HTML never contains a cached open-now claim; the live client clock uses Vietnam time.
 const status = computed(() => placeStatusText(props.now ? openStatus(place.value.openingHours, props.now) : { kind: 'unknown' }, place.value.unconfirmed));
 const hasContact = computed(() => Boolean(place.value.contact.phone || place.value.contact.fanpage || place.value.contact.website));
-// Ba chỗ gần đây hiện sẵn; phần còn lại mở bằng "Xem thêm" (vẫn có trong HTML cho máy tìm kiếm và khi tắt JavaScript).
+const notes = computed(() => travelNotes(place.value));
+const moments = computed(() => visitingMoments(place.value));
 const nearbyFirst = computed(() => props.detail.nearby.slice(0, 3));
 const nearbyMore = computed(() => props.detail.nearby.slice(3));
-// Thanh đáy chỉ giữ hành động chính: Chỉ đường và Gọi; quán đã đóng thì không có thanh.
-const hasActionBar = computed(() => Boolean(directions.value || phone.value));
+const hasActionBar = computed(() => !closed.value && Boolean(directions.value || phone.value));
 useHead(() => ({ bodyAttrs: { 'data-rd-bottom': hasActionBar.value ? 'action' : undefined } }));
+const root = ref<HTMLElement>();
+let dispose: (() => void) | undefined;
+onMounted(() => { if (root.value) dispose = observeLivingRoute(root.value); });
+onBeforeUnmount(() => dispose?.());
 </script>
 
 <template>
-  <article :class="['rd-detail', { 'rd-detail--with-actions': hasActionBar }]">
-    <div class="rd-detail__content">
-      <RdPlaceGallery :photos="place.photos" :name="place.name" :category="place.category" />
-      <header class="rd-detail__intro">
-        <p class="rd-detail__eyebrow">{{ categories }}<template v-if="place.zoneName"> · <NuxtLink :to="`/${citySlug}/khu-vuc/${place.zoneSlug}`">{{ place.zoneName }}</NuxtLink></template></p>
-        <h1 class="page-title">{{ place.name }}</h1>
-        <p v-if="place.address" class="rd-detail__address">{{ place.address }}</p>
-        <p v-if="closed" class="rd-detail__notice"><strong>Đã đóng cửa.</strong> Mình giữ lại ghi chép này để bạn khỏi ghé nhầm. Xem các chỗ tương tự bên dưới nhé.</p>
-        <div v-else class="rd-detail__status">
-          <!-- Giữ chỗ để chip trạng thái hiện ra sau khi hydrate không đẩy nội dung bên dưới. -->
-          <p v-if="place.openingHours.length" class="rd-detail__status-line" role="status" aria-live="polite">
-            <span v-if="status.chip" :class="['rd-chip', status.accent ? 'rd-chip--accent' : 'rd-chip--outline']">{{ status.chip }}</span>
-            <span v-if="status.text">{{ status.text }}</span>
-          </p>
-          <p v-if="status.caveat" class="rd-detail__caveat">
-            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9" /><path d="M12 11v5M12 8h.01" /></svg>
-            {{ status.caveat }}
-          </p>
-          <p class="rd-detail__verified">{{ verifiedOn ? `Xác minh lần cuối: ${verifiedOn}` : 'Chưa có ngày xác minh' }}</p>
-        </div>
-        <p v-if="stale" class="rd-detail__notice" role="status">{{ verifiedOn ? 'Đã hơn 90 ngày chưa xác minh lại.' : 'Thông tin chưa được xác minh.' }} Gọi quán trước khi ghé nhé.</p>
-        <ul class="rd-detail__chips" aria-label="Đặc điểm">
-          <li v-for="tag in place.tags" :key="tag" class="rd-chip">{{ tagLabel(tag) }}</li>
-          <li v-if="place.cover" class="rd-chip">{{ COVER_LABEL[place.cover] }}</li>
-          <li v-if="place.priceLevel" class="rd-chip"><span aria-hidden="true">{{ '₫'.repeat(place.priceLevel) }}</span><span class="visually-hidden">Mức giá {{ place.priceLevel }} trên 4</span></li>
-          <li v-if="place.visitDurationMin" class="rd-chip">Ghé khoảng {{ place.visitDurationMin }} phút</li>
-          <li v-for="time in place.bestTime" :key="time" class="rd-chip">{{ BEST_TIME_LABEL[time] }}</li>
-          <li v-for="transport in place.transport" :key="transport" class="rd-chip">{{ PLACE_TRANSPORT_LABEL[transport] }}</li>
-        </ul>
-      </header>
-
-      <section v-if="place.practicalNotes" class="rd-note rd-detail__tip" aria-labelledby="practical-notes-title">
-        <h2 id="practical-notes-title" class="rd-note__label rd-detail__tip-label">Người địa phương nói</h2>
-        <p class="rd-detail__notes">{{ place.practicalNotes }}</p>
-      </section>
-      <RdOpeningHours :place="place" :now="now" />
-      <section class="rd-detail__contact" aria-labelledby="contact-title">
-        <h2 id="contact-title" class="section-title">Liên hệ</h2>
-        <ul v-if="hasContact" class="rd-detail__contact-list">
-          <li v-if="place.contact.phone"><a :href="`tel:${place.contact.phone}`" data-rd-event="call_click" :data-rd-place-id="place.id"><span>Gọi quán</span><span class="rd-detail__contact-value">{{ place.contact.phone }}</span></a></li>
-          <li v-if="place.contact.fanpage"><a :href="place.contact.fanpage" target="_blank" rel="noopener noreferrer" data-rd-event="fanpage_click" :data-rd-place-id="place.id"><span>Fanpage</span><span class="rd-detail__contact-value" aria-hidden="true">↗</span></a></li>
-          <li v-if="place.contact.website"><a :href="place.contact.website" target="_blank" rel="noopener noreferrer"><span>Website</span><span class="rd-detail__contact-value" aria-hidden="true">↗</span></a></li>
-        </ul>
-        <p v-else class="empty-note">{{ closed ? 'Địa điểm đã đóng cửa' : 'Thông tin liên hệ đang cập nhật' }}</p>
-      </section>
-      <section class="rd-detail__nearby" aria-labelledby="nearby-title">
-        <h2 id="nearby-title" class="section-title">{{ closed ? 'Chỗ tương tự gần đây' : 'Tiện đường ghé thêm' }}</h2>
-        <template v-if="detail.nearby.length">
-          <RdPlaceList :places="nearbyFirst" :city-slug="citySlug" :now="now" compact />
-          <details v-if="nearbyMore.length" class="rd-detail__more">
-            <summary class="rd-btn rd-btn--outline"><span class="rd-detail__more-open">Xem thêm gần đây ({{ nearbyMore.length }})</span><span class="rd-detail__more-close">Thu gọn</span></summary>
-            <RdPlaceList :places="nearbyMore" :city-slug="citySlug" :now="now" compact />
-          </details>
-        </template>
-        <p v-else class="empty-note">Mình chưa ghi chép thêm chỗ gần đây. <NuxtLink :to="`/${citySlug}`">Về xem các chỗ trong thành phố nhé.</NuxtLink></p>
-      </section>
-    </div>
-    <aside v-if="hasActionBar" class="rd-detail__actions" aria-label="Chỉ đường và gọi quán">
-      <div class="rd-action-bar rd-detail__action-bar">
-        <a v-if="directions" class="rd-btn rd-btn--accent" :href="directions" target="_blank" rel="noopener noreferrer" data-rd-event="direction_click" :data-rd-place-id="place.id">
-          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-8-8 18-2-8-8-2z" /></svg>
-          Chỉ đường
-        </a>
-        <a v-if="phone" class="rd-btn rd-btn--outline rd-detail__call" :href="`tel:${phone}`" data-rd-event="call_click" :data-rd-place-id="place.id">
-          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2" /></svg>
-          <span class="rd-detail__call-label">Gọi quán</span>
-        </a>
+  <article ref="root" class="rd-place-story">
+    <svg class="rd-place-story__thread" viewBox="0 0 40 1000" preserveAspectRatio="none" fill="none" aria-hidden="true"><path pathLength="1000" d="M20 0C-5 90 45 140 20 220S-5 360 20 450 45 570 20 650-5 850 20 1000" /></svg>
+    <RdPlaceReveal :place="place" :city-slug="citySlug" :city-name="city?.name ?? ''">
+      <p v-if="closed" class="rd-place-story__notice"><strong>Đã đóng cửa.</strong> Mình giữ lại ghi chép này để bạn khỏi ghé nhầm. Xem các chỗ tương tự bên dưới nhé.</p>
+      <div v-else class="rd-place-story__status">
+        <p v-if="place.openingHours.length" class="rd-place-story__status-line" role="status" aria-live="polite"><span v-if="status.chip" :class="['rd-chip', status.accent ? 'rd-chip--accent' : 'rd-chip--outline']">{{ status.chip }}</span><span v-if="status.text">{{ status.text }}</span></p>
+        <p v-if="status.caveat" class="rd-place-story__caveat">ⓘ {{ status.caveat }}</p>
+        <p class="rd-place-story__verified">{{ verifiedOn ? `Xác minh lần cuối: ${verifiedOn}` : 'Chưa có ngày xác minh' }}</p>
       </div>
+      <p v-if="stale && !closed" class="rd-place-story__notice" role="status">{{ verifiedOn ? 'Đã hơn 90 ngày chưa xác minh lại.' : 'Thông tin chưa được xác minh.' }} Gọi quán trước khi ghé nhé.</p>
+    </RdPlaceReveal>
+
+    <nav class="rd-place-story__contents" aria-label="Mục lục ghi chép địa điểm"><span>MỞ TỪNG TRANG</span><a href="#first-impression">Câu chuyện</a><a href="#photo-journal">Ảnh địa điểm</a><a href="#before-you-go">Điều cần biết</a><a v-if="!closed" href="#find-your-way">Đường đến đây</a><a href="#next-turn">Đi tiếp đâu?</a></nav>
+
+    <section id="first-impression" class="rd-story-section rd-place-story__impression" data-rd-route-scene aria-labelledby="impression-title">
+      <RdChapterLabel number="02" label="Ấn tượng đầu tiên" />
+      <div class="rd-place-story__intro-layout">
+        <div><h2 id="impression-title">Có gì <em>hay ở đây?</em></h2><p class="rd-place-story__margin-note">Rẽ một chút.<br>Hay cả chuyến đi.</p><RdCompass /></div>
+        <div class="rd-place-story__intro-notes"><span class="rd-story-kicker">GHI CHÉP HIỆN CÓ</span><p v-if="place.practicalNotes" class="rd-place-story__prose">{{ place.practicalNotes }}</p><p v-else class="rd-place-story__prose rd-place-story__muted">Câu chuyện của nơi này đang được bổ sung. Trước mắt, bạn có thể xem ảnh và những thông tin thực tế bên dưới.</p><ul v-if="place.tags.length" class="rd-place-story__tags" aria-label="Đặc điểm được ghi nhận"><li v-for="tag in place.tags" :key="tag" class="rd-chip">{{ tagLabel(tag) }}</li></ul><span class="rd-place-story__signature">Mỗi nơi, một câu chuyện.</span></div>
+      </div>
+    </section>
+
+    <section id="photo-journal" class="rd-story-section" data-rd-route-scene aria-labelledby="photo-journal-title"><RdChapterLabel number="03" label="Mở cuốn nhật ký ảnh" /><div class="rd-story-heading"><h2 id="photo-journal-title">Những góc nhìn<br><em>của một nơi.</em></h2><p>Ảnh của chính địa điểm này.<br>Để bạn hình dung trước khi lên đường.</p></div><RdPlaceGallery :photos="place.photos" :name="place.name" :category="place.category" /></section>
+
+    <section id="before-you-go" class="rd-story-section" data-rd-route-scene aria-labelledby="before-title">
+      <RdChapterLabel number="04" label="Bỏ túi vài điều cần biết" /><div class="rd-story-heading"><h2 id="before-title">Trước khi ghé,<br><em>biết một chút.</em></h2><p>Những ghi chép thực tế,<br>để chuyến đi bớt điều bất ngờ.</p></div>
+      <p class="rd-place-story__data-note">{{ closed ? 'Địa điểm đã đóng cửa. Thông tin dưới đây được giữ lại để tham khảo, không phải lời mời ghé thăm.' : place.unconfirmed ? 'Thông tin chưa được quán xác nhận. Bạn nên liên hệ trước khi ghé.' : 'Thông tin theo ghi chép hiện có và có thể thay đổi. Kiểm tra lại trước khi ghé nhé.' }} {{ verifiedOn ? `Xác minh lần cuối: ${verifiedOn}.` : 'Chưa có ngày xác minh.' }}</p>
+      <div class="rd-travel-notes">
+        <div class="rd-travel-notes__hours"><RdOpeningHours :place="place" :now="now" /></div>
+        <section class="rd-travel-note rd-travel-note--address" aria-labelledby="address-note-title"><span class="rd-travel-note__icon" aria-hidden="true">⌖</span><h3 id="address-note-title">Địa chỉ</h3><p>{{ place.address || 'Địa chỉ đang cập nhật' }}</p><NuxtLink v-if="place.zoneName && place.zoneSlug" :to="`/${citySlug}/khu-vuc/${place.zoneSlug}`">{{ place.zoneName }} ↗</NuxtLink><a v-if="!closed" href="#find-your-way">Xem vị trí & sao chép địa chỉ ↓</a></section>
+        <section v-for="note in notes" :key="note.key" class="rd-travel-note" :aria-labelledby="`travel-note-${note.key}`"><span class="rd-travel-note__icon" aria-hidden="true">{{ note.key === 'price' ? '₫' : note.key === 'cover' ? '☂' : note.key === 'duration' ? '◷' : '↗' }}</span><h3 :id="`travel-note-${note.key}`">{{ note.label }}</h3><p>{{ note.value }}</p><small>{{ note.detail }}</small></section>
+      </div>
+      <section class="rd-place-story__contact" aria-labelledby="contact-title"><div><span class="rd-story-kicker">HỎI THÊM TRƯỚC KHI ĐI</span><h3 id="contact-title">Liên hệ</h3></div><ul v-if="hasContact"><li v-if="place.contact.phone"><a :href="`tel:${place.contact.phone}`" data-rd-event="call_click" :data-rd-place-id="place.id"><span>Gọi quán</span><span>{{ place.contact.phone }}</span></a></li><li v-if="place.contact.fanpage"><a :href="place.contact.fanpage" target="_blank" rel="noopener noreferrer" data-rd-event="fanpage_click" :data-rd-place-id="place.id">Fanpage <span aria-hidden="true">↗</span></a></li><li v-if="place.contact.website"><a :href="place.contact.website" target="_blank" rel="noopener noreferrer">Website <span aria-hidden="true">↗</span></a></li></ul><p v-else class="empty-note">{{ closed ? 'Địa điểm đã đóng cửa' : 'Thông tin liên hệ đang cập nhật' }}</p></section>
+    </section>
+
+    <section v-if="moments.length" id="right-moment" class="rd-story-section rd-place-story__moments" data-rd-route-scene aria-labelledby="moments-title">
+      <RdChapterLabel number="05" label="Mỗi nơi, một khoảnh khắc" /><div class="rd-story-heading"><h2 id="moments-title">Đi lúc nào <em>thì hay?</em></h2><p>Thời điểm có trong ghi chép.<br>Chọn nhịp ghé hợp với bạn.</p></div>
+      <ol class="rd-day-timeline"><li v-for="moment in moments" :key="moment.key" :class="{ 'is-recommended': moment.recommended }"><span class="rd-day-timeline__dot" aria-hidden="true">{{ moment.recommended ? '✓' : '·' }}</span><strong>{{ moment.label }}</strong><span>{{ moment.recommended ? 'Có gợi ý ghé' : 'Chưa có gợi ý' }}</span></li></ol>
+      <p class="rd-place-story__data-note">{{ place.unconfirmed ? 'Gợi ý thời điểm chưa được quán xác nhận. ' : '' }}Đây không phải giờ mở cửa hay dự báo thời tiết. Kiểm tra lịch hoạt động trước khi ghé nhé.</p>
+    </section>
+
+    <RdPlaceDirections v-if="!closed" :place="place" :city="city" :city-slug="citySlug" />
+
+    <section v-if="!closed" id="make-it-your-journey" class="rd-story-section rd-place-story__journey" data-rd-route-scene aria-labelledby="journey-title">
+      <RdChapterLabel number="07" label="Một nơi trong chuyến đi của bạn" /><div class="rd-place-story__journey-layout"><div><h2 id="journey-title">Thêm nơi này vào<br><em>chuyến đi của bạn.</em></h2><p>Một điểm ghé hôm nay, một ý tưởng cho chuyến đi tới.</p><p id="place-itinerary-availability" class="rd-place-story__availability">Tính năng thêm địa điểm vào lịch trình cá nhân chưa được mở. Bạn có thể tham khảo các lịch trình đã được Rành Đường biên soạn.</p><div class="rd-place-story__journey-actions"><button type="button" class="rd-btn rd-btn--primary" disabled>Thêm vào lịch trình <small>Sắp có</small></button><NuxtLink class="rd-btn rd-btn--outline" :to="`/${citySlug}#lich-trinh`">Xem lịch trình gợi ý ↗</NuxtLink></div></div><div class="rd-place-story__journey-note"><RdCompass /><span>ĐỂ DÀNH CHO MỘT NGÃ RẼ</span><strong>{{ place.name }}</strong><p>Một nơi đáng nhớ.<br>Một chuyến đi của riêng bạn.</p><svg viewBox="0 0 260 100" fill="none" aria-hidden="true"><path pathLength="1000" d="M10 80C60 80 45 10 105 30S165 100 205 45 240 15 250 20" /><circle cx="250" cy="20" r="5" /></svg><small>Ghi chép địa điểm · Chưa thêm vào lịch trình</small></div></div>
+    </section>
+
+    <section id="next-turn" class="rd-story-section" data-rd-route-scene aria-labelledby="nearby-title"><RdChapterLabel number="08" label="Câu chuyện ở ngã rẽ tiếp theo" /><div class="rd-story-heading"><h2 id="nearby-title">Đi tiếp <em>đâu nhỉ?</em></h2><p>{{ closed ? 'Một vài nơi tương tự trong gợi ý của Rành Đường.' : 'Những địa điểm được gợi ý gần đây.' }}</p></div>
+      <template v-if="detail.nearby.length"><ul class="rd-place-story__recommendations"><li v-for="item in nearbyFirst" :key="item.slug"><RdPlaceCard :place="item" :href="`/${citySlug}/dia-diem/${item.slug}`" :now="now" /></li></ul><details v-if="nearbyMore.length" class="rd-place-story__more"><summary class="rd-btn rd-btn--outline"><span class="rd-place-story__more-open">Xem thêm gần đây ({{ nearbyMore.length }})</span><span class="rd-place-story__more-close">Thu gọn</span></summary><ul class="rd-place-story__recommendations"><li v-for="item in nearbyMore" :key="item.slug"><RdPlaceCard :place="item" :href="`/${citySlug}/dia-diem/${item.slug}`" :now="now" /></li></ul></details></template><p v-else class="empty-note">Mình chưa ghi chép thêm chỗ gần đây. <NuxtLink :to="`/${citySlug}`">Về xem các chỗ trong thành phố nhé.</NuxtLink></p>
+    </section>
+
+    <aside v-if="hasActionBar" class="rd-place-story__action-bar rd-action-bar" aria-label="Hành động cho địa điểm">
+      <span class="rd-place-story__action-name">{{ place.name }}</span><button type="button" class="rd-btn rd-btn--outline rd-place-story__add" disabled aria-describedby="place-itinerary-availability">Thêm vào lịch trình <small>Sắp có</small></button>
+      <a v-if="directions" class="rd-btn rd-btn--accent" :href="directions" target="_blank" rel="noopener noreferrer" data-rd-event="direction_click" :data-rd-place-id="place.id">Chỉ đường <span aria-hidden="true">↗</span></a>
+      <a v-if="phone" class="rd-btn rd-btn--outline rd-place-story__call" :href="`tel:${phone}`" aria-label="Gọi quán" data-rd-event="call_click" :data-rd-place-id="place.id"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2" /></svg></a>
     </aside>
   </article>
 </template>
 
-<style scoped>
-.rd-detail { display: grid; gap: var(--space-6); }
-.rd-detail__content, .rd-detail__intro, .rd-detail__nearby, .rd-detail__contact { display: flex; flex-direction: column; gap: var(--space-3); min-width: 0; }
-.rd-detail__content { gap: var(--space-6); }
-.rd-detail__intro { gap: var(--space-2); }
-.rd-detail__eyebrow { margin: 0; color: var(--ink-soft); font-size: 14px; line-height: 1.6; }
-.rd-detail__eyebrow a { display: inline-flex; align-items: center; min-height: var(--tap-min); }
-.rd-detail__address { margin: 0; color: var(--ink-soft); font-size: 15px; line-height: 1.5; }
-.rd-detail__status { display: flex; flex-direction: column; gap: var(--space-1); margin-top: var(--space-2); }
-.rd-detail__status-line { min-height: 26px; margin: 0; display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); font-size: 15px; }
-.rd-detail__caveat { margin: 0; display: flex; align-items: center; gap: var(--space-2); font-size: 14px; line-height: 1.5; color: var(--ink-soft); }
-.rd-detail__caveat svg { flex: 0 0 18px; width: 18px; height: 18px; }
-.rd-detail__verified { margin: 0; font-size: 13px; line-height: 1.5; color: var(--ink-soft); }
-.rd-detail__chips { list-style: none; margin: var(--space-2) 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--space-2); }
-.rd-detail__notice { padding: var(--space-3) var(--space-4); margin: var(--space-2) 0 0; background: var(--note); border-radius: var(--radius-card); line-height: 1.6; }
-/* Ghi chú dài đọc bằng chữ nội dung, không xoay; nhãn viết tay giữ chất sổ tay (ui-spec mục 4). */
-.rd-detail__tip { transform: none; gap: var(--space-2); }
-.rd-detail__tip-label { margin: 0; font: 400 19px/1.3 var(--font-hand); }
-.rd-detail__notes { margin: 0; font: 400 16px/1.65 var(--font-body); white-space: pre-line; overflow-wrap: anywhere; max-width: 65ch; }
-.rd-detail__contact-list { list-style: none; margin: 0; padding: 0; border-top: var(--border); }
-.rd-detail__contact-list a { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); min-height: var(--button-height); border-bottom: var(--border); font-weight: 600; text-decoration: none; }
-.rd-detail__contact-value { font-weight: 400; color: var(--ink-soft); overflow-wrap: anywhere; }
-.rd-detail__more { display: flex; flex-direction: column; }
-.rd-detail__more summary { align-self: flex-start; list-style: none; }
-.rd-detail__more summary::-webkit-details-marker { display: none; }
-.rd-detail__more[open] summary { margin-bottom: var(--space-3); }
-.rd-detail__more[open] :deep(.list) { animation: rd-fade-up var(--dur-standard) var(--ease-out); }
-.rd-detail__more-close, .rd-detail__more[open] .rd-detail__more-open { display: none; }
-.rd-detail__more[open] .rd-detail__more-close { display: inline; }
-/* Điện thoại: một hàng duy nhất, Chỉ đường chiếm phần lớn, Gọi là nút tròn có nhãn ẩn cho trình đọc màn hình. */
-.rd-detail__action-bar { position: fixed; z-index: 10; inset: auto 0 0; flex-wrap: nowrap; padding: var(--space-3) var(--space-5) calc(var(--space-3) + env(safe-area-inset-bottom, 0px)); }
-.rd-detail__action-bar .rd-btn--accent { flex: 1 1 auto; min-width: 0; }
-.rd-detail__call { flex: 0 0 var(--button-height); width: var(--button-height); height: var(--button-height); padding: 0; border-radius: var(--radius-pill); }
-.rd-detail__call:only-child { flex: 1 1 auto; width: auto; padding: 0 var(--space-4); }
-.rd-detail__call:not(:only-child) .rd-detail__call-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-@media (min-width: 1024px) {
-  .rd-detail--with-actions { grid-template-columns: minmax(0, 1fr) 300px; align-items: start; }
-  .rd-detail__actions { position: sticky; top: var(--space-6); }
-  .rd-detail__action-bar { position: static; flex-direction: column; align-items: stretch; border: var(--border); border-radius: var(--radius-card); padding: var(--space-5); }
-  .rd-detail__call, .rd-detail__call:only-child { flex: 0 0 auto; width: auto; height: var(--tap-min); padding: 0 var(--space-4); }
-  .rd-detail__call:not(:only-child) .rd-detail__call-label { position: static; width: auto; height: auto; overflow: visible; clip-path: none; }
-}
-</style>
+<style src="../../../assets/place-story.css"></style>

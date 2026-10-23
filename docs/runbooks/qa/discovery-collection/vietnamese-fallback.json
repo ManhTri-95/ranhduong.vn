@@ -1,0 +1,36 @@
+{
+  "beforeOAdvance": 32.296875,
+  "after": {
+    "font": "500 32px / 40px Lora, \"Times New Roman\", serif",
+    "characters": [
+      {
+        "char": "Ă",
+        "width": 22.15625
+      },
+      {
+        "char": "n",
+        "width": 15.0625
+      },
+      {
+        "char": " ",
+        "width": 7.046875
+      },
+      {
+        "char": "u",
+        "width": 15.0625
+      },
+      {
+        "char": "ố",
+        "width": 15.046875
+      },
+      {
+        "char": "n",
+        "width": 15.0625
+      },
+      {
+        "char": "g",
+        "width": 15.046875
+      }
+    ]
+  }
+}

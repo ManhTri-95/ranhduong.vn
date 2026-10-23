@@ -1,6 +1,6 @@
 import type { BBox } from '@ranhduong/contracts';
 import { describe, expect, it } from 'vitest';
-import { needsPan, restorableView } from './map-camera';
+import { needsPan, restorableView, pointBounds, viewportAction } from './map-camera';
 
 const size = { width: 390, height: 844 };
 const insets = { top: 100, bottom: 422 };
@@ -27,5 +27,24 @@ describe('restorableView', () => {
     expect(restorableView({ center: [106.7, 10.8], zoom: 14 }, bounds)).toBeUndefined();
     expect(restorableView({ center: [108.44, 11.94], zoom: 9 }, bounds)).toBeUndefined();
     expect(restorableView({ center: [108.44, Number.NaN], zoom: 14 }, bounds)).toBeUndefined();
+  });
+});
+
+describe('Living Map viewport intent', () => {
+  const area: BBox = [108.3, 11.8, 108.6, 12.1];
+  const changed: BBox = [108.4, 11.9, 108.6, 12.1];
+  it('loads the first real viewport, offers user-driven searches and ignores selection camera movement', () => {
+    expect(viewportAction(false, false, undefined, area)).toBe('load');
+    expect(viewportAction(true, true, area, changed)).toBe('offer');
+    expect(viewportAction(true, false, area, changed)).toBe('none');
+    expect(viewportAction(true, true, area, area)).toBe('none');
+  });
+  it('ignores sub-metre numerical noise when returning to the searched viewport', () => {
+    expect(viewportAction(true, true, area, [108.30000001, 11.8, 108.6, 12.1])).toBe('none');
+  });
+  it('fits actual finite place points inside city bounds and has no invented fallback point', () => {
+    expect(pointBounds([[108.4, 11.9], [108.5, 12], [109, 13], [NaN, 12]], area)).toEqual([108.4, 11.9, 108.5, 12]);
+    expect(pointBounds([[108.4, 11.9]], area)).toEqual([108.4, 11.9, 108.4, 11.9]);
+    expect(pointBounds([], area)).toBeNull();
   });
 });

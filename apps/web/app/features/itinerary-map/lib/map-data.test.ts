@@ -1,12 +1,21 @@
 import { describe, expect, it } from 'vitest';
 import type { ItineraryPublicStop } from '@ranhduong/contracts';
-import { itineraryMapData } from './map-data';
+import { itineraryFitPadding, itineraryMapData } from './map-data';
 
 function stop(number: number, coordinates?: [number, number]): ItineraryPublicStop {
   return { key: `1-${number}`, number, start: '08:00', end: '09:00', travelMinFromPrev: 0, kind: 'visit', note: '',
     place: coordinates ? { slug: 'quan-gia-lap', name: 'Quán Giả Lập', category: 'cafe', alsoCategories: [], unconfirmed: true, location: { type: 'Point', coordinates } } : null };
 }
 describe('numbered itinerary map data', () => {
+  it('fits within short map canvases, reserving visible space above the controls', () => {
+    for (const [width, height, overlay] of [[375, 120, 56], [768, 170, 56], [480, 500, 106]] as const) {
+      const padding = itineraryFitPadding(width, height, overlay);
+      expect(padding.top + padding.bottom).toBeLessThan(height);
+      expect(padding.left + padding.right).toBeLessThan(width);
+      expect(padding.bottom).toBeGreaterThanOrEqual(padding.top);
+      expect(padding.top).toBeGreaterThan(0);
+    }
+  });
   it('preserves stop numbers and repeat visits, with GeoJSON longitude first', () => {
     const data = itineraryMapData([stop(1, [108.4, 11.9]), stop(2, [108.4, 11.9])]);
     expect(data.points.map(({ key, number, coordinates }) => ({ key, number, coordinates }))).toEqual([

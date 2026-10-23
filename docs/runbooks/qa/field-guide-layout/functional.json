@@ -1,0 +1,84 @@
+[
+  {
+    "check": "Load more",
+    "before": 20,
+    "after": 31,
+    "focused": "rd-place rd-field-card",
+    "document": 390
+  },
+  {
+    "check": "Search",
+    "url": "http://localhost:3100/da-lat/khu-vuc/trung-tam?q=Y%C3%AAn",
+    "names": [
+      "Yên Cafe"
+    ],
+    "document": 390
+  },
+  {
+    "check": "Tag filter and clear",
+    "url": "http://localhost:3100/da-lat/khu-vuc/trung-tam?tags=chill",
+    "selected": "✓\nChill\n20\nnơi có thẻ này trong phạm vi đang xem, trước khi lọc thẻ và từ khóa",
+    "results": 20,
+    "focus": "tag:chill"
+  },
+  {
+    "check": "Category filter",
+    "url": "http://localhost:3100/da-lat/khu-vuc/trung-tam?tags=chill&category=cafe",
+    "results": 15,
+    "document": 320
+  },
+  {
+    "check": "Region navigation preserves filters",
+    "url": "http://localhost:3100/da-lat/khu-vuc/phia-nam?tags=chill&category=cafe",
+    "activeRegion": "02\nPhía Nam\n↗",
+    "focused": "page",
+    "document": 320
+  },
+  {
+    "check": "Map preview on intent",
+    "requests": [
+      "http://localhost:3101/v1/cities/da-lat/places?zone=phia-nam&category=cafe,food,attraction,activity&limit=4&bbox=108.34,11.81,108.62,12.09",
+      "http://localhost:3101/v1/cities/da-lat/places?zone=trung-tam&category=cafe,food,attraction,activity&limit=4&bbox=108.34,11.81,108.62,12.09",
+      "http://localhost:3101/v1/cities/da-lat/places?zone=trung-tam&category=cafe,food,attraction,activity&limit=4&bbox=108.34,11.81,108.62,12.09"
+    ],
+    "places": 4,
+    "state": "Đang mở bản đồ…\n\n© OpenStreetMap contributors · OpenMapTiles · OpenFreeMap · Style và giấy phép",
+    "document": 320
+  },
+  {
+    "check": "Map list selection",
+    "selected": "02\nMộc Quán BBQ\nĂn uống\n↗",
+    "surface": "1 km\n\nĐang mở bản đồ…\n\n© OpenStreetMap contributors · OpenMapTiles · OpenFreeMap · Style và giấy phép",
+    "document": 320
+  },
+  {
+    "check": "Place detail navigation",
+    "url": "http://localhost:3100/da-lat/dia-diem/thon-13",
+    "heading": "Thôn 13"
+  },
+  {
+    "check": "Map entry navigation",
+    "url": "http://localhost:3100/da-lat/ban-do?zone=phia-nam",
+    "expected": "/da-lat/ban-do?zone=phia-nam"
+  },
+  {
+    "check": "Empty search state",
+    "count": 0,
+    "message": "Chưa có địa điểm khớp bộ lọc này. Thử bỏ bớt một điều kiện nhé.\n\nBỏ lọc"
+  },
+  {
+    "check": "Keyboard region cards",
+    "focus": {
+      "tag": "A",
+      "class": "rd-field-next__card",
+      "outline": "solid",
+      "outlineWidth": "3px"
+    }
+  },
+  {
+    "check": "Map preview request failure (QA interception only)",
+    "message": "Chưa tải được bản đồ. Thử lại hoặc mở liên kết bên cạnh nhé.",
+    "retry": 1,
+    "document": 320
+  }
+]

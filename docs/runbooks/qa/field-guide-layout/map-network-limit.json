@@ -1,0 +1,14 @@
+[
+  {
+    "url": "https://tiles.openfreemap.org/planet",
+    "failure": {
+      "errorText": "net::ERR_NETWORK_ACCESS_DENIED"
+    }
+  },
+  {
+    "url": "https://tiles.openfreemap.org/fonts/Noto%20Sans%20Regular/0-255.pbf",
+    "failure": {
+      "errorText": "net::ERR_NETWORK_ACCESS_DENIED"
+    }
+  }
+]

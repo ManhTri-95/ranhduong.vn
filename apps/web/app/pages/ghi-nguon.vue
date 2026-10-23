@@ -2,10 +2,17 @@
 import { LEGAL_PAGES } from '~/shared/lib/legal-pages';
 import RdLegalPage from '~/shared/ui/RdLegalPage.vue';
 import RdLegalContact from '~/shared/ui/RdLegalContact.vue';
+import { EDITORIAL_PHOTOS } from '~/shared/lib/editorial-photos';
 </script>
 
 <template>
   <RdLegalPage :page="LEGAL_PAGES[2]">
+    <section id="anh-trang-chu">
+      <h2>Ảnh Đà Lạt trên trang chủ</h2>
+      <p>Ảnh tư liệu gợi không khí điểm đến, không thay thế ảnh hay xác nhận tình trạng hiện tại của từng địa điểm. Các bản WebP đã được thu nhỏ, bỏ metadata và có thể được cắt theo khung hiển thị.</p>
+      <ul><li v-for="photo in EDITORIAL_PHOTOS" :key="photo.file"><a :href="photo.sourceUrl" target="_blank" rel="noopener noreferrer">{{ photo.alt }}</a> · {{ photo.credit }} · {{ photo.source }} · <a :href="photo.licenseUrl" target="_blank" rel="noopener noreferrer">{{ photo.license }}</a>.</li></ul>
+      <p>Các bản chuyển đổi của ảnh Frank Fox được cung cấp theo cùng giấy phép CC BY-SA 4.0. Quyền tác giả và giấy phép của ảnh độc lập với mã nguồn trang web.</p>
+    </section>
     <section id="ban-do">
       <h2>Bản đồ và dữ liệu OpenStreetMap</h2>
       <p>Dữ liệu nền bản đồ: © OpenStreetMap contributors, theo giấy phép Open Database License (ODbL). Ghi nguồn này cũng hiển thị cạnh bản đồ địa điểm và bản đồ lịch trình.</p>
