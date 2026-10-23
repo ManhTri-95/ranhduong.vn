@@ -44,7 +44,7 @@ async function load(): Promise<void> {
       <h2>Nhặt vài nơi hay.<br><em>Ghép thành<br>một chuyến đi.</em></h2>
       <p class="rd-home-itinerary-intro__lead">Một tách cà phê, một chỗ ăn, một nơi muốn ghé. Bắt đầu với lịch trình đã được biên soạn và xem từng điểm dừng trên bản đồ.</p>
       <a class="rd-home-text-link" href="#itinerary-strip-title">Chọn lịch trình có sẵn ↗</a>
-      <div class="rd-home-itinerary-intro__coming"><span class="rd-home-kicker">Tự tạo lịch trình · Sắp có</span><p id="journal-coming-note">Tính năng tự tạo và lưu địa điểm chưa mở trên web. Hiện tại, hãy chọn một lịch trình có sẵn.</p></div>
+      <div class="rd-home-itinerary-intro__coming"><NuxtLink class="rd-btn" :to="`/${citySlug}/tao-lich-trinh`">Tự tạo lịch trình ↗</NuxtLink><p>Chọn số ngày, gu và nhịp độ. Mình lên lịch riêng cho chuyến đi của bạn.</p></div>
     </div>
     <div class="rd-journal-preview" :aria-busy="pending">
       <div class="rd-journal-preview__top"><span>SỔ HÀNH TRÌNH / RÀNH ĐƯỜNG</span><RdCompass /></div>

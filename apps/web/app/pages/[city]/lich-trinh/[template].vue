@@ -54,6 +54,10 @@ usePageSeo({ path, title, description, image: () => template.data.value && !fail
       <RdItineraryDetail v-if="template.data.value" :itinerary="template.data.value" :city="city.data.value ?? null" :city-slug="citySlug" :share-url="canonical" :ticket="ticket" />
       <div v-else-if="!failed" class="rd-itinerary-page__loading" role="status" aria-label="Đang tải lịch trình" />
       <div v-else><h1 class="page-title">Lịch trình mẫu</h1><p class="empty-note">Bấm Thử lại để xem lịch trình nhé.</p></div>
+      <aside v-if="template.data.value && !failed" class="rd-itinerary-page__create" aria-label="Lên lịch riêng">
+        <p>Muốn một chuyến đi hợp gu mình hơn?</p>
+        <NuxtLink class="rd-btn" :to="`/${citySlug}/tao-lich-trinh`">Tự tạo lịch trình ↗</NuxtLink>
+      </aside>
     </main>
   </div>
 </template>
@@ -62,4 +66,6 @@ usePageSeo({ path, title, description, image: () => template.data.value && !fail
 .rd-itinerary-page { max-width: var(--content-max); margin: 0 auto; padding: var(--space-2) var(--space-5) var(--space-12); display: grid; gap: var(--space-3); }
 .rd-itinerary-page__back { display: inline-flex; align-items: center; min-height: var(--tap-min); text-decoration: none; font: 500 11px var(--font-body); color: var(--ink-soft); }
 .rd-itinerary-page__loading { min-height: 400px; background: var(--mist); border-radius: var(--radius-card); }
+.rd-itinerary-page__create { padding: var(--space-6); background: var(--mist); border: var(--border); border-radius: var(--radius-card); }
+.rd-itinerary-page__create p { margin: 0 0 var(--space-4); font-size: 15px; }
 </style>

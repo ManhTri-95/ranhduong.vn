@@ -45,6 +45,7 @@ describe('S17 sitemap public sources', () => {
   });
   it('includes active city, four categories, map and existing zones', async () => {
     const paths = SitemapResponse.parse(await (await get('pages')).json()).items.map((entry) => entry.path);
+    expect(paths).toContain('/thanh-pho-gia-lap/tao-lich-trinh');
     expect(paths).toEqual(expect.arrayContaining(['/thanh-pho-gia-lap', '/thanh-pho-gia-lap/ca-phe', '/thanh-pho-gia-lap/an-uong', '/thanh-pho-gia-lap/tham-quan', '/thanh-pho-gia-lap/hoat-dong', '/thanh-pho-gia-lap/ban-do', '/thanh-pho-gia-lap/khu-vuc/cum-gia-lap-a']));
     expect(paths.join(' ')).not.toMatch(/undefined|bad_slug|thanh-pho-tat|tim-kiem|admin|\/l\//);
   });

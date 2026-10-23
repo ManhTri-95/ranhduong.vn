@@ -8,7 +8,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 const city = {
   slug: 'da-lat', name: 'Thành phố Giả Lập', accent: '#f4bd33',
   center: { type: 'Point', coordinates: [0.5, 0.5] }, mapBounds: [0, 0, 1, 1],
-  zones: [{ slug: 'trung-tam', name: 'Trung tâm Giả Lập' }, { slug: 'phia-nam', name: 'Phía Nam Giả Lập' }],
+  zones: [{ slug: 'trung-tam', name: 'Trung tâm Giả Lập', center: { type: 'Point', coordinates: [0.25, 0.25] } }, { slug: 'phia-nam', name: 'Phía Nam Giả Lập', center: { type: 'Point', coordinates: [0.75, 0.75] } }],
 };
 const items = Array.from({ length: 25 }, (_, i) => ({
   slug: `quan-gia-lap-${i + 1}`, name: `Quán Giả Lập ${i + 1}`, category: 'cafe',
@@ -50,7 +50,7 @@ const api = createServer((req, res) => {
     res.writeHead(503).end(JSON.stringify({ code: 'INTERNAL_ERROR', message: 'Lỗi API Giả Lập' }));
   } else if (url.pathname.startsWith('/v1/seo/sitemap/')) {
     const kind = url.pathname.split('/').at(-1);
-    const paths: Record<string, string[]> = { pages: ['/da-lat', '/da-lat/ca-phe', '/da-lat/khu-vuc/trung-tam'], places: ['/da-lat/dia-diem/quan-gia-lap-1', '/da-lat/dia-diem/closed'], lists: ['/da-lat/top/danh-sach-gia-lap'], itineraries: ['/da-lat/lich-trinh/lich-trinh-gia-lap'] };
+    const paths: Record<string, string[]> = { pages: ['/da-lat', '/da-lat/tao-lich-trinh', '/da-lat/ca-phe', '/da-lat/khu-vuc/trung-tam'], places: ['/da-lat/dia-diem/quan-gia-lap-1', '/da-lat/dia-diem/closed'], lists: ['/da-lat/top/danh-sach-gia-lap'], itineraries: ['/da-lat/lich-trinh/lich-trinh-gia-lap'] };
     res.end(JSON.stringify({ items: (paths[kind ?? ''] ?? []).map((path) => ({ path, lastmod: '2026-10-09T08:30:00.000Z' })) }));
   } else if (url.pathname === '/v1/cities/da-lat') {
     res.end(JSON.stringify(city));
@@ -110,6 +110,42 @@ const api = createServer((req, res) => {
   } else {
     res.writeHead(404).end(JSON.stringify({ code: 'NOT_FOUND', message: 'Không tìm thấy thành phố Giả Lập' }));
   }
+});
+
+describe('S38 itinerary creation production SSR', () => {
+  it('renders an indexable form with canonical, one-hour SWR and no initial map', async () => {
+    const response = await fetch(`${base}/da-lat/tao-lich-trinh`);
+    expect(response.status).toBe(200);
+    expect(response.headers.get('cache-control')).toContain('s-maxage=3600');
+    const html = await response.text();
+    expect(html).toContain('rel="canonical" href="https://ranhduong.vn/da-lat/tao-lich-trinh"');
+    expect(html).toContain('name="robots" content="index, follow"');
+    for (const text of ['Mình đi mấy ngày?', 'Khi nào mình lên đường?', 'di chuyển bằng gì?', 'đi cùng ai?', 'Bạn thích ghé những đâu?', 'Đi thong thả', 'Bạn ở khu nào?', 'Bỏ qua', 'Ghim trên bản đồ', 'Trung tâm Giả Lập', 'Lên lịch giúp mình', 'không hiện trong lịch chia sẻ']) expect(html).toContain(text);
+    expect(html).not.toContain('<canvas');
+    expect(html).not.toMatch(/<link[^>]*maplibre-gl-worker[^>]*>/);
+    expect(html).not.toContain('"stayLocation"');
+    expect(html).toContain('type="date"');
+  });
+  it('has crawlable entry links on home and template pages and a pages sitemap URL', async () => {
+    for (const path of ['/da-lat?audit=s38-entry', '/da-lat/lich-trinh/lich-trinh-gia-lap']) {
+      expect(await (await fetch(`${base}${path}`)).text()).toContain('href="/da-lat/tao-lich-trinh"');
+    }
+    expect(await (await fetch(`${base}/sitemap-pages.xml`)).text()).toContain('<loc>https://ranhduong.vn/da-lat/tao-lich-trinh</loc>');
+  });
+  it('keeps unavailable and missing city responses no-store and recovers the same URL', async () => {
+    apiFailed = true;
+    const path = '/da-lat/tao-lich-trinh?audit=s38-error';
+    try {
+      const response = await fetch(`${base}${path}`);
+      expect(response.status).toBe(503);
+      expect(response.headers.get('cache-control')).toBe('no-store');
+      expect(await response.text()).toContain('name="robots" content="noindex, follow"');
+    } finally { apiFailed = false; }
+    expect((await fetch(`${base}${path}`)).status).toBe(200);
+    const missing = await fetch(`${base}/thanh-pho-khong-co/tao-lich-trinh`);
+    expect(missing.status).toBe(404);
+    expect(missing.headers.get('cache-control')).toBe('no-store');
+  });
 });
 
 describe('S20 static legal pages production SSR', () => {
@@ -909,7 +945,7 @@ describe('UX home and itinerary SSR', () => {
     expect(positions.every(position => position >= 0)).toBe(true);
     expect(positions).toEqual([...positions].sort((a, b) => a - b));
     expect(html.match(/class="rd-chapter__number"/g)).toHaveLength(7);
-    for (const text of ['Rẽ một chút.', 'Hay cả chuyến đi.', 'Tự tạo lịch trình', 'Sắp có', '0.5000° B / 0.5000° Đ', 'không phải tuyến chỉ đường', 'Đi khám phá thôi']) expect(html).toContain(text);
+    for (const text of ['Rẽ một chút.', 'Hay cả chuyến đi.', 'Tự tạo lịch trình', '0.5000° B / 0.5000° Đ', 'không phải tuyến chỉ đường', 'Đi khám phá thôi']) expect(html).toContain(text);
     expect(html).toContain('href="/da-lat/tham-quan?tags=view-doi"');
     expect(html).toContain('href="/da-lat/tham-quan?tags=song-ao"');
     expect(html).not.toMatch(/<button(?=[^>]*disabled)(?=[^>]*aria-describedby="journal-coming-note")[^>]*>/);
@@ -930,8 +966,7 @@ describe('UX home and itinerary SSR', () => {
     expect(html).toContain('Vị trí từ dữ liệu địa điểm');
     expect(html).toContain('Xem trước vị trí');
     expect(html).not.toMatch(/<button[^>]*rd-home-map__pin/);
-    expect(html).toContain('Tính năng tự tạo và lưu địa điểm chưa mở trên web');
-    expect(html).not.toContain('href="/da-lat/tao-lich-trinh"');
+    expect(html).toContain('href="/da-lat/tao-lich-trinh"');
     expect(html).not.toContain('<canvas');
     expect(html.match(/<link[^>]*maplibre[^>]*>/g) ?? []).toEqual([]);
     expect(geographicRequests).toBe(initialGeographicRequests);

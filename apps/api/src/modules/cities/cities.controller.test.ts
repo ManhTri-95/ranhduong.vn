@@ -27,8 +27,8 @@ describe('GET /v1/cities/:city', () => {
       center: { type: 'Point', coordinates: [0.5, 0.5] },
       mapBounds: [0, 0, 1, 1],
       zones: [
-        { slug: 'cum-gia-lap-a', name: 'Cụm Giả Lập A' },
-        { slug: 'cum-gia-lap-b', name: 'Cụm Giả Lập B' },
+        { slug: 'cum-gia-lap-a', name: 'Cụm Giả Lập A', center: { type: 'Point', coordinates: [0.25, 0.25] } },
+        { slug: 'cum-gia-lap-b', name: 'Cụm Giả Lập B', center: { type: 'Point', coordinates: [0.75, 0.75] } },
       ],
     });
   });

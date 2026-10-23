@@ -23,6 +23,7 @@ describe('S37 guest itinerary HTTP', () => {
   let cookie: string;
   const post = (body: unknown = request(), headers: Record<string, string> = {}, city = CITY) => fetch(`${t.url}/cities/${city}/itineraries`, { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: t.origin, Cookie: cookie, ...headers }, body: JSON.stringify(body) });
   const read = (shareId: string, identity = cookie) => fetch(`${t.url}/itineraries/${shareId}`, { headers: identity ? { Cookie: identity } : {} });
+  const copy = (shareId: string, identity = '', origin = t.origin) => fetch(`${t.url}/itineraries/${shareId}/copy`, { method: 'POST', headers: { Cookie: identity, Origin: origin } });
   beforeAll(async () => {
     t = await createAdminTestApp([GuestItinerariesModule]);
     cityId = (await t.app.get(CitiesService).applySeed(fakeCitySeed())).cityId;
@@ -78,6 +79,63 @@ describe('S37 guest itinerary HTTP', () => {
     const body = await response.json() as ItineraryUserDetail;
     expect(await (await read(body.shareId, setCookie.split(';')[0]!)).json()).toMatchObject({ canEdit: true });
     expect((await read(body.shareId, '')).headers.get('set-cookie')).toBeNull();
+  });
+
+  it('S39 copies the schedule with a new identity, shareId and keys, without private source fields', async () => {
+    const source = await (await post()).json() as ItineraryUserDetail;
+    await t.conn.collection('itineraries').updateOne({ shareId: source.shareId }, { $set: { ownerId: new Types.ObjectId(), ticketKey: 'private-ticket', ticketCleanupKeys: ['private-cleanup'], version: 8 } });
+    const response = await copy(source.shareId);
+    expect(response.status).toBe(201);
+    expect(response.headers.get('cache-control')).toBe('no-store');
+    const identity = response.headers.get('set-cookie')!.split(';')[0]!;
+    expect(identity).toMatch(/^gid=[\da-f-]{36}$/);
+    const body = await response.json() as ItineraryUserDetail;
+    expect(body).toMatchObject({ canEdit: true, version: 1, title: source.title, params: source.params });
+    expect(body.shareId).not.toBe(source.shareId);
+    const originalKeys = new Set(source.days.flatMap((day) => day.stops.map((stop) => stop.key)));
+    for (const [index, day] of body.days.entries()) {
+      expect(day.stops.map(({ key: _key, ...stop }) => stop)).toEqual(source.days[index]!.stops.map(({ key: _key, ...stop }) => stop));
+      for (const stop of day.stops) expect(originalKeys.has(stop.key)).toBe(false);
+      for (const detour of day.detours) expect(day.stops.some((stop) => stop.key === detour.afterKey)).toBe(true);
+    }
+    const stored = await t.conn.collection('itineraries').findOne({ shareId: body.shareId });
+    expect(stored).toMatchObject({ guestId: identity.slice(4), version: 1, visibility: 'unlisted' });
+    for (const field of ['ownerId', 'ticketKey']) expect(stored).not.toHaveProperty(field);
+    expect(stored!.params).not.toHaveProperty('stayLocation');
+    expect(stored!.ticketCleanupKeys).toEqual([]);
+    assertPrivate(body);
+    expect(await (await read(body.shareId, identity)).json()).toMatchObject({ canEdit: true });
+    expect(await (await read(body.shareId, cookie)).json()).toMatchObject({ canEdit: false });
+    expect(await t.conn.collection('itineraries').findOne({ shareId: source.shareId })).toMatchObject({ version: 8, ticketKey: 'private-ticket', params: { stayLocation: { coordinates: [0.21, 0.225] } } });
+  });
+
+  it('S39 copies past trips and masks unavailable notes and detours in the response', async () => {
+    const source = await (await post()).json() as ItineraryUserDetail;
+    const row = await t.conn.collection('itineraries').findOne({ shareId: source.shareId });
+    await t.conn.collection('places').updateMany({ _id: { $in: [row!.days[0].stops[0].placeId, row!.days[0].detours[0].placeId] } }, { $set: { status: 'hidden' } });
+    await t.conn.collection('itineraries').updateOne({ shareId: source.shareId }, { $set: { 'params.startDate': '2020-01-01', 'days.0.stops.0.note': 'Ghi chú riêng Giả Lập' } });
+    const response = await copy(source.shareId, `gid=${randomUUID()}`);
+    expect(response.status).toBe(201);
+    const body = await response.json() as ItineraryUserDetail;
+    expect(body.params.startDate).toBe('2020-01-01');
+    expect(body.days[0]!.stops[0]).toMatchObject({ place: null, note: '' });
+    expect(body.days[0]!.detours[0]!.place).toBeNull();
+    assertPrivate(body);
+    expect(JSON.stringify(body)).not.toContain('riêng');
+  });
+
+  it('S39 enforces Origin, no-store 404s and the shared creation quota for copy', async () => {
+    const source = await (await post()).json() as ItineraryUserDetail;
+    for (const origin of ['', 'https://evil.example']) expect((await copy(source.shareId, cookie, origin)).status).toBe(403);
+    for (const id of ['bad_id', 'z'.repeat(20)]) {
+      const response = await copy(id, cookie);
+      expect(response.status).toBe(404);
+      expect(response.headers.get('cache-control')).toBe('no-store');
+    }
+    const identity = `gid=${randomUUID()}`;
+    for (let index = 0; index < 10; index++) expect((await copy(source.shareId, identity)).status).toBe(201);
+    expect((await copy(source.shareId, identity)).status).toBe(429);
+    expect((await post(request(), { Cookie: identity })).status).toBe(429);
   });
 
   it('validates the date, interests and city bounds; enforces Origin on every write', async () => {

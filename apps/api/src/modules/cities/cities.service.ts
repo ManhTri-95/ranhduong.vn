@@ -112,7 +112,15 @@ export class CitiesService {
   async getPublic(slug: string): Promise<CityPublic> {
     const city = await this.repo.findActiveBySlug(slug);
     if (!city) throw cityNotFound();
-    const zones = await this.repo.listZones(city.id);
-    return CityPublic.parse({ ...city, zones: zones.map(({ slug: zoneSlug, name }) => ({ slug: zoneSlug, name })) });
+    const zones = await this.repo.listZoneAreas(city.id);
+    return CityPublic.parse({ ...city, zones: zones.map(({ slug: zoneSlug, name, rings }) => {
+      const points = rings[0] ?? [];
+      const lngs = points.map(([lng]) => lng);
+      const lats = points.map(([, lat]) => lat);
+      return { slug: zoneSlug, name, ...(points.length ? { center: { type: 'Point', coordinates: [
+        (Math.min(...lngs) + Math.max(...lngs)) / 2,
+        (Math.min(...lats) + Math.max(...lats)) / 2,
+      ] } } : {}) };
+    }) });
   }
 }

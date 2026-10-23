@@ -100,6 +100,10 @@ export const CityPublic = z.object({
   accent: HexColor,
   center: GeoPoint,
   mapBounds: BBox,
-  zones: z.array(z.object({ slug: Slug, name: z.string().min(1) })),
+  zones: z.array(z.object({
+    slug: Slug, name: z.string().min(1),
+    /** Tâm khung ranh giới cụm, dùng khi khách chỉ biết khu lưu trú. */
+    center: GeoPoint.optional(),
+  })),
 });
 export type CityPublic = z.infer<typeof CityPublic>;

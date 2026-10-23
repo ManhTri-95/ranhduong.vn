@@ -15,7 +15,7 @@ export class SeoService {
     for (const city of await this.cities.sitemapCities()) {
       const prefix = `/${city.slug}`;
       if (kind === 'pages') {
-        items.push(entry(prefix, city), entry(`${prefix}/ban-do`, city), ...Object.values(CATEGORY_URL_SLUG).map((slug) => entry(`${prefix}/${slug}`, city)), ...city.zones.map((zone) => entry(`${prefix}/khu-vuc/${zone.slug}`, zone)));
+        items.push(entry(prefix, city), entry(`${prefix}/ban-do`, city), entry(`${prefix}/tao-lich-trinh`, city), ...Object.values(CATEGORY_URL_SLUG).map((slug) => entry(`${prefix}/${slug}`, city)), ...city.zones.map((zone) => entry(`${prefix}/khu-vuc/${zone.slug}`, zone)));
       } else {
         const sources = kind === 'places' ? await this.places.sitemapSources(city.id) : kind === 'lists' ? await this.lists.sitemapSources(city.id) : await this.itineraries.sitemapSources(city.id, city.slug);
         const segment = kind === 'places' ? 'dia-diem' : kind === 'lists' ? 'top' : 'lich-trinh';
