@@ -5,6 +5,7 @@ export interface MapView { center: [number, number]; zoom: number }
 
 /** Mức zoom nhỏ nhất của bản đồ thành phố (ui-spec mục 6). */
 export const MAP_MIN_ZOOM = 11;
+export const MAP_FOCUS_DURATION_MS = 280;
 const MAP_MAX_ZOOM = 22;
 
 /** Chỉ dịch bản đồ khi ghim đang bị header, sheet hoặc mép màn hình che; ghim đã thấy thì giữ nguyên khung nhìn. */
@@ -20,4 +21,17 @@ export function restorableView(saved: MapView | undefined, bounds: BBox, minZoom
   const [west, south, east, north] = bounds;
   const inside = lng >= west && lng <= east && lat >= south && lat <= north;
   return inside && saved.zoom >= minZoom && saved.zoom <= MAP_MAX_ZOOM ? saved : undefined;
+}
+
+/** Camera pans caused by choosing a card never trigger discovery requests. */
+export function viewportAction(initialized: boolean, interactive: boolean, searched: BBox | undefined, next: BBox): 'load' | 'offer' | 'none' {
+  if (!initialized) return 'load';
+  if (!interactive) return 'none';
+  return searched && next.every((value, index) => Math.abs(value - searched[index]!) < 0.000001) ? 'none' : 'offer';
+}
+
+export function pointBounds(points: readonly [number, number][], city: BBox): BBox | null {
+  const valid = points.filter(([lng, lat]) => Number.isFinite(lng) && Number.isFinite(lat) && lng >= city[0] && lng <= city[2] && lat >= city[1] && lat <= city[3]);
+  if (!valid.length) return null;
+  return [Math.min(...valid.map(point => point[0])), Math.min(...valid.map(point => point[1])), Math.max(...valid.map(point => point[0])), Math.max(...valid.map(point => point[1]))];
 }

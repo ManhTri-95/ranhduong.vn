@@ -1,0 +1,157 @@
+[
+  {
+    "name": "failed photo keeps its frame and uses the shared fallback",
+    "passed": true,
+    "detail": {
+      "heightBefore": 173.75,
+      "heightAfter": 173.75
+    }
+  },
+  {
+    "name": "empty-collection at phone/tablet/desktop",
+    "passed": true,
+    "detail": [
+      {
+        "width": 320,
+        "document": 320,
+        "h1": 1
+      },
+      {
+        "width": 390,
+        "document": 390,
+        "h1": 1
+      },
+      {
+        "width": 768,
+        "document": 768,
+        "h1": 1
+      },
+      {
+        "width": 1440,
+        "document": 1440,
+        "h1": 1
+      }
+    ]
+  },
+  {
+    "name": "long-collection at phone/tablet/desktop",
+    "passed": true,
+    "detail": [
+      {
+        "width": 320,
+        "document": 320,
+        "h1": 1
+      },
+      {
+        "width": 390,
+        "document": 390,
+        "h1": 1
+      },
+      {
+        "width": 768,
+        "document": 768,
+        "h1": 1
+      },
+      {
+        "width": 1440,
+        "document": 1440,
+        "h1": 1
+      }
+    ]
+  },
+  {
+    "name": "missing-place at phone/tablet/desktop",
+    "passed": true,
+    "detail": [
+      {
+        "width": 320,
+        "document": 320,
+        "h1": 1
+      },
+      {
+        "width": 390,
+        "document": 390,
+        "h1": 1
+      },
+      {
+        "width": 768,
+        "document": 768,
+        "h1": 1
+      },
+      {
+        "width": 1440,
+        "document": 1440,
+        "h1": 1
+      }
+    ]
+  },
+  {
+    "name": "photo-place at phone/tablet/desktop",
+    "passed": true,
+    "detail": [
+      {
+        "width": 320,
+        "document": 320,
+        "h1": 1
+      },
+      {
+        "width": 390,
+        "document": 390,
+        "h1": 1
+      },
+      {
+        "width": 768,
+        "document": 768,
+        "h1": 1
+      },
+      {
+        "width": 1440,
+        "document": 1440,
+        "h1": 1
+      }
+    ]
+  },
+  {
+    "name": "five-day-itinerary at phone/tablet/desktop",
+    "passed": true,
+    "detail": [
+      {
+        "width": 320,
+        "document": 320,
+        "h1": 1
+      },
+      {
+        "width": 390,
+        "document": 390,
+        "h1": 1
+      },
+      {
+        "width": 768,
+        "document": 768,
+        "h1": 1
+      },
+      {
+        "width": 1440,
+        "document": 1440,
+        "h1": 1
+      }
+    ]
+  },
+  {
+    "name": "itinerary day, stop and mobile map dialog stay synchronized",
+    "passed": true
+  },
+  {
+    "name": "reduced motion and unavailable fonts retain a readable static page",
+    "passed": true
+  },
+  {
+    "name": "200 percent text stress keeps the phone layout within its viewport",
+    "passed": true,
+    "detail": {
+      "width": 390,
+      "document": 390,
+      "h1": 1
+    }
+  }
+]

@@ -18,7 +18,7 @@ export function useCityTheme(citySlug: string, city: Ref<CityPublic | null | und
   });
   useHead(() => {
     const accent = String(route.params.city ?? '') === citySlug ? cityThemeAccent(city.value?.accent, source.data.value, clock.value, Boolean(source.error.value)) : undefined;
-    return { htmlAttrs: { style: accent ? `--accent:${accent};` : undefined } };
+    return { htmlAttrs: { style: accent ? `--season-accent:${accent};` : undefined } };
   });
   let timer: ReturnType<typeof setTimeout> | undefined;
   let disposed = false;

@@ -9,7 +9,7 @@ describe('S30 tài nguyên vé', () => {
     const colors = ticketColors(readTokensCss(), '#E9B824');
     for (const value of Object.values(colors)) expect(value).toMatch(/^#[0-9A-Fa-f]{6}$/);
     expect(colors.accent).toBe('#E9B824');
-    expect(colors.ink).toBe('#1E3A2F');
+    expect(colors.ink).toBe('#242C2B');
     expect(() => ticketColors(':root { --paper: #F7F2E8; }', '#E9B824')).toThrow(/--paper-raised/);
   });
   it('đủ 5 file font tĩnh, mỗi họ font kèm OFL, ảnh mặc định 1200×630', async () => {

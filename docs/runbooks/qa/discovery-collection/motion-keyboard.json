@@ -1,0 +1,71 @@
+{
+  "normal": {
+    "name": "rd-field-reveal",
+    "duration": "0.65s"
+  },
+  "widths": [
+    {
+      "viewport": 320,
+      "document": 320,
+      "route": "live",
+      "progress": "0.513"
+    },
+    {
+      "viewport": 375,
+      "document": 375,
+      "route": "live",
+      "progress": "0.513"
+    },
+    {
+      "viewport": 390,
+      "document": 390,
+      "route": "live",
+      "progress": "0.513"
+    },
+    {
+      "viewport": 430,
+      "document": 430,
+      "route": "live",
+      "progress": "0.513"
+    },
+    {
+      "viewport": 768,
+      "document": 768,
+      "route": "live",
+      "progress": "0.543"
+    },
+    {
+      "viewport": 1024,
+      "document": 1024,
+      "route": "live",
+      "progress": "0.459"
+    },
+    {
+      "viewport": 1280,
+      "document": 1280,
+      "route": "live",
+      "progress": "0.464"
+    },
+    {
+      "viewport": 1440,
+      "document": 1440,
+      "route": "live",
+      "progress": "0.465"
+    },
+    {
+      "viewport": 1920,
+      "document": 1920,
+      "route": "live",
+      "progress": "0.465"
+    }
+  ],
+  "reduced": {
+    "name": "none",
+    "duration": "0s"
+  },
+  "keyboard": {
+    "class": "rd-collection-next__card",
+    "outline": "solid",
+    "width": "3px"
+  }
+}

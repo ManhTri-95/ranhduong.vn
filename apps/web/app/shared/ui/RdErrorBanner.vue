@@ -11,6 +11,8 @@ defineEmits<{ retry: [] }>();
 </template>
 
 <style scoped>
-.banner { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-3) var(--space-4); background: var(--paper-raised); border: var(--border-hair) solid var(--ink); border-radius: var(--radius-card); }
+.banner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-3) var(--space-4); background: var(--paper-raised); border: var(--border-hair) solid var(--ink); border-radius: var(--radius-card); }
 .banner__text { margin: 0; font-size: 14px; line-height: 1.4; }
+.banner__text { flex: 1 1 200px; min-width: 0; overflow-wrap: anywhere; }
+.banner .rd-btn { flex-shrink: 0; }
 </style>

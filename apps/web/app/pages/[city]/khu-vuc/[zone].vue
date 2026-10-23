@@ -1,16 +1,11 @@
 <script setup lang="ts">
-import { PUBLIC_CATEGORIES, Slug } from '@ranhduong/contracts';
+import RdSkipLink from '~/shared/ui/RdSkipLink.vue';
+import { Slug } from '@ranhduong/contracts';
 import { computed } from 'vue';
 import { useCity } from '~/entities/city/api/city';
-import { usePlaceList, type PlaceListParams } from '~/entities/place/api/places';
-import {
-  isIndexableListing,
-  LISTING_PAGE_SIZE,
-  listingApiParams,
-  parseListingQuery,
-  placeListKey,
-} from '~/entities/place/lib/listing-query';
-import RdTagFilter from '~/features/place-tag-filter/ui/RdTagFilter.vue';
+import { usePlaceList } from '~/entities/place/api/places';
+import { areaApiParams, areaIndexable, parseAreaQuery } from '~/entities/place/lib/area-guide';
+import { placeListKey } from '~/entities/place/lib/listing-query';
 import { markUnavailableOnServer, throwIfNotFound } from '~/shared/api/page-status';
 import { useClientNow } from '~/shared/lib/use-client-now';
 import { usePageSeo } from '~/shared/lib/use-page-seo';
@@ -18,8 +13,7 @@ import { itemListJsonLd } from '~/shared/lib/seo';
 import { photoOgUrl } from '~/shared/lib/media';
 import RdErrorBanner from '~/shared/ui/RdErrorBanner.vue';
 import RdCityHeader from '~/widgets/city-header/ui/RdCityHeader.vue';
-import RdPlaceListing from '~/widgets/place-listing/ui/RdPlaceListing.vue';
-import RdZoneLinks from '~/widgets/zone-links/ui/RdZoneLinks.vue';
+import RdAreaGuide from '~/widgets/place-listing/ui/RdAreaGuide.vue';
 
 definePageMeta({
   validate: (route) => Slug.safeParse(route.params.city).success && Slug.safeParse(route.params.zone).success,
@@ -31,15 +25,9 @@ const route = useRoute();
 const citySlug = String(route.params.city);
 const zoneSlug = String(route.params.zone);
 const basePath = `/${citySlug}/khu-vuc/${zoneSlug}`;
-const filter = parseListingQuery(route.query);
-// Mọi danh mục có trang công khai (không có lưu trú, mua sắm).
-const params: PlaceListParams = {
-  category: PUBLIC_CATEGORIES.join(','),
-  zone: zoneSlug,
-  ...listingApiParams(filter),
-  limit: LISTING_PAGE_SIZE,
-};
-const [city, list] = await Promise.all([useCity(citySlug), usePlaceList(citySlug, params, placeListKey(citySlug, params))]);
+const filter = parseAreaQuery(route.query);
+const params = areaApiParams(zoneSlug, filter);
+const [city, list] = await Promise.all([useCity(citySlug), usePlaceList(citySlug, params, `${placeListKey(citySlug, params)}:rain=${filter.rainSafe}`)]);
 throwIfNotFound(city.error.value);
 // API trả 404 khi cụm không có trong thành phố.
 throwIfNotFound(list.error.value);
@@ -56,14 +44,14 @@ markUnavailableOnServer(loadFailed.value);
 const cityName = computed(() => city.data.value?.name ?? '');
 const zoneName = computed(() => zone.value?.name ?? '');
 const title = computed(() => (zoneName.value ? `Khu ${zoneName.value}` : 'Khu vực'));
-/** Gợi ý khi khu này chưa có chỗ nào: cụm đầu tiên khác cụm đang xem (thứ tự seed, Trung tâm trước). */
-const otherZone = computed(() => zones.value.find((z) => z.slug !== zoneSlug));
 const page = computed(() => list.data.value ?? null);
-const availableTags = computed(() => page.value?.tags ?? []);
 const now = useClientNow();
 
 async function retry(): Promise<void> {
   await Promise.all([city.refresh(), list.refresh()]);
+  throwIfNotFound(city.error.value);
+  throwIfNotFound(list.error.value);
+  if (city.data.value && !zone.value) throw createError({ statusCode: 404, statusMessage: 'Not Found', fatal: true });
 }
 
 const seoConfig = useRuntimeConfig().public;
@@ -72,8 +60,8 @@ usePageSeo({
   path: basePath,
   title: () => (cityName.value ? `${title.value}, ${cityName.value} · Rành Đường` : `${title.value} · Rành Đường`),
   description: () =>
-    `Cà phê, chỗ ăn, chỗ chơi ở khu ${zoneName.value}${cityName.value ? `, ${cityName.value}` : ''}: ghi chép của người rành đường, chỗ nào cũng được hỏi lại trước khi lên đây.`,
-  noindex: () => !isIndexableListing(filter) || loadFailed.value,
+    `Khám phá cà phê, chỗ ăn, chỗ chơi ở khu ${zoneName.value}${cityName.value ? `, ${cityName.value}` : ''}. Lọc theo sở thích, xem ghi chép địa điểm và tìm đường trên bản đồ.`,
+  noindex: () => !areaIndexable(filter) || loadFailed.value,
   image: () => cover.value ? photoOgUrl(seoConfig.mediaBase, cover.value) : undefined,
   breadcrumbs: () => [{ name: cityName.value || 'Thành phố', path: `/${citySlug}` }, { name: title.value, path: basePath }],
   jsonLd: () => page.value && !loadFailed.value ? [itemListJsonLd(seoConfig.siteUrl, citySlug, page.value.items, title.value)] : [],
@@ -82,38 +70,15 @@ usePageSeo({
 
 <template>
   <div>
-    <RdCityHeader :city-slug="citySlug" :city-name="cityName" />
-    <main class="main">
+    <RdSkipLink target="area-main" />
+    <RdCityHeader :city-slug="citySlug" :city-name="cityName" editorial :section-base="`/${citySlug}`" />
+    <main id="area-main" tabindex="-1" class="rd-area-page">
       <RdErrorBanner v-if="loadFailed" message="Chưa tải được hết dữ liệu, có thể mạng đang chập chờn." @retry="retry" />
-      <section class="intro">
-        <h1 class="page-title">{{ title }}</h1>
-        <p class="lead">Ghi chép của người rành đường{{ cityName ? ` ở ${cityName}` : '' }}. Chỗ nào cũng được hỏi lại trước khi lên đây.</p>
-      </section>
-      <RdTagFilter :action="basePath" :tags="availableTags" :selected="filter.tags" />
-      <RdPlaceListing
-        :city-slug="citySlug"
-        :base-path="basePath"
-        :params="params"
-        :page="page"
-        :tags="filter.tags"
-        :paged="filter.cursor !== undefined"
-        :failed="listFailed"
-        :now="now"
-      >
-        <template #empty>
-          <p class="empty-note">
-            Khu này mình chưa ghi chép chỗ nào.<template v-if="otherZone">
-              Xem <NuxtLink :to="`/${citySlug}/khu-vuc/${otherZone.slug}`">khu {{ otherZone.name }}</NuxtLink> nhé?
-            </template>
-          </p>
-        </template>
-      </RdPlaceListing>
-      <RdZoneLinks :city-slug="citySlug" :zones="zones" />
+      <RdAreaGuide :city="city.data.value ?? null" :city-slug="citySlug" :zone-slug="zoneSlug" :zone-name="zoneName" :base-path="basePath" :filter="filter" :params="params" :page="page" :failed="listFailed" :now="now" />
     </main>
   </div>
 </template>
 
 <style scoped>
-.main { max-width: 1200px; margin: 0 auto; padding: var(--space-2) var(--space-5) var(--space-7); display: flex; flex-direction: column; gap: var(--space-6); }
-.intro { display: flex; flex-direction: column; gap: var(--space-3); }
+.rd-area-page { max-width: var(--content-max); margin: 0 auto; padding: var(--space-4) var(--space-5) var(--space-12); display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-5); }
 </style>

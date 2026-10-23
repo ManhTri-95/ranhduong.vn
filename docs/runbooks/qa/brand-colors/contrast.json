@@ -1,0 +1,79 @@
+[
+  {
+    "name": "primary",
+    "foreground": "#FFFFFF",
+    "background": "#234E45",
+    "ratio": 9.345150228792576,
+    "passes": true
+  },
+  {
+    "name": "primary-hover",
+    "foreground": "#FFFFFF",
+    "background": "#1B4038",
+    "ratio": 11.431275019752086,
+    "passes": true
+  },
+  {
+    "name": "accent",
+    "foreground": "#FFFFFF",
+    "background": "#A45B3E",
+    "ratio": 5.06695997255217,
+    "passes": true
+  },
+  {
+    "name": "accent-hover",
+    "foreground": "#FFFFFF",
+    "background": "#985337",
+    "ratio": 5.789031593842948,
+    "passes": true
+  },
+  {
+    "name": "editorial",
+    "foreground": "#985337",
+    "background": "#F7F5F0",
+    "ratio": 5.313241729366688,
+    "passes": true
+  },
+  {
+    "name": "brand-chip",
+    "foreground": "#985337",
+    "background": "#F2E5DD",
+    "ratio": 4.6938750773518425,
+    "passes": true
+  },
+  {
+    "name": "selected",
+    "foreground": "#234E45",
+    "background": "#DCE8E2",
+    "ratio": 7.424486555952617,
+    "passes": true
+  },
+  {
+    "name": "disabled",
+    "foreground": "#565D58",
+    "background": "#E5E5DF",
+    "ratio": 5.352364031162712,
+    "passes": true
+  },
+  {
+    "name": "success",
+    "foreground": "#1F6B3F",
+    "background": "#DCEFE2",
+    "ratio": 5.409001507795185,
+    "passes": true
+  },
+  {
+    "name": "warning",
+    "foreground": "#6E4A00",
+    "background": "#FCEFB4",
+    "ratio": 6.866479354754508,
+    "passes": true
+  },
+  {
+    "name": "error",
+    "foreground": "#8E2F22",
+    "background": "#F6DAD5",
+    "ratio": 6.166202278140482,
+    "passes": true
+  }
+]

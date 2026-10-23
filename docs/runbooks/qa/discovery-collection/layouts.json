@@ -1,0 +1,1136 @@
+[
+  {
+    "viewport": 320,
+    "document": 320,
+    "category": "cafe",
+    "gridColumns": "280px",
+    "nextColumns": "280px",
+    "outside": [],
+    "controls": [
+      {
+        "class": "rd-btn rd-btn--primary",
+        "x": 20,
+        "width": 140.28125,
+        "height": 44
+      },
+      {
+        "class": "router-link-active router-link-exact-active",
+        "x": 24,
+        "width": 150,
+        "height": 78
+      },
+      {
+        "class": "",
+        "x": 182,
+        "width": 150,
+        "height": 78
+      },
+      {
+        "class": "",
+        "x": 340,
+        "width": 150,
+        "height": 78
+      },
+      {
+        "class": "",
+        "x": 498,
+        "width": 150,
+        "height": 78
+      },
+      {
+        "class": "",
+        "x": 250.609375,
+        "width": 44.390625,
+        "height": 44
+      },
+      {
+        "class": "",
+        "x": 24,
+        "width": 85.640625,
+        "height": 44
+      },
+      {
+        "class": "",
+        "x": 117.640625,
+        "width": 106.46875,
+        "height": 44
+      },
+      {
+        "class": "",
+        "x": 232.109375,
+        "width": 107.296875,
+        "height": 44
+      },
+      {
+        "class": "",
+        "x": 347.40625,
+        "width": 108.984375,
+        "height": 44
+      },
+      {
+        "class": "",
+        "x": 464.390625,
+        "width": 100.328125,
+        "height": 44
+      },
+      {
+        "class": "",
+        "x": 572.71875,
+        "width": 111.25,
+        "height": 44
+      },
+      {
+        "class": "rd-btn rd-btn--primary",
+        "x": 41,
+        "width": 238,
+        "height": 44
+      },
+      {
+        "class": "rd-btn rd-btn--outline",
+        "x": 113.96875,
+        "width": 92.046875,
+        "height": 44
+      },
+      {
+        "class": "rd-btn rd-btn--primary",
+        "x": 41,
+        "width": 151.3125,
+        "height": 44
+      }
+    ],
+    "glyphs": [
+      {
+        "class": "rd-place__glyph",
+        "x": 207,
+        "width": 72,
+        "height": 72
+      },
+      {
+        "class": "rd-place__glyph",
+        "x": 207,
+        "width": 72,
+        "height": 72
+      },
+      {
+        "class": "rd-place__glyph",
+        "x": 207,
+        "width": 72,
+        "height": 72
+      }
+    ],
+    "footer": {
+      "class": "rd-footer",
+      "x": 0,
+      "width": 320,
+      "height": 166
+    }
+  },
+  {
+    "viewport": 375,
+    "document": 375,
+    "category": "cafe",
+    "gridColumns": "335px",
+    "nextColumns": "335px",
+    "outside": [],
+    "controls": [
+      {
+        "class": "rd-btn rd-btn--primary",
+        "x": 20,
+        "width": 140.28125,
+        "height": 44
+      },
+      {
+        "class": "router-link-active router-link-exact-active",
+        "x": 24,
+        "width": 150,
+        "height": 78
+      },
+      {
+        "class": "",
+        "x": 182,
+        "width": 150,
+        "height": 78
+      },
+      {
+        "class": "",
+        "x": 340,
+        "width": 150,
+        "height": 78
+      },
+      {
+        "class": "",
+        "x": 498,
+        "width": 150,
+        "height": 78
+      },
+      {
+        "class": "",
+        "x": 305.609375,
+        "width": 44.390625,
+        "height": 44
+      },
+      {
+        "class": "",
+        "x": 24,
+        "width": 85.640625,
+        "height": 44
+      },
+      {
+        "class": "",
+        "x": 117.640625,
+        "width": 106.46875,
+        "height": 44
+      },
+      {
+        "class": "",
+        "x": 232.109375,
+        "width": 107.296875,
+        "height": 44
+      },
+      {
+        "class": "",
+        "x": 347.40625,
+        "width": 108.984375,
+        "height": 44
+      },
+      {
+        "class": "",
+        "x": 464.390625,
+        "width": 100.328125,
+        "height": 44
+      },
+      {
+        "class": "",
+        "x": 572.71875,
+        "width": 111.25,
+        "height": 44
+      },
+      {
+        "class": "rd-btn rd-btn--primary",
+        "x": 41,
+        "width": 293,
+        "height": 44
+      },
+      {
+        "class": "rd-btn rd-btn--outline",
+        "x": 141.46875,
+        "width": 92.046875,
+        "height": 44
+      },
+      {
+        "class": "rd-btn rd-btn--primary",
+        "x": 41,
+        "width": 151.3125,
+        "height": 44
+      }
+    ],
+    "glyphs": [
+      {
+        "class": "rd-place__glyph",
+        "x": 262,
+        "width": 72,
+        "height": 72
+      },
+      {
+        "class": "rd-place__glyph",
+        "x": 262,
+        "width": 72,
+        "height": 72
+      },
+      {
+        "class": "rd-place__glyph",
+        "x": 262,
+        "width": 72,
+        "height": 72
+      }
+    ],
+    "footer": {
+      "class": "rd-footer",
+      "x": 0,
+      "width": 375,
+      "height": 114
+    }
+  },
+  {
+    "viewport": 390,
+    "document": 390,
+    "category": "cafe",
+    "gridColumns": "350px",
+    "nextColumns": "350px",
+    "outside": [],
+    "controls": [
+      {
+        "class": "rd-btn rd-btn--primary",
+        "x": 20,
+        "width": 140.28125,
+        "height": 44
+      },
+      {
+        "class": "router-link-active router-link-exact-active",
+        "x": 24,
+        "width": 150,
+        "height": 78
+      },
+      {
+        "class": "",
+        "x": 182,
+        "width": 150,
+        "height": 78
+      },
+      {
+        "class": "",
+        "x": 340,
+        "width": 150,
+        "height": 78
+      },
+      {
+        "class": "",
+        "x": 498,
+        "width": 150,
+        "height": 78
+      },
+      {
+        "class": "",
+        "x": 320.609375,
+        "width": 44.390625,
+        "height": 44
+      },
+      {
+        "class": "",
+        "x": 24,
+        "width": 85.640625,
+        "height": 44
+      },
+      {
+        "class": "",
+        "x": 117.640625,
+        "width": 106.46875,
+        "height": 44
+      },
+      {
+        "class": "",
+        "x": 232.109375,
+        "width": 107.296875,
+        "height": 44
+      },
+      {
+        "class": "",
+        "x": 347.40625,
+        "width": 108.984375,
+        "height": 44
+      },
+      {
+        "class": "",
+        "x": 464.390625,
+        "width": 100.328125,
+        "height": 44
+      },
+      {
+        "class": "",
+        "x": 572.71875,
+        "width": 111.25,
+        "height": 44
+      },
+      {
+        "class": "rd-btn rd-btn--primary",
+        "x": 41,
+        "width": 308,
+        "height": 44
+      },
+      {
+        "class": "rd-btn rd-btn--outline",
+        "x": 148.96875,
+        "width": 92.046875,
+        "height": 44
+      },
+      {
+        "class": "rd-btn rd-btn--primary",
+        "x": 41,
+        "width": 151.3125,
+        "height": 44
+      }
+    ],
+    "glyphs": [
+      {
+        "class": "rd-place__glyph",
+        "x": 277,
+        "width": 72,
+        "height": 72
+      },
+      {
+        "class": "rd-place__glyph",
+        "x": 277,
+        "width": 72,
+        "height": 72
+      },
+      {
+        "class": "rd-place__glyph",
+        "x": 277,
+        "width": 72,
+        "height": 72
+      }
+    ],
+    "footer": {
+      "class": "rd-footer",
+      "x": 0,
+      "width": 390,
+      "height": 114
+    }
+  },
+  {
+    "viewport": 430,
+    "document": 430,
+    "category": "cafe",
+    "gridColumns": "390px",
+    "nextColumns": "390px",
+    "outside": [],
+    "controls": [
+      {
+        "class": "rd-btn rd-btn--primary",
+        "x": 20,
+        "width": 140.28125,
+        "height": 44
+      },
+      {
+        "class": "router-link-active router-link-exact-active",
+        "x": 24,
+        "width": 150,
+        "height": 78
+      },
+      {
+        "class": "",
+        "x": 182,
+        "width": 150,
+        "height": 78
+      },
+      {
+        "class": "",
+        "x": 340,
+        "width": 150,
+        "height": 78
+      },
+      {
+        "class": "",
+        "x": 498,
+        "width": 150,
+        "height": 78
+      },
+      {
+        "class": "",
+        "x": 267.53125,
+        "width": 44.390625,
+        "height": 44
+      },
+      {
+        "class": "",
+        "x": 24,
+        "width": 85.640625,
+        "height": 44
+      },
+      {
+        "class": "",
+        "x": 117.640625,
+        "width": 106.46875,
+        "height": 44
+      },
+      {
+        "class": "",
+        "x": 232.109375,
+        "width": 107.296875,
+        "height": 44
+      },
+      {
+        "class": "",
+        "x": 347.40625,
+        "width": 108.984375,
+        "height": 44
+      },
+      {
+        "class": "",
+        "x": 464.390625,
+        "width": 100.328125,
+        "height": 44
+      },
+      {
+        "class": "",
+        "x": 572.71875,
+        "width": 111.25,
+        "height": 44
+      },
+      {
+        "class": "rd-btn rd-btn--primary",
+        "x": 41,
+        "width": 348,
+        "height": 44
+      },
+      {
+        "class": "rd-btn rd-btn--outline",
+        "x": 168.96875,
+        "width": 92.046875,
+        "height": 44
+      },
+      {
+        "class": "rd-btn rd-btn--primary",
+        "x": 41,
+        "width": 151.3125,
+        "height": 44
+      }
+    ],
+    "glyphs": [
+      {
+        "class": "rd-place__glyph",
+        "x": 317,
+        "width": 72,
+        "height": 72
+      },
+      {
+        "class": "rd-place__glyph",
+        "x": 317,
+        "width": 72,
+        "height": 72
+      },
+      {
+        "class": "rd-place__glyph",
+        "x": 317,
+        "width": 72,
+        "height": 72
+      }
+    ],
+    "footer": {
+      "class": "rd-footer",
+      "x": 0,
+      "width": 430,
+      "height": 114
+    }
+  },
+  {
+    "viewport": 768,
+    "document": 768,
+    "category": "cafe",
+    "gridColumns": "350px 350px",
+    "nextColumns": "358px 358px",
+    "outside": [],
+    "controls": [
+      {
+        "class": "rd-btn rd-btn--primary",
+        "x": 20,
+        "width": 140.28125,
+        "height": 44
+      },
+      {
+        "class": "router-link-active router-link-exact-active",
+        "x": 24,
+        "width": 174,
+        "height": 78
+      },
+      {
+        "class": "",
+        "x": 206,
+        "width": 174,
+        "height": 78
+      },
+      {
+        "class": "",
+        "x": 388,
+        "width": 174,
+        "height": 78
+      },
+      {
+        "class": "",
+        "x": 570,
+        "width": 174,
+        "height": 78
+      },
+      {
+        "class": "",
+        "x": 589.53125,
+        "width": 44.390625,
+        "height": 44
+      },
+      {
+        "class": "",
+        "x": 24,
+        "width": 85.640625,
+        "height": 44
+      },
+      {
+        "class": "",
+        "x": 117.640625,
+        "width": 106.46875,
+        "height": 44
+      },
+      {
+        "class": "",
+        "x": 232.109375,
+        "width": 107.296875,
+        "height": 44
+      },
+      {
+        "class": "",
+        "x": 347.40625,
+        "width": 108.984375,
+        "height": 44
+      },
+      {
+        "class": "",
+        "x": 464.390625,
+        "width": 100.328125,
+        "height": 44
+      },
+      {
+        "class": "",
+        "x": 572.71875,
+        "width": 111.25,
+        "height": 44
+      },
+      {
+        "class": "rd-btn rd-btn--primary",
+        "x": 571.828125,
+        "width": 155.171875,
+        "height": 44
+      },
+      {
+        "class": "rd-btn rd-btn--outline",
+        "x": 337.96875,
+        "width": 92.046875,
+        "height": 44
+      },
+      {
+        "class": "rd-btn rd-btn--primary",
+        "x": 53,
+        "width": 151.3125,
+        "height": 44
+      }
+    ],
+    "glyphs": [
+      {
+        "class": "rd-place__glyph",
+        "x": 285,
+        "width": 72,
+        "height": 72
+      },
+      {
+        "class": "rd-place__glyph",
+        "x": 655,
+        "width": 72,
+        "height": 72
+      },
+      {
+        "class": "rd-place__glyph",
+        "x": 285,
+        "width": 72,
+        "height": 72
+      }
+    ],
+    "footer": {
+      "class": "rd-footer",
+      "x": 0,
+      "width": 768,
+      "height": 85
+    }
+  },
+  {
+    "viewport": 1024,
+    "document": 1024,
+    "category": "cafe",
+    "gridColumns": "306.656px 306.672px 306.656px",
+    "nextColumns": "320px 320px 320px",
+    "outside": [],
+    "controls": [
+      {
+        "class": "rd-btn rd-btn--primary",
+        "x": 20,
+        "width": 140.28125,
+        "height": 44
+      },
+      {
+        "class": "router-link-active router-link-exact-active",
+        "x": 206,
+        "width": 192.5,
+        "height": 78
+      },
+      {
+        "class": "",
+        "x": 406.5,
+        "width": 192.5,
+        "height": 78
+      },
+      {
+        "class": "",
+        "x": 607,
+        "width": 192.5,
+        "height": 78
+      },
+      {
+        "class": "",
+        "x": 807.5,
+        "width": 192.5,
+        "height": 78
+      },
+      {
+        "class": "",
+        "x": 845.53125,
+        "width": 44.390625,
+        "height": 44
+      },
+      {
+        "class": "",
+        "x": 24,
+        "width": 85.640625,
+        "height": 44
+      },
+      {
+        "class": "",
+        "x": 117.640625,
+        "width": 106.46875,
+        "height": 44
+      },
+      {
+        "class": "",
+        "x": 232.109375,
+        "width": 107.296875,
+        "height": 44
+      },
+      {
+        "class": "",
+        "x": 347.40625,
+        "width": 108.984375,
+        "height": 44
+      },
+      {
+        "class": "",
+        "x": 464.390625,
+        "width": 100.328125,
+        "height": 44
+      },
+      {
+        "class": "",
+        "x": 572.71875,
+        "width": 111.25,
+        "height": 44
+      },
+      {
+        "class": "rd-btn rd-btn--primary",
+        "x": 757.34375,
+        "width": 225.65625,
+        "height": 44
+      },
+      {
+        "class": "rd-btn rd-btn--outline",
+        "x": 465.96875,
+        "width": 92.046875,
+        "height": 44
+      },
+      {
+        "class": "rd-btn rd-btn--primary",
+        "x": 53,
+        "width": 151.3125,
+        "height": 44
+      }
+    ],
+    "glyphs": [
+      {
+        "class": "rd-place__glyph",
+        "x": 247,
+        "width": 72,
+        "height": 72
+      },
+      {
+        "class": "rd-place__glyph",
+        "x": 579,
+        "width": 72,
+        "height": 72
+      },
+      {
+        "class": "rd-place__glyph",
+        "x": 911,
+        "width": 72,
+        "height": 72
+      }
+    ],
+    "footer": {
+      "class": "rd-footer",
+      "x": 0,
+      "width": 1024,
+      "height": 85
+    }
+  },
+  {
+    "viewport": 1280,
+    "document": 1280,
+    "category": "cafe",
+    "gridColumns": "378.656px 378.672px 378.656px",
+    "nextColumns": "392px 392px 392px",
+    "outside": [],
+    "controls": [
+      {
+        "class": "rd-btn rd-btn--primary",
+        "x": 40,
+        "width": 140.28125,
+        "height": 44
+      },
+      {
+        "class": "router-link-active router-link-exact-active",
+        "x": 226,
+        "width": 246.5,
+        "height": 78
+      },
+      {
+        "class": "",
+        "x": 480.5,
+        "width": 246.5,
+        "height": 78
+      },
+      {
+        "class": "",
+        "x": 735,
+        "width": 246.5,
+        "height": 78
+      },
+      {
+        "class": "",
+        "x": 989.5,
+        "width": 246.5,
+        "height": 78
+      },
+      {
+        "class": "",
+        "x": 1081.53125,
+        "width": 44.390625,
+        "height": 44
+      },
+      {
+        "class": "",
+        "x": 44,
+        "width": 85.640625,
+        "height": 44
+      },
+      {
+        "class": "",
+        "x": 137.640625,
+        "width": 106.46875,
+        "height": 44
+      },
+      {
+        "class": "",
+        "x": 252.109375,
+        "width": 107.296875,
+        "height": 44
+      },
+      {
+        "class": "",
+        "x": 367.40625,
+        "width": 108.984375,
+        "height": 44
+      },
+      {
+        "class": "",
+        "x": 484.390625,
+        "width": 100.328125,
+        "height": 44
+      },
+      {
+        "class": "",
+        "x": 592.71875,
+        "width": 111.25,
+        "height": 44
+      },
+      {
+        "class": "rd-btn rd-btn--primary",
+        "x": 933.859375,
+        "width": 285.140625,
+        "height": 44
+      },
+      {
+        "class": "rd-btn rd-btn--outline",
+        "x": 593.96875,
+        "width": 92.046875,
+        "height": 44
+      },
+      {
+        "class": "rd-btn rd-btn--primary",
+        "x": 73,
+        "width": 151.3125,
+        "height": 44
+      }
+    ],
+    "glyphs": [
+      {
+        "class": "rd-place__glyph",
+        "x": 339,
+        "width": 72,
+        "height": 72
+      },
+      {
+        "class": "rd-place__glyph",
+        "x": 743,
+        "width": 72,
+        "height": 72
+      },
+      {
+        "class": "rd-place__glyph",
+        "x": 1147,
+        "width": 72,
+        "height": 72
+      }
+    ],
+    "footer": {
+      "class": "rd-footer",
+      "x": 0,
+      "width": 1280,
+      "height": 85
+    }
+  },
+  {
+    "viewport": 1440,
+    "document": 1440,
+    "category": "cafe",
+    "gridColumns": "378.656px 378.672px 378.656px",
+    "nextColumns": "392px 392px 392px",
+    "outside": [],
+    "controls": [
+      {
+        "class": "rd-btn rd-btn--primary",
+        "x": 120,
+        "width": 140.28125,
+        "height": 44
+      },
+      {
+        "class": "router-link-active router-link-exact-active",
+        "x": 306,
+        "width": 246.5,
+        "height": 78
+      },
+      {
+        "class": "",
+        "x": 560.5,
+        "width": 246.5,
+        "height": 78
+      },
+      {
+        "class": "",
+        "x": 815,
+        "width": 246.5,
+        "height": 78
+      },
+      {
+        "class": "",
+        "x": 1069.5,
+        "width": 246.5,
+        "height": 78
+      },
+      {
+        "class": "",
+        "x": 1161.53125,
+        "width": 44.390625,
+        "height": 44
+      },
+      {
+        "class": "",
+        "x": 124,
+        "width": 85.640625,
+        "height": 44
+      },
+      {
+        "class": "",
+        "x": 217.640625,
+        "width": 106.46875,
+        "height": 44
+      },
+      {
+        "class": "",
+        "x": 332.109375,
+        "width": 107.296875,
+        "height": 44
+      },
+      {
+        "class": "",
+        "x": 447.40625,
+        "width": 108.984375,
+        "height": 44
+      },
+      {
+        "class": "",
+        "x": 564.390625,
+        "width": 100.328125,
+        "height": 44
+      },
+      {
+        "class": "",
+        "x": 672.71875,
+        "width": 111.25,
+        "height": 44
+      },
+      {
+        "class": "rd-btn rd-btn--primary",
+        "x": 1013.859375,
+        "width": 285.140625,
+        "height": 44
+      },
+      {
+        "class": "rd-btn rd-btn--outline",
+        "x": 673.96875,
+        "width": 92.046875,
+        "height": 44
+      },
+      {
+        "class": "rd-btn rd-btn--primary",
+        "x": 153,
+        "width": 151.3125,
+        "height": 44
+      }
+    ],
+    "glyphs": [
+      {
+        "class": "rd-place__glyph",
+        "x": 419,
+        "width": 72,
+        "height": 72
+      },
+      {
+        "class": "rd-place__glyph",
+        "x": 823,
+        "width": 72,
+        "height": 72
+      },
+      {
+        "class": "rd-place__glyph",
+        "x": 1227,
+        "width": 72,
+        "height": 72
+      }
+    ],
+    "footer": {
+      "class": "rd-footer",
+      "x": 0,
+      "width": 1440,
+      "height": 85
+    }
+  },
+  {
+    "viewport": 1920,
+    "document": 1920,
+    "category": "cafe",
+    "gridColumns": "378.656px 378.672px 378.656px",
+    "nextColumns": "392px 392px 392px",
+    "outside": [],
+    "controls": [
+      {
+        "class": "rd-btn rd-btn--primary",
+        "x": 360,
+        "width": 140.28125,
+        "height": 44
+      },
+      {
+        "class": "router-link-active router-link-exact-active",
+        "x": 546,
+        "width": 246.5,
+        "height": 78
+      },
+      {
+        "class": "",
+        "x": 800.5,
+        "width": 246.5,
+        "height": 78
+      },
+      {
+        "class": "",
+        "x": 1055,
+        "width": 246.5,
+        "height": 78
+      },
+      {
+        "class": "",
+        "x": 1309.5,
+        "width": 246.5,
+        "height": 78
+      },
+      {
+        "class": "",
+        "x": 1401.53125,
+        "width": 44.390625,
+        "height": 44
+      },
+      {
+        "class": "",
+        "x": 364,
+        "width": 85.640625,
+        "height": 44
+      },
+      {
+        "class": "",
+        "x": 457.640625,
+        "width": 106.46875,
+        "height": 44
+      },
+      {
+        "class": "",
+        "x": 572.109375,
+        "width": 107.296875,
+        "height": 44
+      },
+      {
+        "class": "",
+        "x": 687.40625,
+        "width": 108.984375,
+        "height": 44
+      },
+      {
+        "class": "",
+        "x": 804.390625,
+        "width": 100.328125,
+        "height": 44
+      },
+      {
+        "class": "",
+        "x": 912.71875,
+        "width": 111.25,
+        "height": 44
+      },
+      {
+        "class": "rd-btn rd-btn--primary",
+        "x": 1253.859375,
+        "width": 285.140625,
+        "height": 44
+      },
+      {
+        "class": "rd-btn rd-btn--outline",
+        "x": 913.96875,
+        "width": 92.046875,
+        "height": 44
+      },
+      {
+        "class": "rd-btn rd-btn--primary",
+        "x": 393,
+        "width": 151.3125,
+        "height": 44
+      }
+    ],
+    "glyphs": [
+      {
+        "class": "rd-place__glyph",
+        "x": 659,
+        "width": 72,
+        "height": 72
+      },
+      {
+        "class": "rd-place__glyph",
+        "x": 1063,
+        "width": 72,
+        "height": 72
+      },
+      {
+        "class": "rd-place__glyph",
+        "x": 1467,
+        "width": 72,
+        "height": 72
+      }
+    ],
+    "footer": {
+      "class": "rd-footer",
+      "x": 0,
+      "width": 1920,
+      "height": 85
+    }
+  }
+]

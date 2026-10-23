@@ -1,0 +1,66 @@
+{
+  "enabled": {
+    "name": "rd-field-reveal",
+    "duration": "0.65s"
+  },
+  "reduced": {
+    "name": "none",
+    "duration": "0s"
+  },
+  "widths": [
+    {
+      "viewport": 320,
+      "document": 320,
+      "route": "live",
+      "progress": "0.512"
+    },
+    {
+      "viewport": 375,
+      "document": 375,
+      "route": "live",
+      "progress": "0.503"
+    },
+    {
+      "viewport": 390,
+      "document": 390,
+      "route": "live",
+      "progress": "0.503"
+    },
+    {
+      "viewport": 430,
+      "document": 430,
+      "route": "live",
+      "progress": "0.503"
+    },
+    {
+      "viewport": 768,
+      "document": 768,
+      "route": "live",
+      "progress": "0.526"
+    },
+    {
+      "viewport": 1024,
+      "document": 1024,
+      "route": "live",
+      "progress": "0.470"
+    },
+    {
+      "viewport": 1280,
+      "document": 1280,
+      "route": "live",
+      "progress": "0.475"
+    },
+    {
+      "viewport": 1440,
+      "document": 1440,
+      "route": "live",
+      "progress": "0.476"
+    },
+    {
+      "viewport": 1920,
+      "document": 1920,
+      "route": "live",
+      "progress": "0.476"
+    }
+  ]
+}

@@ -18,7 +18,9 @@ async function share(): Promise<void> {
     catch (error) { if (error instanceof Error && error.name === 'AbortError') return; }
   }
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  document.getElementById('itinerary-share-title')?.scrollIntoView({ block: 'start', behavior: reduced ? 'instant' : 'smooth' });
+  const heading = document.getElementById('itinerary-share-title');
+  heading?.focus({ preventScroll: true });
+  heading?.scrollIntoView({ block: 'start', behavior: reduced ? 'instant' : 'smooth' });
 }
 </script>
 
@@ -30,7 +32,7 @@ async function share(): Promise<void> {
     <button v-if="ticket" type="button" class="rd-icon-btn rd-itinerary-action-bar__ticket" aria-label="Tạo vé để chia sẻ" @click="emit('ticket')">
       <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18v4a2 2 0 0 0 0 4v4H3v-4a2 2 0 0 0 0-4z" /><path d="M14 7v10" stroke-dasharray="2 2" /></svg>
     </button>
-    <a v-if="mode === 'directions' && href && stop?.place" class="rd-btn rd-btn--accent rd-itinerary-action-bar__go" :href="href" target="_blank" rel="noopener noreferrer" :aria-label="`Chỉ đường đến điểm ${stop.number}: ${stop.place.name}`" data-rd-event="direction_click" :data-rd-place-id="stop.place.id">
+    <a v-if="mode === 'directions' && href && stop?.place" class="rd-btn rd-btn--primary rd-itinerary-action-bar__go" :href="href" target="_blank" rel="noopener noreferrer" :aria-label="`Chỉ đường đến điểm ${stop.number}: ${stop.place.name}`" data-rd-event="direction_click" :data-rd-place-id="stop.place.id">
       <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-8-8 18-2-8-8-2z" /></svg>
       <span class="rd-itinerary-action-bar__label"><span class="rd-itinerary-action-bar__kicker">Chỉ đường · điểm {{ stop.number }}</span><span class="rd-itinerary-action-bar__name">{{ stop.place.name }}</span></span>
     </a>

@@ -11,6 +11,15 @@ describe('sheetHeights', () => {
     expect(sheetHeights(400, 100, 72)).toEqual({ collapsed: 72, half: 200, expanded: 260 });
     expect(sheetHeights(200, 100, 72)).toEqual({ collapsed: 72, half: 72, expanded: 72 });
   });
+  it('reserves the actual attribution height when it wraps on a narrow screen', () => {
+    expect(sheetHeights(844, 138, 140, 96)).toEqual({ collapsed: 140, half: 422, expanded: 610 });
+  });
+  it('retains list space with the compact landscape header and sheet controls', () => {
+    const compact = sheetHeights(320, 138, 46, 56);
+    expect(compact.expanded - compact.collapsed).toBeGreaterThanOrEqual(80);
+    const expanded = sheetHeights(320, 92, 46, 56);
+    expect(expanded.expanded - expanded.collapsed).toBeGreaterThanOrEqual(120);
+  });
 });
 
 describe('settleSnap', () => {

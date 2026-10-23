@@ -4,31 +4,39 @@
 /* Nút */
 .rd-btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); height: var(--button-height); padding: 0 var(--space-6); border-radius: var(--radius-pill); font: 700 15px/1 var(--font-body); text-decoration: none; cursor: pointer; box-sizing: border-box; border: 0; }
 .rd-btn svg { width: 20px; height: 20px; }
-.rd-btn--primary { background: var(--ink); color: var(--paper-raised); }
-.rd-btn--accent { background: var(--accent); color: var(--ink); border: var(--border-strong) solid var(--ink); }
-.rd-btn--outline { background: transparent; color: var(--ink); border: var(--border-hair) solid var(--ink); height: var(--tap-min); padding: 0 var(--space-4); font-size: 14px; }
-.rd-btn--dashed { background: transparent; color: var(--ink); border: var(--border-strong) dashed var(--ink); }
-.rd-btn--float { background: var(--ink); color: var(--paper-raised); box-shadow: var(--shadow-float); }
+.rd-btn--primary { background: var(--brand-primary); color: var(--brand-primary-foreground); }
+.rd-btn--accent { background: var(--brand-accent-strong); color: var(--brand-accent-foreground); border: var(--border-strong) solid var(--brand-accent-strong); }
+.rd-btn--outline { background: transparent; color: var(--brand-primary); border: var(--border-hair) solid var(--brand-primary); height: var(--tap-min); padding: 0 var(--space-4); font-size: 14px; }
+.rd-btn--dashed { background: transparent; color: var(--brand-primary); border: var(--border-strong) dashed var(--brand-primary); }
+.rd-btn--ghost { background: transparent; color: var(--brand-primary); }
+.rd-btn--float { background: var(--brand-primary); color: var(--brand-primary-foreground); box-shadow: var(--shadow-float); }
 .rd-icon-btn { width: var(--tap-min); height: var(--tap-min); display: inline-flex; align-items: center; justify-content: center; border-radius: var(--radius-pill); background: var(--paper-raised); border: var(--border-hair) solid var(--line); color: var(--ink); cursor: pointer; }
-.rd-btn:focus-visible, .rd-icon-btn:focus-visible, .rd-chip:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+.rd-btn:focus-visible, .rd-icon-btn:focus-visible, .rd-chip:focus-visible { outline: 3px solid var(--brand-primary); outline-offset: 2px; box-shadow: 0 0 0 2px var(--paper-raised); }
 /* Phản hồi khi bấm: thuộc tính `scale` riêng nên không đè transform định vị (nút nổi, marker). */
 .rd-btn, .rd-icon-btn, .rd-chip--filter, .rd-chip--tag { -webkit-tap-highlight-color: transparent; transition: scale var(--dur-micro) var(--ease-out), background-color var(--dur-standard) var(--ease-out), color var(--dur-standard) var(--ease-out), border-color var(--dur-standard) var(--ease-out); }
 .rd-btn:active, .rd-icon-btn:active, .rd-chip--filter:active, .rd-chip--tag:active { scale: var(--press-scale); }
 @media (hover: hover) {
-  .rd-btn--outline:hover, .rd-icon-btn:hover, .rd-chip--filter:hover { border-color: var(--ink); background-color: var(--paper); }
-  .rd-chip--filter[aria-pressed="true"]:hover, .rd-chip--filter[aria-current="page"]:hover { background-color: var(--ink); }
+  .rd-btn--primary:not(:disabled):not([aria-disabled='true']):hover, .rd-btn--float:not(:disabled):not([aria-disabled='true']):hover { background-color: var(--brand-primary-hover); }
+  .rd-btn--accent:not(:disabled):not([aria-disabled='true']):hover { background-color: var(--brand-accent-text); border-color: var(--brand-accent-text); }
+  .rd-btn--outline:not(:disabled):not([aria-disabled='true']):hover, .rd-btn--ghost:not(:disabled):not([aria-disabled='true']):hover, .rd-btn--dashed:not(:disabled):not([aria-disabled='true']):hover, .rd-icon-btn:not(:disabled):hover, .rd-chip--filter:not(:disabled):hover { border-color: var(--brand-primary); background-color: var(--mist); }
+  .rd-chip--filter[aria-pressed="true"]:hover, .rd-chip--filter[aria-current="page"]:hover { background-color: var(--selected-surface); }
 }
+.rd-btn--primary:not(:disabled):not([aria-disabled='true']):active, .rd-btn--float:not(:disabled):not([aria-disabled='true']):active { background-color: var(--brand-primary-hover); }
+.rd-btn--accent:not(:disabled):not([aria-disabled='true']):active { background-color: var(--brand-accent-text); }
+.rd-btn:disabled, .rd-btn[aria-disabled='true'], .rd-icon-btn:disabled { background: var(--disabled-surface); color: var(--disabled-foreground); border-color: var(--disabled-border); opacity: 1; cursor: not-allowed; }
 
 /* Chip */
 .rd-chip { display: inline-flex; align-items: center; gap: var(--space-1); padding: 3px 10px; border-radius: var(--radius-thumb); font: 700 12px/16px var(--font-body); color: var(--ink); background: var(--mist); border: 0; }
-.rd-chip--accent { background: var(--accent); }
+.rd-chip--accent { background: var(--note); color: var(--brand-accent-text); }
+.rd-chip--success { background: var(--status-ok-bg); color: var(--status-ok); }
+.rd-chip--season { background: var(--mist); color: var(--brand-primary); }
 .rd-chip--partner, .rd-chip--outline { background: transparent; border: var(--border-hair) solid var(--ink); }
 .rd-chip--filter { height: var(--tap-min); padding: 0 var(--space-4); border-radius: var(--radius-pill); font-size: 14px; font-weight: 600; background: var(--paper-raised); border: var(--border-hair) solid var(--line); cursor: pointer; }
 /* Đang chọn: nút lọc (aria-pressed) hoặc link tới trang đang xem (NuxtLink tự gắn aria-current="page"). */
-.rd-chip--filter[aria-pressed="true"], .rd-chip--filter[aria-current="page"] { background: var(--ink); color: var(--paper-raised); border-color: var(--ink); }
+.rd-chip--filter[aria-pressed="true"], .rd-chip--filter[aria-current="page"] { background: var(--selected-surface); color: var(--selected-foreground); border-color: var(--selected-border); }
 /* Chip lọc theo thẻ (thuộc tính, ui-spec §4): nền --mist; đang chọn viền đậm và dấu ✓, không chỉ dựa vào màu. */
 .rd-chip--tag { min-height: var(--tap-min); padding: 0 var(--space-3); gap: 6px; border-radius: var(--radius-pill); font-size: 14px; font-weight: 600; background: var(--mist); border: var(--border-strong) solid transparent; cursor: pointer; box-sizing: border-box; }
-.rd-chip--tag[aria-pressed="true"] { background: var(--paper-raised); border-color: var(--ink); }
+.rd-chip--tag[aria-pressed="true"] { background: var(--selected-surface); color: var(--selected-foreground); border-color: var(--selected-border); }
 .rd-chip--tag svg { width: 16px; height: 16px; }
 .rd-chip__count { font-weight: 400; font-size: 13px; color: var(--ink-soft); }
 @media (hover: hover) { .rd-chip--tag:hover { border-color: var(--ink-soft); } .rd-chip--tag[aria-pressed="true"]:hover { border-color: var(--ink); } }
@@ -96,7 +104,7 @@ a.rd-place:active { scale: var(--press-scale); }
 .rd-season__title { font: 700 20px/1.2 var(--font-display); }
 .rd-season__sub { font: 400 13px/1.45 var(--font-body); color: var(--ink-soft); }
 .rd-season__art { flex: 0 0 96px; height: 96px; }
-.rd-season__art .fill { fill: var(--accent); }
+.rd-season__art .fill { fill: var(--season-accent); }
 
 /* Ô thời tiết */
 .rd-weather { display: flex; align-items: center; gap: 14px; padding: 14px var(--space-4); background: var(--ink); color: var(--paper-raised); border-radius: 18px; }
@@ -115,7 +123,7 @@ a.rd-place:active { scale: var(--press-scale); }
 .rd-stop { display: flex; gap: 14px; }
 .rd-stop__rail { flex: 0 0 var(--stop-dot); display: flex; flex-direction: column; align-items: center; }
 .rd-stop__dot { width: var(--stop-dot); height: var(--stop-dot); border-radius: var(--radius-pill); background: var(--ink); color: var(--paper-raised); display: flex; align-items: center; justify-content: center; font: 700 15px var(--font-body); box-sizing: border-box; }
-.rd-stop--end .rd-stop__dot { background: var(--accent); color: var(--ink); border: var(--border-strong) solid var(--ink); }
+.rd-stop--end .rd-stop__dot { background: var(--selected-surface); color: var(--selected-foreground); border: var(--border-strong) solid var(--selected-border); }
 .rd-stop__line { flex: 1; width: 0; margin-top: 4px; border-left: var(--border-strong) dashed var(--ink); }
 .rd-stop__body { flex: 1; min-width: 0; padding-bottom: var(--space-2); }
 .rd-stop__time { font: 700 13px/18px var(--font-body); color: var(--ink-soft); }
@@ -138,13 +146,13 @@ a.rd-place:active { scale: var(--press-scale); }
 
 /* Ghim bản đồ */
 .rd-pin path.drop { fill: var(--paper-raised); stroke: var(--ink); stroke-width: 1.8; }
-.rd-pin--active path.drop { fill: var(--accent); stroke-width: 2; }
+.rd-pin--active path.drop { fill: var(--selected-surface); stroke: var(--selected-border); stroke-width: 2; }
 .rd-pin .glyph { fill: none; stroke: var(--ink); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 
 /* Tem */
 .rd-stamp { width: 92px; }
 .rd-stamp .frame { fill: var(--paper-raised); stroke: var(--ink); stroke-width: 1.5; stroke-dasharray: 3 4; }
-.rd-stamp .inner { fill: var(--accent); stroke: var(--ink); stroke-width: 1.5; }
+.rd-stamp .inner { fill: var(--note); stroke: var(--brand-accent); stroke-width: 1.5; }
 .rd-stamp .art { fill: none; stroke: var(--ink); stroke-width: 1.6; stroke-linecap: round; }
 .rd-stamp--missing { opacity: 0.55; }
 .rd-stamp--missing .inner { fill: var(--paper); }
@@ -156,7 +164,7 @@ a.rd-place:active { scale: var(--press-scale); }
 .rd-season-banner p { margin: 0; color: var(--ink-soft); line-height: 1.6; overflow-wrap: anywhere; white-space: pre-line; }
 .rd-season-banner__link { min-height: var(--tap-min); display: inline-flex; align-items: center; gap: var(--space-2); color: var(--ink); text-decoration: underline; text-underline-offset: 3px; font-weight: 600; overflow-wrap: anywhere; }
 .rd-season-banner .rd-season-illustration { transform-origin: 50% 80%; }
-.rd-season-banner[data-rd-motion-state='running'] .rd-season-illustration, .rd-season-banner[data-rd-motion-state='paused'] .rd-season-illustration { animation: rd-season-sway 4s ease-in-out infinite; }
+.rd-season-banner[data-rd-motion-state='running'] .rd-season-illustration, .rd-season-banner[data-rd-motion-state='paused'] .rd-season-illustration { animation: rd-season-sway 650ms ease-in-out 1; }
 .rd-season-banner[data-rd-motion-state='paused'] .rd-season-illustration { animation-play-state: paused; }
-@keyframes rd-season-sway { 0%, 100% { transform: rotate(-2deg); } 50% { transform: rotate(2deg); } }
+@keyframes rd-season-sway { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(2deg); } }
 @media (prefers-reduced-motion: reduce) { .rd-season-banner .rd-season-illustration { animation: none; } }

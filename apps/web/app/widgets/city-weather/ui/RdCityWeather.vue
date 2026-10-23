@@ -44,7 +44,7 @@ onScopeDispose(() => { clearTimeout(timer); if (mounted) document.removeEventLis
           <p class="rd-weather__sub">{{ display.hint }}</p>
         </div>
       </div>
-      <NuxtLink v-if="display.rainMode" class="rd-city-weather__rain" :to="`/${citySlug}/ban-do?rainSafe=true`">Quán trú mưa được gần bạn →</NuxtLink>
+      <NuxtLink v-if="display.rainMode" class="rd-city-weather__rain" :to="`/${citySlug}/ban-do?rainSafe=true`">Tìm quán có mái che →</NuxtLink>
       <div class="rd-city-weather__source">
         <p><a href="https://www.weatherapi.com/" target="_blank" rel="noopener noreferrer">WeatherAPI.com</a> · Thời tiết chỉ để tham khảo, có thể khác theo vị trí và thời điểm.</p>
         <details>

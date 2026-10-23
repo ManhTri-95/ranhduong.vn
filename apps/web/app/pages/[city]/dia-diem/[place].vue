@@ -10,6 +10,7 @@ import { usePageSeo } from '~/shared/lib/use-page-seo';
 import { markUnavailableOnServer, throwIfNotFound } from '~/shared/api/page-status';
 import { useClientNow } from '~/shared/lib/use-client-now';
 import RdErrorBanner from '~/shared/ui/RdErrorBanner.vue';
+import RdSkipLink from '~/shared/ui/RdSkipLink.vue';
 import RdCityHeader from '~/widgets/city-header/ui/RdCityHeader.vue';
 import RdPlaceDetail from '~/widgets/place-detail/ui/RdPlaceDetail.vue';
 
@@ -48,19 +49,25 @@ usePageSeo({
 </script>
 
 <template>
-  <div>
-    <RdCityHeader :city-slug="citySlug" :city-name="city.data.value?.name ?? ''" />
-    <main class="rd-detail-page">
-      <nav aria-label="Đường dẫn trang"><NuxtLink class="rd-detail-page__back" :to="`/${citySlug}`">← {{ city.data.value?.name || 'Về trang thành phố' }}</NuxtLink></nav>
+  <div class="rd-place-story-page">
+    <RdSkipLink target="place-story-main" label="Đến nội dung địa điểm" />
+    <RdCityHeader :city-slug="citySlug" :city-name="city.data.value?.name ?? ''" :section-base="`/${citySlug}`" editorial />
+    <main id="place-story-main" tabindex="-1" class="rd-detail-page">
+      <nav class="rd-detail-page__breadcrumbs" aria-label="Đường dẫn trang"><NuxtLink class="rd-detail-page__back" :to="`/${citySlug}`">← {{ city.data.value?.name || 'Về trang thành phố' }}</NuxtLink><span aria-hidden="true">/</span><span aria-current="page">{{ detail.data.value?.place.name || 'Địa điểm' }}</span></nav>
       <RdErrorBanner v-if="failed" message="Chưa tải được hết thông tin địa điểm, có thể mạng đang chập chờn." @retry="retry" />
-      <RdPlaceDetail v-if="detail.data.value" :detail="detail.data.value" :city-slug="citySlug" :now="now" />
+      <RdPlaceDetail v-if="detail.data.value" :detail="detail.data.value" :city="city.data.value" :city-slug="citySlug" :now="now" />
       <section v-else class="rd-detail-page__empty"><h1 class="page-title">Thông tin địa điểm</h1><p class="empty-note">Chưa tải được ghi chép, bấm Thử lại ở trên nhé.</p></section>
     </main>
   </div>
 </template>
 
 <style scoped>
-.rd-detail-page { max-width: 1200px; margin: 0 auto; padding: var(--space-2) var(--space-5) var(--space-7); display: flex; flex-direction: column; gap: var(--space-4); }
-.rd-detail-page__back { display: inline-flex; align-items: center; min-height: var(--tap-min); font-weight: 600; text-decoration: none; }
+.rd-place-story-page { background-color: var(--paper); background-image: var(--paper-grain); background-size: 4px 4px; }
+.rd-detail-page { max-width: var(--content-max); margin: 0 auto; padding: var(--space-2) var(--editorial-gutter) var(--space-7); display: flex; flex-direction: column; gap: var(--space-4); }
+.rd-detail-page__breadcrumbs { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); font-size: 11px; line-height: 1.8; color: var(--ink-soft); }
+.rd-detail-page__breadcrumbs > span:last-child { overflow-wrap: anywhere; }
+.rd-detail-page__back { display: inline-flex; align-items: center; min-height: var(--tap-min); font-weight: 500; text-decoration: none; }
 .rd-detail-page__empty { display: flex; flex-direction: column; gap: var(--space-4); }
+.rd-place-story-page__skip { position: absolute; top: var(--space-2); left: var(--space-5); transform: translateY(-180%); z-index: 50; background: var(--paper-raised); padding: var(--space-4); border-radius: var(--radius-chip); }
+.rd-place-story-page__skip:focus { transform: none; }
 </style>

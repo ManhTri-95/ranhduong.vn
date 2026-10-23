@@ -1,0 +1,8 @@
+{
+  "invite": 360,
+  "surface": 360,
+  "position": "absolute",
+  "button": 14,
+  "buttonFlexShrink": "1",
+  "buttonMinHeight": "auto"
+}

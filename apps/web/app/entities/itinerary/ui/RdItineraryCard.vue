@@ -26,7 +26,7 @@ const mediaBase = useRuntimeConfig().public.mediaBase;
       <span class="rd-itin__days">{{ formatTripLength(itinerary.days) }}</span>
     </div>
     <div class="rd-itin__body">
-      <span v-if="itinerary.season" class="rd-chip rd-chip--accent">{{ itinerary.season }}</span>
+      <span v-if="itinerary.season" class="rd-chip rd-chip--season">{{ itinerary.season }}</span>
       <h3 class="card__title">{{ itinerary.title }}</h3>
       <p class="rd-place__meta card__meta">{{ itineraryCardMeta(itinerary) }}</p>
       <span class="rd-itin__cta">Xem lịch <span aria-hidden="true">→</span></span>

@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import RdSkipLink from '~/shared/ui/RdSkipLink.vue';
+import RdEditorialHeading from '~/shared/ui/RdEditorialHeading.vue';
+import RdEmptyState from '~/shared/ui/RdEmptyState.vue';
 import { CATEGORY_URL_SLUG, Slug } from '@ranhduong/contracts';
 import { computed } from 'vue';
 import { useCity } from '~/entities/city/api/city';
@@ -51,9 +54,10 @@ usePageSeo({
 
 <template>
   <div class="search-page">
-    <RdCityHeader :city-slug="citySlug" :city-name="cityName" />
-    <main class="search-page__main">
-      <h1 class="page-title">Tìm{{ cityName ? ` ở ${cityName}` : '' }}</h1>
+    <RdSkipLink target="search-main" />
+    <RdCityHeader :city-slug="citySlug" :city-name="cityName" editorial :section-base="`/${citySlug}`" />
+    <main id="search-main" tabindex="-1" class="search-page__main">
+      <RdEditorialHeading as="h1" label="Mở sổ, tìm một nơi hay">Tìm{{ cityName ? ` ở ${cityName}` : '' }}</RdEditorialHeading>
       <RdSearchForm :action="`/${citySlug}/tim-kiem`" :city-slug="citySlug" :query="q" />
       <RdErrorBanner v-if="failed" message="Chưa tìm được, có thể mạng đang chập chờn." @retry="retry" />
       <template v-if="q">
@@ -61,9 +65,7 @@ usePageSeo({
           <p class="lead" role="status">{{ items.length }} chỗ khớp “{{ q }}”</p>
           <RdPlaceList :places="items" :city-slug="citySlug" :now="now" />
         </template>
-        <p v-else-if="!failed" class="empty-note" role="status">
-          Mình chưa ghi chép chỗ nào khớp “{{ q }}”. Thử gõ ngắn hơn, hoặc xem <NuxtLink :to="cafePath">các quán cà phê</NuxtLink>.
-        </p>
+        <RdEmptyState v-else-if="!failed" title="Thử rẽ hướng khác nhé?" :message="`Chưa tìm thấy ghi chép khớp “${q}”. Thử gõ ngắn hơn hoặc chọn một danh mục.`"><NuxtLink class="rd-btn rd-btn--outline" :to="cafePath">Khám phá các quán cà phê ↗</NuxtLink></RdEmptyState>
       </template>
       <p v-else-if="!failed" class="empty-note">Gõ tên quán, món ăn hay chỗ muốn đi, có dấu hay không dấu đều được.</p>
     </main>

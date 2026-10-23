@@ -1,0 +1,56 @@
+[
+  {
+    "viewport": 320,
+    "document": 320,
+    "animation": "rd-field-reveal",
+    "route": "live"
+  },
+  {
+    "viewport": 375,
+    "document": 375,
+    "animation": "rd-field-reveal",
+    "route": "live"
+  },
+  {
+    "viewport": 390,
+    "document": 390,
+    "animation": "rd-field-reveal",
+    "route": "live"
+  },
+  {
+    "viewport": 430,
+    "document": 430,
+    "animation": "rd-field-reveal",
+    "route": "live"
+  },
+  {
+    "viewport": 768,
+    "document": 768,
+    "animation": "rd-field-reveal",
+    "route": "live"
+  },
+  {
+    "viewport": 1024,
+    "document": 1024,
+    "animation": "rd-field-reveal",
+    "route": "live"
+  },
+  {
+    "viewport": 1280,
+    "document": 1280,
+    "animation": "rd-field-reveal",
+    "route": "live"
+  },
+  {
+    "viewport": 1440,
+    "document": 1440,
+    "animation": "rd-field-reveal",
+    "route": "live"
+  },
+  {
+    "viewport": 1920,
+    "document": 1920,
+    "animation": "rd-field-reveal",
+    "route": "live"
+  }
+]

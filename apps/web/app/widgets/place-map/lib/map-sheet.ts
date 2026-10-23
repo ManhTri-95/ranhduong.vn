@@ -10,8 +10,8 @@ const OVERDRAG = 0.3;
 const ORDER: SheetSnap[] = ['collapsed', 'half', 'expanded'];
 
 /** Chiều cao nhìn thấy của sheet ở từng mức; `peek` là phần đầu sheet (thanh kéo và tiêu đề). */
-export function sheetHeights(viewport: number, headerBottom: number, peek: number): SheetHeights {
-  const expanded = Math.max(peek, viewport - headerBottom - EXPANDED_GAP);
+export function sheetHeights(viewport: number, headerBottom: number, peek: number, gap = EXPANDED_GAP): SheetHeights {
+  const expanded = Math.max(peek, viewport - headerBottom - gap);
   const half = Math.min(Math.max(Math.round(viewport * 0.5), peek), expanded);
   return { collapsed: Math.min(peek, expanded), half, expanded };
 }

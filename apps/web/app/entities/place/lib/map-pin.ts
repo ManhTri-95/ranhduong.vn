@@ -21,6 +21,6 @@ export const CATEGORY_GLYPH: Record<PlaceCategory, readonly GlyphShape[]> = {
 const glyphMarkup = (shapes: readonly GlyphShape[]): string =>
   shapes.map((shape) => (shape.kind === 'circle' ? `<circle cx="${shape.cx}" cy="${shape.cy}" r="${shape.r}"/>` : `<path d="${shape.d}"/>`)).join('');
 
-export function placePinSvg(category: PlaceCategory, fill = 'var(--accent)', stroke = 'var(--ink)'): string {
+export function placePinSvg(category: PlaceCategory, fill = 'var(--selected-surface)', stroke = 'var(--selected-foreground)'): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="44" viewBox="0 0 36 44" aria-hidden="true" focusable="false"><path d="M18 42C15 37 2 28 2 18 2 8 9 2 18 2c9 0 16 6 16 16 0 10-12 19-16 24z" fill="${fill}" stroke="${stroke}" stroke-width="2" stroke-linejoin="round"/><g fill="none" stroke="${stroke}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${glyphMarkup(CATEGORY_GLYPH[category])}</g></svg>`;
 }

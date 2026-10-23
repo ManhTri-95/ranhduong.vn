@@ -30,7 +30,7 @@ async function share(channel: ShareChannel): Promise<void> {
 
 <template>
   <section class="rd-itinerary-share" aria-labelledby="itinerary-share-title">
-    <h2 id="itinerary-share-title" class="section-title">Rủ bạn đi cùng</h2>
+    <h2 id="itinerary-share-title" class="section-title" tabindex="-1">Rủ bạn đi cùng</h2>
     <p>Chọn Zalo hoặc Messenger trong bảng chia sẻ của điện thoại để gửi lịch này cho bạn.</p>
     <div class="rd-itinerary-share__buttons">
       <button type="button" class="rd-btn rd-btn--outline" :disabled="busy" @click="share('zalo')">Zalo</button>

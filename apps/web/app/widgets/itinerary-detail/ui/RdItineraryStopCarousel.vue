@@ -2,6 +2,7 @@
 import { CATEGORY_LABEL, type ItineraryPublicStop } from '@ranhduong/contracts';
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { directionHref } from '~/entities/place/lib/place-detail';
+import RdJourneyPhoto from './RdJourneyPhoto.vue';
 
 const props = defineProps<{ stops: ItineraryPublicStop[]; selectedKey: string | null; citySlug: string }>();
 const emit = defineEmits<{ select: [key: string] }>();
@@ -82,7 +83,8 @@ onBeforeUnmount(() => { observer?.disconnect(); clearTimeout(settleTimer); });
 <template>
   <ol ref="list" class="rd-itinerary-carousel" aria-label="Các điểm trong ngày">
     <li v-for="stop in stops" :key="stop.key" :data-stop-key="stop.key" :class="['rd-itinerary-carousel__card', { 'rd-itinerary-carousel__card--selected': stop.key === selectedKey }]">
-      <span class="rd-itinerary-carousel__number" aria-hidden="true">{{ stop.number }}</span>
+      <button type="button" class="rd-itinerary-carousel__number" :aria-pressed="stop.key === selectedKey" :aria-label="`Chọn điểm ${stop.number}${stop.place ? `: ${stop.place.name}` : ''}`" @click="pick(stop.key)">{{ String(stop.number).padStart(2, '0') }}</button>
+      <div v-if="stop.place?.coverKey" class="rd-itinerary-carousel__photo"><RdJourneyPhoto :place="stop.place" sizes="64px" /></div>
       <div class="rd-itinerary-carousel__body">
         <p class="rd-itinerary-carousel__time">{{ stop.start }}–{{ stop.end }}<template v-if="stop.kind === 'meal'"> · Bữa ăn</template></p>
         <h3><NuxtLink v-if="stop.place" :to="`/${citySlug}/dia-diem/${stop.place.slug}`">{{ stop.place.name }}</NuxtLink><template v-else>Điểm ghé đang cập nhật</template></h3>
@@ -100,8 +102,10 @@ onBeforeUnmount(() => { observer?.disconnect(); clearTimeout(settleTimer); });
 .rd-itinerary-carousel::-webkit-scrollbar { display: none; }
 .rd-itinerary-carousel__card { flex: 0 0 min(280px, 82%); scroll-snap-align: start; display: flex; align-items: flex-start; gap: var(--space-3); padding: var(--space-3); box-sizing: border-box; background: var(--paper-raised); border: var(--border); border-radius: var(--radius-card); transition: border-color var(--dur-standard) var(--ease-out), box-shadow var(--dur-standard) var(--ease-out); }
 .rd-itinerary-carousel__card--selected { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
-.rd-itinerary-carousel__number { flex: 0 0 32px; height: 32px; display: grid; place-items: center; box-sizing: border-box; border-radius: var(--radius-pill); background: var(--ink); color: var(--paper-raised); font: 700 15px var(--font-body); }
-.rd-itinerary-carousel__card--selected .rd-itinerary-carousel__number { background: var(--accent); color: var(--ink); border: var(--border-strong) solid var(--ink); }
+.rd-itinerary-carousel__number { flex: 0 0 var(--tap-min); height: var(--tap-min); display: grid; place-items: center; padding: 0; border: var(--border-ink); box-sizing: border-box; border-radius: var(--radius-pill); background: var(--ink); color: var(--paper-raised); font: 500 13px var(--font-coordinate); cursor: pointer; }
+.rd-itinerary-carousel__photo { flex: 0 0 52px; height: 68px; border-radius: var(--radius-postcard); overflow: hidden; }
+.rd-itinerary-carousel__number:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+.rd-itinerary-carousel__card--selected .rd-itinerary-carousel__number { background: var(--selected-surface); color: var(--selected-foreground); border: var(--border-strong) solid var(--selected-border); }
 .rd-itinerary-carousel__body { flex: 1; min-width: 0; }
 .rd-itinerary-carousel__body p, .rd-itinerary-carousel__body h3 { margin: 0; }
 .rd-itinerary-carousel__time, .rd-itinerary-carousel__meta { font-size: 13px; color: var(--ink-soft); }
@@ -109,4 +113,5 @@ onBeforeUnmount(() => { observer?.disconnect(); clearTimeout(settleTimer); });
 .rd-itinerary-carousel__body h3 a { text-decoration: none; }
 .rd-itinerary-carousel__go { flex: 0 0 auto; border-color: var(--ink); }
 .rd-itinerary-carousel__go svg { width: 20px; height: 20px; }
+@media (max-height: 530px) { .rd-itinerary-carousel__photo { display: none; } }
 </style>

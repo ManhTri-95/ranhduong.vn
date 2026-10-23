@@ -390,7 +390,7 @@ function onActionClose(): void {
         <button v-if="dirty" type="button" class="rd-btn rd-btn--ghost" :disabled="busy !== null" @click="onDiscard">Bỏ thay đổi</button>
         <template v-if="status === 'draft'">
           <button type="button" class="rd-btn rd-btn--outline" :disabled="busy !== null || photoBusy" @click="editor.save">{{ busy === 'save' ? 'Đang lưu…' : 'Lưu nháp' }}</button>
-          <button type="button" class="rd-btn rd-btn--accent" :disabled="busy !== null || photoBusy || issues.length > 0" aria-describedby="activation-issues" @click="editor.activate">
+          <button type="button" class="rd-btn rd-btn--primary" :disabled="busy !== null || photoBusy || issues.length > 0" aria-describedby="activation-issues" @click="editor.activate">
             {{ busy === 'activate' ? 'Đang kích hoạt…' : 'Kích hoạt' }}
           </button>
         </template>
