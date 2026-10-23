@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import RdSkipLink from '~/shared/ui/RdSkipLink.vue';
 import { Slug } from '@ranhduong/contracts';
 import { computed } from 'vue';
 import { useCity } from '~/entities/city/api/city';
@@ -45,8 +46,9 @@ usePageSeo({ path, title, description, image: () => template.data.value && !fail
 
 <template>
   <div>
+    <RdSkipLink target="itinerary-main" />
     <RdCityHeader :city-slug="citySlug" :city-name="city.data.value?.name ?? ''" editorial :section-base="`/${citySlug}`" />
-    <main class="rd-itinerary-page">
+    <main id="itinerary-main" tabindex="-1" class="rd-itinerary-page">
       <nav aria-label="Đường dẫn trang"><NuxtLink class="rd-itinerary-page__back" :to="`/${citySlug}`">← {{ city.data.value?.name || 'Về trang thành phố' }}</NuxtLink></nav>
       <RdErrorBanner v-if="failed" message="Chưa tải được lịch trình, có thể mạng đang chập chờn." @retry="retry" />
       <RdItineraryDetail v-if="template.data.value" :itinerary="template.data.value" :city="city.data.value ?? null" :city-slug="citySlug" :share-url="canonical" :ticket="ticket" />

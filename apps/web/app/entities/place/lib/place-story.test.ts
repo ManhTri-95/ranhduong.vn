@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { PlaceDetail } from '@ranhduong/contracts';
-import { coordinateLabel, placeMapCard, travelNotes, visitingMoments } from './place-story';
+import { coordinateLabel, placeMapCard, storyChapters, travelNotes, visitingMoments } from './place-story';
 
 const place: PlaceDetail = {
   id: '000000000000000000000001', slug: 'dia-diem-gia-lap', name: 'Địa điểm Giả Lập',
@@ -9,6 +9,11 @@ const place: PlaceDetail = {
 };
 
 describe('authentic place story', () => {
+  it('numbers only populated editorial chapters and never offers a journey to a closed place', () => {
+    expect(storyChapters(place)).toEqual(['place-reveal', 'before-you-go', 'find-your-way', 'make-it-your-journey', 'next-turn']);
+    expect(storyChapters({ ...place, practicalNotes: 'Ghi chú Giả Lập', photos: [{ key: 'fake/photo', source: 'self', credit: 'Giả Lập', license: 'Giả Lập' }], bestTime: ['morning'] })).toEqual(['place-reveal', 'first-impression', 'photo-journal', 'before-you-go', 'right-moment', 'find-your-way', 'make-it-your-journey', 'next-turn']);
+    expect(storyChapters({ ...place, status: 'closed', bestTime: ['morning'] })).toEqual(['place-reveal', 'before-you-go', 'next-turn']);
+  });
   it('keeps missing costs, shelter and each transport mode explicitly unknown', () => {
     const notes = travelNotes(place);
     expect(notes.find(note => note.key === 'price')?.value).toBe('Chưa rõ mức giá');

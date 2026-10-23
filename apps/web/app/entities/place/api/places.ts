@@ -45,3 +45,9 @@ export function usePlaceDetail(citySlug: string, slug: string) {
     timeout: API_TIMEOUT_MS, transform: (data: unknown) => PlaceDetailResponse.parse(data),
   });
 }
+
+/** Public optional map focus; callers may recover from a missing/unavailable place. */
+export async function fetchPlaceDetail(apiBase: string, citySlug: string, slug: string, signal?: AbortSignal): Promise<PlaceDetailResponse> {
+  const data: unknown = await $fetch(`/cities/${citySlug}/places/${slug}`, { baseURL: apiBase, timeout: API_TIMEOUT_MS, retry: 0, signal });
+  return PlaceDetailResponse.parse(data);
+}

@@ -2,10 +2,12 @@
 import { Slug } from '@ranhduong/contracts';
 import { computed } from 'vue';
 import { useCity } from '~/entities/city/api/city';
-import { usePlaceList } from '~/entities/place/api/places';
+import { fetchPlaceDetail, usePlaceList } from '~/entities/place/api/places';
+import { mapFocusPlace, parseMapFocus } from '~/entities/place/lib/map-focus';
 import { mapFilterQuery, parseMapFilters, type MapFilters } from '~/entities/place/lib/map-query';
 import { markUnavailableOnServer, throwIfNotFound } from '~/shared/api/page-status';
 import { usePageSeo } from '~/shared/lib/use-page-seo';
+import { useApiBase } from '~/shared/api/client';
 import RdErrorBanner from '~/shared/ui/RdErrorBanner.vue';
 import RdMapExplorer from '~/widgets/place-map/ui/RdMapExplorer.vue';
 import RdSiteFooter from '~/widgets/site-footer/ui/RdSiteFooter.vue';
@@ -17,6 +19,19 @@ const router = useRouter();
 const citySlug = String(route.params.city);
 const city = await useCity(citySlug);
 throwIfNotFound(city.error.value);
+const apiBase = useApiBase();
+const focusSlug = computed(() => parseMapFocus(route.query.place));
+const focusRequested = computed(() => route.query.place !== undefined);
+const focus = await useAsyncData(() => `map-focus:${citySlug}:${focusSlug.value ?? ''}`, async (_app, { signal }) => {
+  const slug = focusSlug.value;
+  if (!slug || !city.data.value) return { slug, place: null };
+  try {
+    const detail = await fetchPlaceDetail(apiBase, citySlug, slug, signal);
+    return { slug, place: mapFocusPlace(detail.place, city.data.value.mapBounds) };
+  } catch { return { slug, place: null }; }
+});
+// Nuxt may retain old data while the reactive key changes. Never apply it to another request.
+const focusedPlace = computed(() => focus.data.value?.slug === focusSlug.value ? focus.data.value?.place ?? null : null);
 const filters = computed(() => {
   const parsed = parseMapFilters(route.query);
   if (parsed.zone && city.data.value && !city.data.value.zones.some(zone => zone.slug === parsed.zone)) parsed.zone = undefined;
@@ -36,12 +51,12 @@ async function retryCity(): Promise<void> {
   throwIfNotFound(city.error.value);
 }
 usePageSeo({ path: `/${citySlug}/ban-do`, title: () => `Bản đồ ${city.data.value?.name ?? 'địa điểm'} · Rành Đường`, description: 'Tìm quán cà phê, chỗ ăn và chỗ chơi trong vùng bạn đang xem. Ghi chép của người rành đường.',
-  breadcrumbs: () => [{ name: city.data.value?.name || 'Thành phố', path: `/${citySlug}` }, { name: 'Bản đồ', path: `/${citySlug}/ban-do` }], noindex: () => Boolean(city.error.value || places.error.value || Object.keys(filterQuery.value).length),
+  breadcrumbs: () => [{ name: city.data.value?.name || 'Thành phố', path: `/${citySlug}` }, { name: 'Bản đồ', path: `/${citySlug}/ban-do` }], noindex: () => Boolean(city.error.value || places.error.value || Object.keys(filterQuery.value).length || focusRequested.value),
 });
 </script>
 
 <template>
-  <RdMapExplorer v-if="city.data.value" :key="citySlug" :city="city.data.value" :initial-page="places.data.value ?? null" :filters="filters" :failed="Boolean(places.error.value)" @filters="changeFilters">
+  <RdMapExplorer v-if="city.data.value" :key="citySlug" :city="city.data.value" :initial-page="places.data.value ?? null" :filters="filters" :failed="Boolean(places.error.value)" :focused-place="focusedPlace" :focus-slug="focusSlug" :focus-requested="focusRequested" :focus-pending="focus.pending.value" @filters="changeFilters" @retry-focus="focus.refresh()">
     <template #footer><RdSiteFooter /></template>
   </RdMapExplorer>
   <main v-else class="rd-map-unavailable">

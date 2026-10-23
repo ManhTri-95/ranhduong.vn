@@ -40,7 +40,7 @@ defineProps<{ citySlug: string; places: PlaceCard[]; failed: boolean; now: Date 
 .rd-postcard :deep(.rd-place__quote) { font: 20px/1.3 var(--font-hand); }
 .rd-postcard__signature { margin: var(--space-4) 0 var(--space-1); align-self: flex-end; color: var(--route-rust); font: 21px var(--font-hand); }
 @media (min-width: 768px) { .rd-featured__grid { grid-auto-flow: initial; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-10) var(--space-6); overflow: visible; margin: 0; padding-inline: 0; } }
-@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) { .rd-postcard { transform: translate(calc((1 - var(--rd-route-progress, 1)) * var(--rd-postcard-shift)), calc((1 - var(--rd-route-progress, 1)) * 28px)) rotate(calc(var(--rd-postcard-turn) * (1.7 - var(--rd-route-progress, 1) * 0.7))); } }
+
 @media (hover: hover) and (prefers-reduced-motion: no-preference) { .rd-postcard { transition: transform var(--dur-panel) var(--ease-route); } .rd-postcard:has(a:is(:hover, :focus-visible)) { transform: translateY(-6px) rotate(0); } }
 .section :deep(.rd-place__quote) { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 </style>

@@ -111,7 +111,7 @@ onBeforeUnmount(() => { version++; controller?.abort(); });
 .rd-home-map__load :deep(.rd-compass) { width: 80px; height: 80px; color: var(--route-rust); }
 .rd-home-map__invitation { font: 700 23px/1.4 var(--font-display); margin: var(--space-4) 0 var(--space-5); }
 .rd-home-map__load .rd-btn { font-size: 12px; border-radius: var(--radius-postcard); }
-.rd-home-map__load button[aria-disabled='true'] { cursor: wait; opacity: 0.7; }
+.rd-home-map__load button[aria-disabled='true'] { cursor: wait;   background-color: var(--disabled-surface); color: var(--disabled-foreground); border-color: var(--disabled-border); opacity: 1;}
 .rd-home-map__feedback { background: var(--paper-raised); padding: var(--space-2); margin: var(--space-3) 0 0; font-size: 11px; line-height: 1.6; }
 .rd-home-map__selected { position: absolute; left: var(--space-3); bottom: var(--space-12); max-width: 75%; margin: 0; padding: var(--space-3); background: var(--paper-raised); border-left: 2px solid var(--route-rust); font-size: 12px; font-weight: 600; pointer-events: none; overflow-wrap: anywhere; }
 .rd-home-map__empty-status { padding: var(--space-6); }

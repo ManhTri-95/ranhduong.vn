@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import RdSkipLink from '~/shared/ui/RdSkipLink.vue';
 import { Slug } from '@ranhduong/contracts';
 import { computed } from 'vue';
 import { useCity } from '~/entities/city/api/city';
@@ -46,8 +47,9 @@ usePageSeo({
 
 <template>
   <div>
+    <RdSkipLink target="collection-main" />
     <RdCityHeader :city-slug="citySlug" :city-name="city.data.value?.name ?? ''" editorial defer-map :section-base="`/${citySlug}`" />
-    <main class="rd-curated-page">
+    <main id="collection-main" tabindex="-1" class="rd-curated-page">
       <div v-if="failed" class="rd-curated-page__error"><RdErrorBanner message="Chưa tải được danh sách gợi ý, có thể mạng đang chập chờn." @retry="retry" /><NuxtLink :to="`/${citySlug}`">← {{ city.data.value?.name || 'Về trang thành phố' }}</NuxtLink></div>
       <RdCollectionJournal v-if="city.data.value && list.data.value" :city-slug="citySlug" :city="city.data.value" :collection="list.data.value" :related="otherLists" :share-url="absoluteUrl(seoConfig.siteUrl, path)" />
     </main>

@@ -1,0 +1,46 @@
+[
+  {
+    "name": "mobile shell and keyboard skip link",
+    "passed": true
+  },
+  {
+    "name": "category filtering and Back retain loaded places",
+    "passed": true
+  },
+  {
+    "name": "discovery search keeps query and reset recovers results",
+    "passed": true
+  },
+  {
+    "name": "focused map uses a real selected postcard",
+    "passed": true
+  },
+  {
+    "name": "initial focused map entry survives place detail and Back",
+    "passed": true
+  },
+  {
+    "name": "initial focused marker is visible above the mobile sheet",
+    "passed": true
+  },
+  {
+    "name": "focus outside active filters never inflates the result list",
+    "passed": true
+  },
+  {
+    "name": "missing focused place retains recovery and city list",
+    "passed": true
+  },
+  {
+    "name": "focused map offers its filtered list without JavaScript",
+    "passed": true
+  },
+  {
+    "name": "discovery API error has a visible retry and recovers the same query",
+    "passed": true
+  },
+  {
+    "name": "collection marker selection and clipboard-denied recovery stay usable",
+    "passed": true
+  }
+]

@@ -1,0 +1,69 @@
+[
+  {
+    "name": "held pagination shows bounded loading and completes at 320x568",
+    "passed": true
+  },
+  {
+    "path": "/dieu-khoan",
+    "width": 320,
+    "document": 320,
+    "h1": 1,
+    "passed": true
+  },
+  {
+    "path": "/dieu-khoan",
+    "width": 768,
+    "document": 768,
+    "h1": 1,
+    "passed": true
+  },
+  {
+    "path": "/dieu-khoan",
+    "width": 1440,
+    "document": 1440,
+    "h1": 1,
+    "passed": true
+  },
+  {
+    "path": "/quyen-rieng-tu",
+    "width": 320,
+    "document": 320,
+    "h1": 1,
+    "passed": true
+  },
+  {
+    "path": "/quyen-rieng-tu",
+    "width": 768,
+    "document": 768,
+    "h1": 1,
+    "passed": true
+  },
+  {
+    "path": "/quyen-rieng-tu",
+    "width": 1440,
+    "document": 1440,
+    "h1": 1,
+    "passed": true
+  },
+  {
+    "path": "/ghi-nguon",
+    "width": 320,
+    "document": 320,
+    "h1": 1,
+    "passed": true
+  },
+  {
+    "path": "/ghi-nguon",
+    "width": 768,
+    "document": 768,
+    "h1": 1,
+    "passed": true
+  },
+  {
+    "path": "/ghi-nguon",
+    "width": 1440,
+    "document": 1440,
+    "h1": 1,
+    "passed": true
+  }
+]

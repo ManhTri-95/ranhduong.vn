@@ -96,11 +96,12 @@ const api = createServer((req, res) => {
     else res.writeHead(404).end(JSON.stringify({ code: 'NOT_FOUND', message: 'Không tìm thấy danh sách' }));
   } else if (url.pathname === '/v1/cities/da-lat/places/old-slug') {
     res.writeHead(301, { location: '/v1/cities/da-lat/places/quan-gia-lap-1' }).end();
-  } else if (['quan-gia-lap-1', 'closed', 'with-photo', 'missing-info'].some((slug) => url.pathname === `/v1/cities/da-lat/places/${slug}`)) {
+  } else if (['quan-gia-lap-1', 'closed', 'with-photo', 'missing-info', 'focus-gia-lap'].some((slug) => url.pathname === `/v1/cities/da-lat/places/${slug}`)) {
     if (detailFailed) return res.writeHead(503).end(JSON.stringify({ code: 'INTERNAL_ERROR', message: 'Lỗi chi tiết Giả Lập' }));
     const slug = url.pathname.split('/').at(-1);
     res.end(JSON.stringify({
       place: { ...detailPlace, slug, status: slug === 'closed' ? 'closed' : 'active',
+        ...(slug === 'focus-gia-lap' ? { name: 'Điểm mở từ ghi chép Giả Lập' } : {}),
         photos: slug === 'with-photo' ? Array.from({ length: 3 }, (_, index) => ({ key: index === 0 ? 'fake/photo' : `fake/photo-${index + 1}`, source: 'self', credit: 'Người Chụp Giả Lập', license: 'Giấy phép Giả Lập', sourceUrl: 'https://example.com/fake' })) : [],
         ...(slug === 'with-photo' ? { bestTime: ['morning', 'sunset'], transport: ['motorbike'], cover: 'partial', priceLevel: 2 } : {}),
         ...(slug === 'missing-info' ? { category: 'attraction', unconfirmed: false, location: undefined, address: undefined, practicalNotes: undefined, contact: {}, openingHours: [], lastVerifiedAt: undefined } : {}) },
@@ -278,7 +279,7 @@ describe('S24 weather production SSR', () => {
       expect(html).toContain(`${label} · 18°C`);
       expect(html).toContain('WeatherAPI.com');
       expect(html).toContain('Thời tiết chỉ để tham khảo');
-      expect(html.includes('Quán trú mưa được gần bạn')).toBe(mode === 'rain');
+      expect(html.includes('Tìm quán có mái che')).toBe(mode === 'rain');
       if (mode === 'rain') expect(html).toContain('href="/da-lat/ban-do?rainSafe=true"');
     } finally { weatherMode = 'none'; }
   });
@@ -316,7 +317,7 @@ describe('S23 seasonal production SSR', () => {
       expect(response.status).toBe(200);
       expect(response.headers.get('cache-control')).toBe('no-store');
       const html = await response.text();
-      expect(html).toContain(`--accent:${accent}`);
+      expect(html).toContain(`--season-accent:${accent}`);
       expect(html).toContain('id="season-banner-title"');
       expect(html).toContain('Banner mùa Giả Lập');
       expect(html).toContain('Mô tả mùa Giả Lập');
@@ -326,7 +327,7 @@ describe('S23 seasonal production SSR', () => {
   });
   it('uses city color and no banner without a matching season', async () => {
     const html = await (await fetch(`${base}/da-lat?audit=s23-default`)).text();
-    expect(html).toContain('--accent:#f4bd33');
+    expect(html).toContain('--season-accent:#f4bd33');
     expect(html).not.toContain('id="season-banner-title"');
   });
   it('uses the city default and retry when /now fails, then recovers on the same URL', async () => {
@@ -337,7 +338,7 @@ describe('S23 seasonal production SSR', () => {
       expect(response.status).toBe(503);
       expect(response.headers.get('cache-control')).toBe('no-store');
       const html = await response.text();
-      expect(html).toContain('--accent:#f4bd33');
+      expect(html).toContain('--season-accent:#f4bd33');
       expect(html).toContain('Thử lại');
       expect(html).not.toContain('id="season-banner-title"');
     } finally { seasonFailed = false; }
@@ -418,9 +419,30 @@ describe('S13 search production SSR', () => {
 });
 
 describe('S12 map production SSR', () => {
+  it('opens a real place independently of result membership while preserving canonical and filter semantics', async () => {
+    const response = await fetch(`${base}/da-lat/ban-do?place=focus-gia-lap&category=food`);
+    const html = await response.text();
+    expect(response.status).toBe(200);
+    expect(html).toContain('Điểm mở từ ghi chép Giả Lập');
+    expect(html).toContain('Địa điểm bạn vừa mở nằm ngoài kết quả đang lọc');
+    expect(html).toContain('name="robots" content="noindex, follow"');
+    expect(html).toContain('rel="canonical" href="https://ranhduong.vn/da-lat/ban-do"');
+    expect(html.includes('href="/da-lat/ban-do?category=food"')).toBe(true);
+    expect(mapQueries.at(-1)?.has('place')).toBe(false);
+    expect(mapQueries.at(-1)?.get('category')).toBe('food');
+  });
+  it.each([{ slug: 'closed' }, { slug: 'missing-info' }, { slug: 'khong-co-gia-lap' }, { slug: ['quan-gia-lap-1', 'closed'] }])('keeps the city map usable for unavailable focus $slug', async ({ slug }) => {
+    const query = Array.isArray(slug) ? slug.map(value => `place=${value}`).join('&') : `place=${slug}`;
+    const response = await fetch(`${base}/da-lat/ban-do?${query}`);
+    const html = await response.text();
+    expect(response.status).toBe(200);
+    expect(html).toContain('Chưa có vị trí để mở cho địa điểm này');
+    expect(html).toContain('Quán Giả Lập 1');
+    expect(html).toContain('name="robots" content="noindex, follow"');
+  });
   it('Living Map renders a journal discovery panel and keyboard alternatives to all three sheet levels', async () => {
     const html = await (await fetch(`${base}/da-lat/ban-do?audit=living-map`)).text();
-    for (const text of ['THE LIVING MAP', 'Bản đồ biết kể chuyện.', 'Đến danh sách địa điểm', 'Chiều cao danh sách', 'Bản đồ', 'Nửa màn', 'Danh sách', 'Lọc thêm', 'Ghi chép ban đầu của thành phố', 'OpenStreetMap', 'OpenMapTiles', 'OpenFreeMap']) expect(html.includes(text), text).toBe(true);
+    for (const text of ['BẢN ĐỒ KHÁM PHÁ', 'Bản đồ biết kể chuyện.', 'Đến danh sách địa điểm', 'Chiều cao danh sách', 'Bản đồ', 'Nửa màn', 'Danh sách', 'Lọc thêm', 'Ghi chép ban đầu của thành phố', 'OpenStreetMap', 'OpenMapTiles', 'OpenFreeMap']) expect(html.includes(text), text).toBe(true);
     expect(html.match(/<h1(?:\s|>)/g)).toHaveLength(1);
     expect(html.includes('role="search"')).toBe(true);
     expect(html.includes('id="map-results"')).toBe(true);
@@ -510,7 +532,7 @@ describe('S11 detail production SSR', () => {
     expect(html).toContain('Giấy phép Giả Lập');
   });
 
-  it('Place Story keeps eight real chapters, one H1, deferred maps and an honest upcoming itinerary action', async () => {
+  it('Place Story keeps populated chapters, one H1, deferred maps and a real itinerary action', async () => {
     const geographicBefore = geographicRequests;
     const html = await (await fetch(`${base}/da-lat/dia-diem/with-photo?story=chapters`)).text();
     const chapters = ['place-reveal', 'first-impression', 'photo-journal', 'before-you-go', 'right-moment', 'find-your-way', 'make-it-your-journey', 'next-turn'];
@@ -520,7 +542,7 @@ describe('S11 detail production SSR', () => {
     expect(html.match(/<h1(?:\s|>)/g)).toHaveLength(1);
     expect(html.includes('0.3000° B / 0.2000° Đ')).toBe(true);
     expect(html.includes('Tính năng thêm địa điểm vào lịch trình cá nhân chưa được mở.')).toBe(true);
-    expect(/<button[^>]*disabled[^>]*>Thêm vào lịch trình/.test(html)).toBe(true);
+    expect(/<button[^>]*disabled[^>]*>Thêm vào lịch trình/.test(html)).toBe(false);
     expect(html.includes('href="/da-lat#lich-trinh"')).toBe(true);
     expect(html.includes('Sao chép địa chỉ')).toBe(true);
     for (const anchor of ['kham-pha', 'lich-trinh', 'cam-hung']) expect(html.includes(`href="/da-lat#${anchor}"`)).toBe(true);
@@ -542,7 +564,7 @@ describe('S11 detail production SSR', () => {
 
   it('Place Story keeps missing information honest and omits unsupported timing and map controls', async () => {
     const html = await (await fetch(`${base}/da-lat/dia-diem/missing-info`)).text();
-    for (const text of ['Câu chuyện của nơi này đang được bổ sung.', 'Chưa rõ mức giá', 'Chưa rõ mái che', 'Giờ mở cửa đang cập nhật', 'Địa chỉ đang cập nhật', 'Chưa có ngày xác minh', 'Thông tin liên hệ đang cập nhật']) expect(html.includes(text), text).toBe(true);
+    for (const text of ['Ảnh đang cập nhật', 'Chưa rõ mức giá', 'Chưa rõ mái che', 'Giờ mở cửa đang cập nhật', 'Địa chỉ đang cập nhật', 'Chưa có ngày xác minh', 'Thông tin liên hệ đang cập nhật']) expect(html.includes(text), text).toBe(true);
     expect(html.includes('id="right-moment"')).toBe(false);
     expect(html.includes('>Xem vị trí trên bản đồ<')).toBe(false);
     expect(html.includes('https://www.google.com/maps/dir/')).toBe(false);
@@ -882,7 +904,7 @@ describe('UX home and itinerary SSR', () => {
   it('renders the seven journal scenes, real city coordinates and deferred authentic previews', async () => {
     const initialTemplateRequests = templatePreviewRequests;
     const html = await (await fetch(`${base}/da-lat?audit=living-route`)).text();
-    const scenes = ['home-title', 'route-story-title', 'interests-title', 'featured-places-title', 'map-preview-title', 'lich-trinh', 'closing-title'];
+    const scenes = ['home-title', 'interests-title', 'route-story-title', 'featured-places-title', 'map-preview-title', 'lich-trinh', 'closing-title'];
     const positions = scenes.map(id => html.indexOf(`id="${id}"`));
     expect(positions.every(position => position >= 0)).toBe(true);
     expect(positions).toEqual([...positions].sort((a, b) => a - b));
@@ -890,7 +912,7 @@ describe('UX home and itinerary SSR', () => {
     for (const text of ['Rẽ một chút.', 'Hay cả chuyến đi.', 'Tự tạo lịch trình', 'Sắp có', '0.5000° B / 0.5000° Đ', 'không phải tuyến chỉ đường', 'Đi khám phá thôi']) expect(html).toContain(text);
     expect(html).toContain('href="/da-lat/tham-quan?tags=view-doi"');
     expect(html).toContain('href="/da-lat/tham-quan?tags=song-ao"');
-    expect(html).toMatch(/<button(?=[^>]*disabled)(?=[^>]*aria-describedby="journal-coming-note")[^>]*>/);
+    expect(html).not.toMatch(/<button(?=[^>]*disabled)(?=[^>]*aria-describedby="journal-coming-note")[^>]*>/);
     expect(templatePreviewRequests).toBe(initialTemplateRequests);
     expect(html).not.toContain('draggable="true"');
   });

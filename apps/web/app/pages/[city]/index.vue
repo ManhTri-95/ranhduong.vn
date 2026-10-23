@@ -10,6 +10,7 @@ import { markUnavailableOnServer, throwIfNotFound } from '~/shared/api/page-stat
 import { useClientNow } from '~/shared/lib/use-client-now';
 import { usePageSeo } from '~/shared/lib/use-page-seo';
 import RdErrorBanner from '~/shared/ui/RdErrorBanner.vue';
+import RdSkipLink from '~/shared/ui/RdSkipLink.vue';
 import RdCityHeader from '~/widgets/city-header/ui/RdCityHeader.vue';
 import RdCuratedListStrip from '~/widgets/curated-list-strip/ui/RdCuratedListStrip.vue';
 import { FEATURED_QUERY } from '~/widgets/featured-places/model/query';
@@ -58,16 +59,16 @@ usePageSeo({
   path: `/${citySlug}`,
   title: () => (cityName.value ? `${cityName.value} hôm nay ghé đâu? · Rành Đường` : 'Rành Đường'),
   description: () =>
-    `Ghi chép của người rành đường ở ${cityName.value || 'Đà Lạt'}: quán cà phê, chỗ ăn, chỗ chơi và lịch trình có sẵn. Quán nào cũng được hỏi lại trước khi lên đây.`,
+    `Ghi chép của người rành đường ở ${cityName.value || 'Đà Lạt'}: quán cà phê, chỗ ăn, chỗ chơi và lịch trình có sẵn. Xem trạng thái xác nhận và những lưu ý trước khi ghé.`,
   breadcrumbs: () => [{ name: cityName.value || 'Thành phố', path: `/${citySlug}` }], noindex: loadFailed,
 });
 </script>
 
 <template>
   <div class="rd-home">
-    <a class="rd-home-skip" href="#home-content">Đến nội dung chính</a>
+    <RdSkipLink target="home-content" />
     <RdCityHeader :city-slug="citySlug" :city-name="cityName" editorial />
-    <main id="home-content">
+    <main id="home-content" tabindex="-1">
       <RdJourneyFrame>
         <div v-if="loadFailed" class="rd-home-container rd-home__error">
           <RdErrorBanner message="Chưa tải được hết dữ liệu, có thể mạng đang chập chờn." @retry="retry" />
@@ -78,8 +79,8 @@ usePageSeo({
           <span class="rd-home-manifesto__note">MỘT CUỐN SỔ MỞ. NHIỀU CÁCH LÊN ĐƯỜNG.</span>
         </div>
         <div class="rd-home-container">
-          <RdHomeRouteStory :city-slug="citySlug" :places="featuredPlaces" />
           <RdHomeInterests :city-slug="citySlug" />
+          <RdHomeRouteStory :city-slug="citySlug" :places="featuredPlaces" />
           <div id="dia-diem" class="rd-home-section">
             <RdFeaturedPlaces :city-slug="citySlug" :places="featuredPlaces" :failed="featuredFailed" :now="now" />
           </div>

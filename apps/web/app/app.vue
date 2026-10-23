@@ -6,13 +6,13 @@ const config = useRuntimeConfig().public;
 const route = useRoute();
 // Trang toàn màn hình (bản đồ) tự đặt footer trong bottom sheet, không để footer dưới khung bản đồ.
 const fullscreen = computed(() => route.meta.fullscreen === true);
-const homeCitySlug = computed(() => typeof route.params.city === 'string' && route.path.replace(/\/$/, '') === `/${route.params.city}` ? route.params.city : undefined);
+const footerCitySlug = computed(() => typeof route.params.city === 'string' ? route.params.city : undefined);
 useHead(() => ({ meta: config.googleSiteVerification ? [{ name: 'google-site-verification', content: config.googleSiteVerification }] : [] }));
 </script>
 
 <template>
   <NuxtLoadingIndicator color="var(--ink)" />
   <NuxtPage />
-  <RdSiteFooter v-if="!fullscreen" :city-slug="homeCitySlug" />
+  <RdSiteFooter v-if="!fullscreen" :city-slug="footerCitySlug" />
   <RdAnalyticsConsent :hide-settings="fullscreen" />
 </template>

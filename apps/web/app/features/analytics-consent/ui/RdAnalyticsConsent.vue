@@ -18,7 +18,7 @@ const setChoice = (value: AnalyticsConsent) => { choice.value = value; editing.v
         <h2 id="analytics-title">Giúp mình hiểu bạn dùng Rành Đường thế nào</h2>
         <p>Bạn có thể cho phép đo lượt truy cập để mình cải thiện trang. Mình không gửi tên, email, số điện thoại hay nội dung tìm kiếm. Bộ đếm lượt xem và bấm địa điểm không dùng cookie định danh.</p>
         <NuxtLink class="rd-consent__privacy" to="/quyen-rieng-tu">Đọc chính sách quyền riêng tư</NuxtLink>
-        <div class="rd-consent__actions"><button class="rd-btn rd-btn--outline" type="button" @click="setChoice('denied')">Từ chối</button><button class="rd-btn rd-btn--accent" type="button" @click="setChoice('granted')">Cho phép</button><button v-if="editing" class="rd-btn rd-btn--outline" type="button" @click="editing = false">Đóng</button></div>
+        <div class="rd-consent__actions"><button class="rd-btn rd-btn--outline" type="button" @click="setChoice('denied')">Từ chối</button><button class="rd-btn rd-btn--primary" type="button" @click="setChoice('granted')">Cho phép</button><button v-if="editing" class="rd-btn rd-btn--outline" type="button" @click="editing = false">Đóng</button></div>
       </section>
       <button v-else class="rd-consent__settings" type="button" @click="editing = true">Tuỳ chọn đo lượt truy cập</button>
     </aside>

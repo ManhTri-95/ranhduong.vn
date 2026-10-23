@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { MAP_FOCUS_DURATION_MS } from '~/shared/lib/map-camera';
 import type { CityPublic, PlaceCard } from '@ranhduong/contracts';
 import type { Map as MapLibreMap, Marker } from 'maplibre-gl';
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
@@ -18,7 +19,7 @@ let timer: ReturnType<typeof setTimeout> | undefined;
 let generation = 0;
 let disposed = false;
 let assetsFailed = false;
-const duration = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 250;
+const duration = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : MAP_FOCUS_DURATION_MS;
 
 function fit(): void {
   if (!map || !library) return;
@@ -101,6 +102,6 @@ onBeforeUnmount(() => { disposed = true; generation++; clearTimeout(timer); obse
 .rd-collection-map__notice { position: absolute; top: var(--space-3); left: var(--space-3); right: var(--space-16); padding: var(--space-4); background: var(--paper-raised); border: var(--border); font: 400 13px/1.7 var(--font-body); }
 .rd-collection-map__notice p { margin-top: 0; }
 .rd-collection-map :deep(.rd-collection-pin) { width: var(--tap-min); height: var(--tap-min); display: grid; place-items: center; border: 2px solid var(--paper-raised); border-radius: var(--radius-pill); background: var(--ink); color: var(--paper-raised); box-shadow: var(--shadow-float); font: 600 13px var(--font-coordinate); cursor: pointer; }
-.rd-collection-map :deep(.rd-collection-pin[aria-pressed='true']) { z-index: 1; background: var(--accent); color: var(--ink); outline: 2px solid var(--ink); outline-offset: 3px; }
+.rd-collection-map :deep(.rd-collection-pin[aria-pressed='true']) { z-index: 1; background: var(--selected-surface); color: var(--selected-foreground); outline: 2px solid var(--selected-border); outline-offset: 3px; }
 .rd-collection-map :deep(.maplibregl-ctrl button) { width: var(--tap-min); height: var(--tap-min); }
 </style>

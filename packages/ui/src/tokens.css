@@ -1,18 +1,33 @@
-/* Design tokens theo Spec UI mục 2. --accent đổi theo thành phố và mùa. */
+/* Brand roles are stable; seasonal artwork uses its own --season-accent. */
 :root {
-  --paper: #F7F2E8;
+  --brand-primary: #234E45;
+  --brand-primary-foreground: #FFFFFF;
+  --brand-primary-hover: #1B4038;
+  --brand-accent: #B86B4B;
+  --brand-accent-strong: #A45B3E;
+  --brand-accent-text: #985337;
+  --brand-accent-foreground: #FFFFFF;
+  --brand-copper: #A86443;
+  --selected-surface: var(--mist);
+  --selected-foreground: var(--brand-primary);
+  --selected-border: var(--brand-primary);
+  --disabled-surface: #E5E5DF;
+  --disabled-foreground: #565D58;
+  --disabled-border: #92998F;
+  --paper: #F7F5F0;
   --paper-raised: #FFFDF8;
-  --ink: #1E3A2F;
+  --ink: #242C2B;
   --ink-soft: #46564E;
-  --mist: #DDE5E2;
-  --line: #C9D3CF;
-  --note: #FCEFB4;
-  --note-edge: #E2D38E;
+  --mist: #DCE8E2;
+  --line: #D6D8CF;
+  --note: #F2E5DD;
+  --note-edge: var(--brand-accent);
   --map-land: #F3EAD6;
   --map-forest: #CBD9C5;
   --map-water: #BFD4DC;
   --map-road-casing: #B8A98A;
-  --accent: #E9B824;
+  --accent: var(--brand-accent);
+  --season-accent: var(--brand-accent);
 
   --font-display: 'Lora', Georgia, serif;
   /* Windows Georgia can advance Vietnamese composed accents as separate glyphs when web fonts are unavailable. */
@@ -58,9 +73,16 @@
   --editorial-shade: linear-gradient(0deg, rgba(12, 30, 24, 0.84), rgba(12, 30, 24, 0) 80%);
   --shadow-card: 0 12px 32px rgba(30, 58, 47, 0.09);
   --dur-reveal: 420ms;
+  /* Public-web role aliases; consumers opt in without changing admin/ticket type. */
+  --text-page: clamp(32px, 4.5vw, 64px);
+  --text-section: clamp(26px, 3.4vw, 44px);
+  --text-body: 15px;
+  --text-utility: 13px;
+  --text-caption: 11px;
+  --dur-focus: 280ms;
   /* The Living Route: travel-journal surfaces and a directional motion signature. */
-  --route-rust: #943F2C;
-  --route-highlight: #FCEFB4;
+  --route-rust: var(--brand-accent-text);
+  --route-highlight: var(--note);
   --font-coordinate: ui-monospace, 'Cascadia Code', Consolas, monospace;
   --radius-postcard: 4px;
   --shadow-postcard: 0 12px 26px rgba(30, 58, 47, 0.12), 0 2px 4px rgba(30, 58, 47, 0.06);
@@ -79,7 +101,7 @@
   /* Thanh cố định ở đáy (trang địa điểm) và nút nổi (trang chủ): trang chừa đúng chỗ này ở cuối. */
   --action-bar-height: 80px;
   --float-clearance: calc(var(--button-height) + 2 * var(--space-6));
-  /* Màu trạng thái, chỉ dùng trong quản trị (ui-spec mục 12): chữ / nền. */
+  /* Semantic status roles; never derived from brand or seasonal accents. */
   --status-ok: #1F6B3F;
   --status-ok-bg: #DCEFE2;
   --status-warn: #6E4A00;
@@ -88,8 +110,8 @@
   --status-bad-bg: #F6DAD5;
 }
 
-[data-season='maianhdao'] { --accent: #E58FA8; }
-[data-season='mua'] { --accent: #8DB3CF; }
+[data-season='maianhdao'] { --season-accent: #E58FA8; }
+[data-season='mua'] { --season-accent: #8DB3CF; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }

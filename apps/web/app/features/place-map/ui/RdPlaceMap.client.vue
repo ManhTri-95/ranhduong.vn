@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { MAP_FOCUS_DURATION_MS } from '~/shared/lib/map-camera';
 import type { BBox, CityPublic, PlaceCard } from '@ranhduong/contracts';
 import type { GeoJSONSource, Map as MapLibreMap, Marker, Popup } from 'maplibre-gl';
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue';
@@ -11,7 +12,7 @@ import { MAP_MIN_ZOOM, needsPan, pointBounds, type MapInsets, type MapView } fro
 import { addPlaceLayers, CLUSTERS, PLACE_SOURCE, POINTS, selectPlaceLayer, updatePlaceLayers } from '../lib/map-layers';
 
 /** initialView: khung nhìn khôi phục khi quay lại trang; insets: phần header và sheet đang che bản đồ (px). */
-const props = defineProps<{ city: CityPublic; places: PlaceCard[]; selectedSlug: string | null; initialView?: MapView; insets?: MapInsets; fitInitialPlaces?: boolean; journal?: boolean; focusKey?: number }>();
+const props = defineProps<{ city: CityPublic; places: PlaceCard[]; selectedSlug: string | null; initialView?: MapView; insets?: MapInsets; fitInitialPlaces?: boolean; journal?: boolean; focusKey?: number; focusInitialSelection?: boolean }>();
 const emit = defineEmits<{ viewport: [bbox: BBox, interactive: boolean]; select: [slug: string]; camera: [view: MapView]; ready: []; error: [] }>();
 const styleUrl = useRuntimeConfig().public.mapStyleUrl;
 const container = ref<HTMLDivElement | null>(null);
@@ -195,7 +196,7 @@ async function start(): Promise<void> {
       syncSelectedMarker();
       const chosen = props.places.find((place) => place.slug === props.selectedSlug);
       // Khung nhìn khôi phục đã chứa ghim đang chọn; chỉ canh giữa khi mở mới.
-      if (chosen?.location && !startView) instance.jumpTo({ center: chosen.location.coordinates, padding: padding() });
+      if (chosen?.location && (!startView || props.focusInitialSelection)) instance.jumpTo({ center: chosen.location.coordinates, padding: padding() });
       else if (props.fitInitialPlaces && !startView) {
         const bounds = pointBounds(props.places.flatMap(place => place.location ? [place.location.coordinates] : []), props.city.mapBounds);
         if (bounds) instance.fitBounds(bounds, { padding: { top: padding().top + 48, bottom: padding().bottom + 48, left: 48, right: 48 }, maxZoom: 14, duration: 0 });
@@ -225,7 +226,7 @@ async function start(): Promise<void> {
         const zoom = await (instance.getSource(PLACE_SOURCE) as GeoJSONSource).getClusterExpansionZoom(cluster.properties.cluster_id as number);
         if (disposed || instance !== map) return;
         const [lng, lat] = cluster.geometry.coordinates;
-        if (lng !== undefined && lat !== undefined) instance.easeTo({ center: [lng, lat], zoom, padding: padding(), duration: reducedMotion() ? 0 : 300 }, { originalEvent: event.originalEvent });
+        if (lng !== undefined && lat !== undefined) instance.easeTo({ center: [lng, lat], zoom, padding: padding(), duration: reducedMotion() ? 0 : MAP_FOCUS_DURATION_MS }, { originalEvent: event.originalEvent });
       } catch { reportError(); }
     });
     instance.on('mousemove', (event) => {
@@ -274,7 +275,7 @@ watch(() => [props.selectedSlug, props.focusKey] as const, ([slug]) => {
   const canvas = map.getCanvas();
   const point = map.project(place.location.coordinates);
   if (needsPan(point, { width: canvas.clientWidth, height: canvas.clientHeight }, padding())) {
-    map.easeTo({ center: place.location.coordinates, padding: padding(), duration: reducedMotion() ? 0 : 300 });
+    map.easeTo({ center: place.location.coordinates, padding: padding(), duration: reducedMotion() ? 0 : MAP_FOCUS_DURATION_MS });
   }
 });
 onMounted(() => {

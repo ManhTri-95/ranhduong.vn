@@ -15,7 +15,7 @@ const interests: { label: string; detail: string; path: string; photo?: Editoria
 
 <template>
   <section id="kham-pha" class="rd-home-section rd-interests-section" data-rd-route-scene aria-labelledby="interests-title">
-    <RdChapterLabel number="03" label="Chọn hướng cho hôm nay" />
+    <RdChapterLabel number="02" label="Chọn hướng cho hôm nay" />
     <div class="rd-home-heading"><h2 id="interests-title">Hôm nay<br>đi <em>kiểu gì?</em></h2><p>Có người đi vì một tách cà phê.<br>Có người chỉ cần một lý do để ra ngoài.</p></div>
     <ul class="rd-interests">
       <li v-for="(interest, index) in interests" :key="interest.path">

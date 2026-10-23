@@ -3,10 +3,11 @@ import type { CityPublic, PlaceDetail } from '@ranhduong/contracts';
 import { computed, nextTick, onBeforeUnmount, ref, shallowRef, type Component } from 'vue';
 import { directionHref } from '~/entities/place/lib/place-detail';
 import { coordinateLabel, placeMapCard } from '~/entities/place/lib/place-story';
+import { placeMapHref } from '~/entities/place/lib/map-focus';
 import RdChapterLabel from '~/shared/ui/RdChapterLabel.vue';
 import RdCompass from '~/shared/ui/RdCompass.vue';
 
-const props = defineProps<{ place: PlaceDetail; city?: CityPublic | null; citySlug: string }>();
+const props = withDefaults(defineProps<{ place: PlaceDetail; city?: CityPublic | null; citySlug: string; chapter?: string }>(), { chapter: '06' });
 const point = computed(() => placeMapCard(props.place));
 const directions = computed(() => directionHref(props.place));
 const coordinates = computed(() => coordinateLabel(props.place.location));
@@ -52,8 +53,8 @@ onBeforeUnmount(() => { disposed = true; });
 
 <template>
   <section id="find-your-way" class="rd-story-section rd-place-directions" data-rd-route-scene aria-labelledby="directions-title">
-    <RdChapterLabel number="06" label="Tìm đường đến một câu chuyện" />
-    <div class="rd-story-heading"><h2 id="directions-title">Đường <em>đến đây.</em></h2><p>Một điểm ghé đã có vị trí.<br>Phần đường còn lại, bạn chọn.</p></div>
+    <RdChapterLabel :number="chapter" label="Tìm đường đến một câu chuyện" />
+    <div class="rd-story-heading"><h2 id="directions-title">Đường <em>đến đây.</em></h2><p>{{ point ? 'Xem vị trí trước khi lên đường.' : 'Vị trí đang được bổ sung.' }}<br>Phần đường còn lại, bạn chọn.</p></div>
     <div class="rd-place-directions__layout">
       <div class="rd-place-directions__info">
         <RdCompass />
@@ -66,7 +67,7 @@ onBeforeUnmount(() => { disposed = true; });
         </div>
         <p class="rd-place-directions__feedback" role="status" aria-live="polite">{{ notice }}</p>
         <label v-if="manualCopy" class="rd-place-directions__manual">Địa chỉ để sao chép<input :value="place.address" readonly @focus="($event.target as HTMLInputElement).select()"></label>
-        <NuxtLink class="rd-place-directions__full" :to="`/${citySlug}/ban-do`">Khám phá thêm trên bản đồ thành phố ↗</NuxtLink>
+        <NuxtLink class="rd-place-directions__full" :to="placeMapHref(citySlug, place.slug)">Mở bản đồ quanh địa điểm này ↗</NuxtLink>
       </div>
       <div ref="mapElement" class="rd-place-directions__map" role="group" aria-label="Vị trí địa điểm trên bản đồ" tabindex="-1" :aria-busy="pending || Boolean(mapComponent && !ready && !failed)">
         <ClientOnly><component :is="mapComponent" v-if="mapComponent && city && point" :city="city" :places="[point]" :selected-slug="place.slug" :initial-view="{ center: point.location!.coordinates, zoom: 14 }" :insets="{ top: 12, bottom: 56 }" @ready="ready = true; failed = false" @error="failed = true" /></ClientOnly>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { MAP_FOCUS_DURATION_MS } from '~/shared/lib/map-camera';
 import type { CityPublic, ItineraryPublicStop } from '@ranhduong/contracts';
 import type { GeoJSONSource, Map as MapLibreMap, Marker } from 'maplibre-gl';
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
@@ -43,11 +44,11 @@ function fitDay(): void {
   if (!data.points.length) return;
   const bounds = new maplibre.LngLatBounds();
   data.points.forEach(point => bounds.extend(point.coordinates));
-  map.fitBounds(bounds, { padding: itineraryFitPadding(canvas.clientWidth, canvas.clientHeight, tools.value?.offsetHeight ?? 0), maxZoom: 14, duration: reducedMotion() ? 0 : 250 });
+  map.fitBounds(bounds, { padding: itineraryFitPadding(canvas.clientWidth, canvas.clientHeight, tools.value?.offsetHeight ?? 0), maxZoom: 14, duration: reducedMotion() ? 0 : MAP_FOCUS_DURATION_MS });
 }
 function focusSelected(): void {
   const point = itineraryMapData(props.stops).points.find(item => item.key === props.selectedKey);
-  if (map && point) map.easeTo({ center: point.coordinates, duration: reducedMotion() ? 0 : 280 });
+  if (map && point) map.easeTo({ center: point.coordinates, duration: reducedMotion() ? 0 : MAP_FOCUS_DURATION_MS });
 }
 function draw(): void {
   if (!map || !maplibre || !container.value || !map.getSource('rd-itinerary-route')) return;
@@ -134,7 +135,7 @@ watch(() => [props.stops, props.selectedKey, props.focusRequest] as const, ([sto
   const canvas = map.getCanvas();
   const point = map.project(stop.place.location.coordinates);
   if (needsPan(point, { width: canvas.clientWidth, height: canvas.clientHeight }, { top: 0, bottom: 0 })) {
-    map.easeTo({ center: stop.place.location.coordinates, duration: reducedMotion() ? 0 : 250 });
+    map.easeTo({ center: stop.place.location.coordinates, duration: reducedMotion() ? 0 : MAP_FOCUS_DURATION_MS });
   }
 });
 watch(connections, value => { if (map?.getLayer('rd-itinerary-line')) map.setLayoutProperty('rd-itinerary-line', 'visibility', value ? 'visible' : 'none'); });
@@ -174,7 +175,7 @@ onBeforeUnmount(() => { disposed = true; generation++; clearTimeout(timer); resi
 .rd-itinerary-map__tools { position: absolute; z-index: 1; left: var(--space-2); bottom: var(--space-2); max-width: calc(100% - 16px); display: flex; flex-wrap: wrap; gap: var(--space-1); padding: var(--space-1); background: var(--paper-raised); border: var(--border-ink); border-radius: var(--radius-note); }
 .rd-itinerary-map__tools button, .rd-itinerary-map__tools label { display: inline-flex; align-items: center; gap: var(--space-1); min-height: var(--tap-min); color: var(--ink); font: 500 11px/1.5 var(--font-body); border: 0; padding: var(--space-1) var(--space-2); background: var(--paper-raised); cursor: pointer; }
 .rd-itinerary-map__tools button { border-bottom: var(--border); }
-.rd-itinerary-map__tools button:disabled { opacity: .5; cursor: default; }
+.rd-itinerary-map__tools button:disabled {  cursor: default;  background-color: var(--disabled-surface); color: var(--disabled-foreground); border-color: var(--disabled-border); opacity: 1;}
 .rd-itinerary-map__tools label { flex-wrap: wrap; }
 .rd-itinerary-map__tools input { accent-color: var(--ink); }
 .rd-itinerary-map__tools label span { font-weight: 400; }
@@ -183,7 +184,7 @@ onBeforeUnmount(() => { disposed = true; generation++; clearTimeout(timer); resi
 .rd-itinerary-map__notice p { margin-top: 0; }
 .rd-itinerary-map :deep(.rd-itinerary-marker) { width: var(--tap-min); height: var(--tap-min); padding: 0; border: 0; background: transparent; cursor: pointer; }
 .rd-itinerary-map :deep(.rd-itinerary-marker__graphic) { box-sizing: border-box; display: grid; place-items: center; width: 100%; height: 100%; background: var(--ink); color: var(--paper-raised); border: var(--border-ink); border-radius: var(--radius-pill); font: 700 20px var(--font-body); pointer-events: none; }
-.rd-itinerary-map :deep(.rd-itinerary-marker--last .rd-itinerary-marker__graphic), .rd-itinerary-map :deep(.rd-itinerary-marker--selected .rd-itinerary-marker__graphic) { background: var(--accent); color: var(--ink); }
+.rd-itinerary-map :deep(.rd-itinerary-marker--last .rd-itinerary-marker__graphic), .rd-itinerary-map :deep(.rd-itinerary-marker--selected .rd-itinerary-marker__graphic) { background: var(--selected-surface); color: var(--selected-foreground); }
 .rd-itinerary-map :deep(.rd-itinerary-marker--selected) { z-index: 1; }
 .rd-itinerary-map :deep(.rd-itinerary-marker--selected .rd-itinerary-marker__graphic) { outline: 3px solid var(--ink); outline-offset: 3px; animation: rd-itinerary-pin-drop 700ms ease-out both; }
 @keyframes rd-itinerary-pin-drop {

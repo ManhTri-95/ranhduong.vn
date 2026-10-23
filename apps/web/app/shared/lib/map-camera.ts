@@ -5,6 +5,7 @@ export interface MapView { center: [number, number]; zoom: number }
 
 /** Mức zoom nhỏ nhất của bản đồ thành phố (ui-spec mục 6). */
 export const MAP_MIN_ZOOM = 11;
+export const MAP_FOCUS_DURATION_MS = 280;
 const MAP_MAX_ZOOM = 22;
 
 /** Chỉ dịch bản đồ khi ghim đang bị header, sheet hoặc mép màn hình che; ghim đã thấy thì giữ nguyên khung nhìn. */

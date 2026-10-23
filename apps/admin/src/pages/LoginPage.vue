@@ -46,5 +46,5 @@ const loginUrl = computed(() => {
 h1 { margin: 0 0 8px; font-family: var(--font-display); font-size: 26px; color: var(--ink); }
 .hint { margin: 0 0 20px; font-size: 14px; color: var(--ink-soft); }
 .notice { margin: 0 0 20px; padding: 12px 14px; background: var(--note); border: 1.5px solid var(--note-edge); border-radius: var(--radius-note); font-size: 14px; color: var(--ink); }
-.google { display: flex; align-items: center; justify-content: center; min-height: 48px; border-radius: var(--radius-pill); background: var(--accent); color: var(--ink); font-weight: 700; font-size: 15px; text-decoration: none; }
+.google { display: flex; align-items: center; justify-content: center; min-height: 48px; border-radius: var(--radius-pill); background: var(--brand-primary); color: var(--brand-primary-foreground); font-weight: 700; font-size: 15px; text-decoration: none; }
 </style>

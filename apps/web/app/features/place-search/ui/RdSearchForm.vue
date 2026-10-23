@@ -166,6 +166,7 @@ onBeforeUnmount(dismiss);
 <style scoped>
 /* Ô nhập của design system tắt outline; hiện vòng focus trên cả khung. */
 .search { position: relative; }
+.rd-search__field input { min-height: var(--tap-min); font-size: 16px; }
 .field:focus-within { outline: 3px solid var(--ink); outline-offset: 2px; }
 .submit { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 var(--tap-min); height: var(--tap-min); margin-right: calc(-1 * var(--space-3)); border: 0; border-radius: var(--radius-pill); background: transparent; color: var(--ink); cursor: pointer; }
 .submit:focus-visible { outline: 3px solid var(--ink); outline-offset: -3px; }

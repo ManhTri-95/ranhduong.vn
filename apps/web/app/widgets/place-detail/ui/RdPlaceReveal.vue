@@ -19,7 +19,7 @@ const categories = computed(() => [props.place.category, ...props.place.alsoCate
 </script>
 
 <template>
-  <header id="place-reveal" class="rd-place-reveal" data-rd-route-scene>
+  <header id="place-reveal" class="rd-place-reveal" :class="{ 'rd-place-reveal--no-photo': !photo }" data-rd-route-scene>
     <div class="rd-place-reveal__media">
       <figure>
         <div class="rd-place-reveal__window">
@@ -28,7 +28,7 @@ const categories = computed(() => [props.place.category, ...props.place.alsoCate
           <span class="rd-place-reveal__stamp"><RdCompass /><span>{{ CATEGORY_LABEL[place.category] }}<small>{{ cityName || 'Ghi chép địa phương' }}</small></span></span>
           <svg class="rd-place-reveal__route" viewBox="0 0 340 180" fill="none" aria-hidden="true"><path pathLength="1000" d="M10 155C60 160 40 55 120 85S190 190 240 110 280 20 325 28" /><circle cx="325" cy="28" r="6" /></svg>
         </div>
-        <figcaption><span>RÀNH ĐƯỜNG / PLACE STORY</span><a v-if="photo" href="#photo-journal">Ảnh: {{ photo.credit }} · Xem nguồn ↗</a><span v-else>Chưa có ảnh địa điểm</span></figcaption>
+        <figcaption><span>RÀNH ĐƯỜNG / GHI CHÉP ĐỊA ĐIỂM</span><a v-if="photo" href="#photo-journal">Ảnh: {{ photo.credit }} · Xem nguồn ↗</a><span v-else>Chưa có ảnh địa điểm</span></figcaption>
       </figure>
     </div>
     <div class="rd-place-reveal__copy">
@@ -40,8 +40,8 @@ const categories = computed(() => [props.place.category, ...props.place.alsoCate
       <p v-if="coordinates" class="rd-place-reveal__coordinates">{{ coordinates }}</p>
       <slot />
       <div v-if="!closed" class="rd-place-reveal__actions">
-        <button type="button" class="rd-btn rd-btn--primary" disabled aria-describedby="place-itinerary-availability">Thêm vào lịch trình <small>Sắp có</small></button>
-        <a v-if="directions" class="rd-btn rd-btn--outline" :href="directions" target="_blank" rel="noopener noreferrer" data-rd-event="direction_click" :data-rd-place-id="place.id">Chỉ đường <span aria-hidden="true">↗</span></a>
+        <a v-if="directions" class="rd-btn rd-btn--primary" :href="directions" target="_blank" rel="noopener noreferrer" data-rd-event="direction_click" :data-rd-place-id="place.id">Chỉ đường <span aria-hidden="true">↗</span></a>
+        <NuxtLink class="rd-btn rd-btn--outline" :to="`/${citySlug}#lich-trinh`">Xem lịch trình gợi ý ↗</NuxtLink>
       </div>
       <a class="rd-place-reveal__continue" :href="closed ? '#next-turn' : '#before-you-go'">{{ closed ? 'Xem các chỗ tương tự' : 'Trước khi ghé, biết một chút' }} <span aria-hidden="true">↓</span></a>
     </div>
@@ -71,4 +71,10 @@ const categories = computed(() => [props.place.category, ...props.place.alsoCate
 @media (min-width: 1024px) {
   .rd-place-reveal { grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.15fr); gap: var(--space-12); align-items: center; }.rd-place-reveal__media { grid-column: 2; grid-row: 1; }.rd-place-reveal__copy { grid-column: 1; grid-row: 1; }.rd-place-reveal__window { aspect-ratio: 4 / 5; max-height: 660px; }.rd-place-reveal__stamp { top: var(--space-6); right: var(--space-6); }.rd-place-reveal__route { width: 60%; }
 }
+</style>
+
+<style scoped>
+.rd-place-reveal--no-photo .rd-place-reveal__window { aspect-ratio: 2; max-height: 280px; }
+.rd-place-reveal--no-photo .rd-place-reveal__route { display: none; }
+.rd-place-reveal__location, .rd-place-reveal__address, .rd-place-reveal__coordinates { font-size: var(--text-utility); }
 </style>

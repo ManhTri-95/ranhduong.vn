@@ -1,25 +1,22 @@
 <script setup lang="ts">
 import { CATEGORY_LABEL, type PlaceCard } from '@ranhduong/contracts';
-import RdCategoryGlyph from '~/entities/place/ui/RdCategoryGlyph.vue';
-import { photoSrcset, photoUrl } from '~/shared/lib/media';
+import RdPlacePhoto from '~/entities/place/ui/RdPlacePhoto.vue';
 import RdChapterLabel from '~/shared/ui/RdChapterLabel.vue';
 
 defineProps<{ citySlug: string; places: PlaceCard[] }>();
-const mediaBase = useRuntimeConfig().public.mediaBase;
 </script>
 
 <template>
   <section id="hanh-trinh-kham-pha" class="rd-route-story rd-home-section" data-rd-route-scene aria-labelledby="route-story-title">
-    <RdChapterLabel number="02" label="Cứ theo một chút tò mò" />
+    <RdChapterLabel number="03" label="Cứ theo một chút tò mò" />
     <div class="rd-home-heading"><h2 id="route-story-title">Một ngã rẽ.<br><em>Thêm một câu chuyện.</em></h2><p>Không cần biết hết mọi con đường.<br>Bắt đầu từ một nơi khiến bạn tò mò.</p></div>
     <div v-if="places.length" class="rd-route-story__journey">
       <svg class="rd-route-story__path" viewBox="0 0 1100 450" preserveAspectRatio="none" fill="none" aria-hidden="true"><path class="rd-route-story__guide" d="M100 70C240-20 220 430 500 300S800-30 1030 150" /><path class="rd-route-story__ink" pathLength="1000" d="M100 70C240-20 220 430 500 300S800-30 1030 150" /></svg>
       <article v-for="(place, index) in places.slice(0, 3)" :key="place.slug" class="rd-route-story__stop">
         <span class="rd-route-story__marker" aria-hidden="true">0{{ index + 1 }}</span>
         <NuxtLink :to="`/${citySlug}/dia-diem/${place.slug}`" class="rd-route-story__card">
-          <div class="rd-route-story__photo">
-            <img v-if="place.coverKey" :src="photoUrl(mediaBase, place.coverKey, 400)" :srcset="photoSrcset(mediaBase, place.coverKey)" sizes="(min-width: 768px) 28vw, 80vw" alt="" width="400" height="300" loading="lazy" decoding="async">
-            <div v-else class="rd-route-story__no-photo"><RdCategoryGlyph :category="place.category" /><span>Ảnh đang cập nhật</span></div>
+          <div class="rd-route-story__photo" :class="{ 'rd-route-story__photo--missing': !place.coverKey }">
+            <RdPlacePhoto :name="place.name" :category="place.category" :photo-key="place.coverKey" sizes="(min-width: 768px) 28vw, 80vw" decorative />
           </div>
           <span class="rd-route-story__category">{{ CATEGORY_LABEL[place.category] }}{{ place.zoneName ? ` / ${place.zoneName}` : '' }}</span>
           <h3>{{ place.name }} <span aria-hidden="true">↗</span></h3>
@@ -42,6 +39,7 @@ const mediaBase = useRuntimeConfig().public.mediaBase;
 .rd-route-story__marker { position: absolute; left: calc(-1 * var(--space-10)); top: 0; display: grid; place-items: center; width: 26px; height: 26px; border: 1px solid var(--route-rust); border-radius: var(--radius-pill); background: var(--paper); color: var(--route-rust); font: 11px var(--font-coordinate); }
 .rd-route-story__card { display: block; color: var(--ink); text-decoration: none; }
 .rd-route-story__photo { aspect-ratio: 4 / 3; overflow: hidden; background: var(--mist); border-radius: var(--radius-postcard); }
+.rd-route-story__photo--missing { aspect-ratio: 2.3; }
 .rd-route-story__photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .rd-route-story__no-photo { height: 100%; display: grid; place-content: center; justify-items: center; gap: var(--space-3); font-size: 12px; color: var(--ink-soft); }
 .rd-route-story__no-photo :deep(svg) { width: 44px; height: 44px; }

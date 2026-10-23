@@ -8,6 +8,8 @@ import { useApiBase } from '~/shared/api/client';
 import { observeLivingRoute } from '~/shared/lib/living-route';
 import { useClientNow } from '~/shared/lib/use-client-now';
 import RdCompass from '~/shared/ui/RdCompass.vue';
+import RdEditorialHeading from '~/shared/ui/RdEditorialHeading.vue';
+import RdEmptyState from '~/shared/ui/RdEmptyState.vue';
 import RdCollectionPhoto from './RdCollectionPhoto.vue';
 import RdCollectionPlaceCard from './RdCollectionPlaceCard.vue';
 
@@ -95,6 +97,7 @@ onBeforeUnmount(() => { disposed = true; controller?.abort(); disposeMotion?.();
   <div ref="root" class="rd-journal">
     <nav class="rd-journal__breadcrumbs" aria-label="Đường dẫn trang"><NuxtLink :to="`/${citySlug}`">{{ city.name }}</NuxtLink><span aria-hidden="true">/</span><span>Bộ sưu tập</span></nav>
 
+    <template v-if="places.length">
     <header class="rd-journal-cover">
       <div class="rd-journal-cover__copy">
         <p class="rd-journal__eyebrow"><span class="rd-journal__tiny-route" aria-hidden="true">⤳</span> SỔ TAY RÀNH ĐƯỜNG <span class="rd-journal__eyebrow-separator">/</span> THEO CHỦ ĐỀ</p>
@@ -105,7 +108,7 @@ onBeforeUnmount(() => { disposed = true; controller?.abort(); disposeMotion?.();
           <NuxtLink v-for="item in categoryLinks" :key="item.category" :to="item.href" :prefetch="false">{{ CATEGORY_LABEL[item.category] }} <span aria-hidden="true">↗</span></NuxtLink>
           <span v-for="area in areas" :key="area" class="rd-journal-cover__area">{{ area }}</span>
         </div>
-        <div class="rd-journal-cover__actions"><a v-if="places.length" class="rd-btn rd-journal__primary" href="#collection-trail">Khám phá bộ sưu tập <span aria-hidden="true">↓</span></a><button type="button" class="rd-journal__text-button" @click="showShare"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M12 16V3m-4 4 4-4 4 4M5 13v7h14v-7" /></svg> Chia sẻ</button></div>
+        <div class="rd-journal-cover__actions"><a v-if="places.length" class="rd-btn rd-btn--primary rd-journal__primary" href="#collection-trail">Khám phá bộ sưu tập <span aria-hidden="true">↓</span></a><button type="button" class="rd-journal__text-button" @click="showShare"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M12 16V3m-4 4 4-4 4 4M5 13v7h14v-7" /></svg> Chia sẻ</button></div>
       </div>
       <div class="rd-journal-cover__visual">
         <div class="rd-journal-cover__grid" aria-hidden="true" />
@@ -129,7 +132,7 @@ onBeforeUnmount(() => { disposed = true; controller?.abort(); disposeMotion?.();
 
     <section id="collection-map" ref="mapSection" class="rd-journal-map" aria-labelledby="collection-map-title">
       <div class="rd-journal__section-heading"><div><p class="rd-journal__eyebrow">MỘT GÓC NHÌN KHÁC</p><h2 id="collection-map-title" ref="mapHeading" tabindex="-1">Những nơi này nằm đâu?</h2></div><span class="rd-journal-map__compass" aria-hidden="true"><RdCompass /></span></div>
-      <div v-if="!mapOpen" class="rd-journal-map__entry"><div class="rd-journal-map__illustration" aria-hidden="true"><svg viewBox="0 0 600 220" fill="none"><path d="M-30 170C90 20 110 230 270 100S460 30 650 140M-20 30C150 160 210-80 370 100S540 170 640 50M100-20l70 270M430-20l-40 270" stroke="currentColor" stroke-width="1.5" /><circle cx="260" cy="108" r="15" /><path d="m255 108 4 4 7-9" /></svg><span>BẢN ĐỒ BỘ SƯU TẬP</span></div><div class="rd-journal-map__entry-copy"><p>Đặt những điểm hẹn lên bản đồ.</p><p>Xem vị trí để chọn nơi thuận tiện cho chuyến đi của bạn.</p><button v-if="places.length" type="button" class="rd-btn rd-journal__primary" @click="openMap()">Mở bản đồ <span aria-hidden="true">↗</span></button><NuxtLink v-else class="rd-btn rd-btn--outline" :to="`/${citySlug}/ban-do`" :prefetch="false">Khám phá bản đồ {{ city.name }}</NuxtLink></div></div>
+      <div v-if="!mapOpen" class="rd-journal-map__entry"><div class="rd-journal-map__illustration" aria-hidden="true"><svg viewBox="0 0 600 220" fill="none"><path d="M-30 170C90 20 110 230 270 100S460 30 650 140M-20 30C150 160 210-80 370 100S540 170 640 50M100-20l70 270M430-20l-40 270" stroke="currentColor" stroke-width="1.5" /><circle cx="260" cy="108" r="15" /><path d="m255 108 4 4 7-9" /></svg><span>BẢN ĐỒ BỘ SƯU TẬP</span></div><div class="rd-journal-map__entry-copy"><p>Đặt những điểm hẹn lên bản đồ.</p><p>Xem vị trí để chọn nơi thuận tiện cho chuyến đi của bạn.</p><button v-if="places.length" type="button" class="rd-btn rd-btn--primary rd-journal__primary" @click="openMap()">Mở bản đồ <span aria-hidden="true">↗</span></button><NuxtLink v-else class="rd-btn rd-btn--outline" :to="`/${citySlug}/ban-do`" :prefetch="false">Khám phá bản đồ {{ city.name }}</NuxtLink></div></div>
       <div v-else class="rd-journal-map__opened">
         <p v-if="mapLoading" class="rd-journal-map__message" role="status">Đang tìm vị trí các địa điểm trong bộ sưu tập…</p>
         <div v-else-if="mapFailed" class="rd-journal-map__message" role="status"><p>Chưa tải được vị trí. Danh sách địa điểm vẫn ở ngay bên trên.</p><button type="button" class="rd-btn rd-btn--outline" @click="retryMap">Thử lại</button></div>
@@ -140,13 +143,19 @@ onBeforeUnmount(() => { disposed = true; controller?.abort(); disposeMotion?.();
       <p class="rd-journal-map__footnote">Vị trí để bạn tham khảo, thứ tự bộ sưu tập không phải lộ trình chỉ đường. <NuxtLink :to="`/${citySlug}/ban-do`" :prefetch="false">Khám phá bản đồ {{ city.name }} ↗</NuxtLink></p>
     </section>
 
-    <section ref="sharePanel" class="rd-journal-share" aria-labelledby="collection-share-title"><div class="rd-journal-share__message"><p class="rd-journal__eyebrow">GỬI MỘT CHÚT CẢM HỨNG</p><h2 id="collection-share-title">Có người cũng sẽ thích những nơi này.</h2><p>Một bộ sưu tập hay, một lời rủ đi cùng.</p></div><div class="rd-journal-share__postcard"><div class="rd-journal-share__postmark" aria-hidden="true"><RdCompass /></div><span class="rd-journal__eyebrow">TỪ SỔ TAY RÀNH ĐƯỜNG</span><p class="rd-journal-share__title">{{ collection.title }}</p><p class="rd-journal-share__destination">{{ city.name }} <span aria-hidden="true">·</span> {{ places.length }} địa điểm</p><div class="rd-journal-share__actions"><button type="button" class="rd-btn rd-journal__primary" :disabled="sharing" @click="share('copy')">{{ shareStatus.startsWith('Đã sao chép') ? 'Đã sao chép ✓' : 'Sao chép liên kết' }}</button><button type="button" class="rd-journal__text-button" :disabled="sharing" @click="share('zalo')">Chia sẻ <span aria-hidden="true">↗</span></button></div><p class="rd-journal-share__status" role="status">{{ shareStatus }}</p><label v-if="manualLink" class="rd-journal-share__manual">Liên kết bộ sưu tập<input :value="shareUrl" readonly @focus="($event.target as HTMLInputElement).select()"></label></div></section>
+    <section ref="sharePanel" class="rd-journal-share" aria-labelledby="collection-share-title"><div class="rd-journal-share__message"><p class="rd-journal__eyebrow">GỬI MỘT CHÚT CẢM HỨNG</p><h2 id="collection-share-title">Có người cũng sẽ thích những nơi này.</h2><p>Một bộ sưu tập hay, một lời rủ đi cùng.</p></div><div class="rd-journal-share__postcard"><div class="rd-journal-share__postmark" aria-hidden="true"><RdCompass /></div><span class="rd-journal__eyebrow">TỪ SỔ TAY RÀNH ĐƯỜNG</span><p class="rd-journal-share__title">{{ collection.title }}</p><p class="rd-journal-share__destination">{{ city.name }} <span aria-hidden="true">·</span> {{ places.length }} địa điểm</p><div class="rd-journal-share__actions"><button type="button" class="rd-btn rd-btn--primary rd-journal__primary" :disabled="sharing" @click="share('copy')">{{ shareStatus.startsWith('Đã sao chép') ? 'Đã sao chép ✓' : 'Sao chép liên kết' }}</button><button type="button" class="rd-journal__text-button" :disabled="sharing" @click="share('zalo')">Chia sẻ <span aria-hidden="true">↗</span></button></div><p class="rd-journal-share__status" role="status">{{ shareStatus }}</p><label v-if="manualLink" class="rd-journal-share__manual">Liên kết bộ sưu tập<input :value="shareUrl" readonly @focus="($event.target as HTMLInputElement).select()"></label></div></section>
 
+    </template>
+    <section v-else class="rd-journal-empty">
+      <RdEditorialHeading as="h1" label="Sổ tay / Bộ sưu tập">{{ collection.title }}<template v-if="description" #description>{{ description }}</template></RdEditorialHeading>
+      <RdEmptyState title="Một trang sổ tay đang được viết tiếp." message="Danh sách đang được cập nhật. Ghé bản đồ để chọn một nơi cho hôm nay nhé."><NuxtLink class="rd-btn rd-btn--primary" :to="`/${citySlug}/ban-do`" :prefetch="false">Khám phá bản đồ {{ city.name }} ↗</NuxtLink></RdEmptyState>
+    </section>
     <section v-if="related.length" class="rd-journal-more" aria-labelledby="collection-more-title"><div class="rd-journal__section-heading"><div><p class="rd-journal__eyebrow">CHUYỆN KỂ TIẾP</p><h2 id="collection-more-title">Còn nhiều chuyện hay phía trước.</h2></div></div><ul><li v-for="item in related" :key="item.slug"><NuxtLink class="rd-journal-more__card" :to="`/${citySlug}/top/${item.slug}`"><div v-if="item.coverKey" class="rd-journal-more__photo"><RdCollectionPhoto :place="{ name: item.title, coverKey: item.coverKey }" sizes="(min-width: 768px) 30vw, 90vw" /></div><p class="rd-journal__eyebrow">{{ city.name }} / {{ item.placeCount }} ĐỊA ĐIỂM</p><h3>{{ item.title }}</h3><span class="rd-journal-more__link">Mở bộ sưu tập <span aria-hidden="true">↗</span></span></NuxtLink></li></ul></section>
   </div>
 </template>
 
 <style scoped>
+.rd-journal-empty { display: grid; gap: var(--space-7); padding-block: var(--space-6) var(--space-12); }
 .rd-journal { max-width: var(--content-max); margin: 0 auto; padding: 0 var(--space-5) var(--space-16); }
 .rd-journal *, .rd-journal *::before, .rd-journal *::after { box-sizing: border-box; }
 .rd-journal__breadcrumbs { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); min-height: var(--tap-min); margin: var(--space-2) 0 var(--space-7); color: var(--ink-soft); font-size: 10px; }
@@ -167,10 +176,10 @@ onBeforeUnmount(() => { disposed = true; controller?.abort(); disposeMotion?.();
 .rd-journal-cover__area { padding: var(--space-2) 0; color: var(--ink-soft); }
 .rd-journal-cover__area::before { content: '/'; color: var(--line); margin-right: var(--space-1); }
 .rd-journal-cover__actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3) var(--space-5); margin-top: var(--space-6); }
-.rd-journal .rd-journal__primary { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-5); max-width: 100%; min-height: var(--button-height); padding: var(--space-3) var(--space-5); background: var(--ink); color: var(--paper-raised); border: 1px solid var(--ink); border-radius: var(--radius-pill); font: 600 11px/1.6 var(--font-body); text-decoration: none; cursor: pointer; transition: transform var(--dur-standard) var(--ease-out), background var(--dur-standard); }
+.rd-journal .rd-journal__primary { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-5); max-width: 100%; min-height: var(--button-height); padding: var(--space-3) var(--space-5); background: var(--brand-primary); color: var(--brand-primary-foreground); border: 1px solid var(--brand-primary); border-radius: var(--radius-pill); font: 600 var(--text-utility)/1.6 var(--font-body); text-decoration: none; cursor: pointer; transition: transform var(--dur-standard) var(--ease-out), background var(--dur-standard); }
 .rd-journal__text-button { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); min-height: var(--tap-min); padding: var(--space-2) 0; background: transparent; border: 0; color: var(--ink); font: 600 11px/1.6 var(--font-body); cursor: pointer; }
 .rd-journal__text-button svg { width: 18px; height: 18px; }
-.rd-journal button:disabled { opacity: .6; cursor: wait; }
+.rd-journal button:disabled {  cursor: wait;  background-color: var(--disabled-surface); color: var(--disabled-foreground); border-color: var(--disabled-border); opacity: 1;}
 .rd-journal-cover__visual { position: relative; min-width: 0; padding: var(--space-6) var(--space-3) var(--space-10); }
 .rd-journal-cover__grid { position: absolute; inset: var(--space-3) 0 var(--space-6) var(--space-6); background-image: var(--cartographic-grid); background-size: 26px 26px; border-radius: var(--radius-postcard); opacity: .7; }
 .rd-journal-cover__postcard { position: relative; margin: 0; width: 100%; padding: var(--space-2); border: 1px solid var(--line); background: var(--paper-raised); box-shadow: var(--shadow-postcard); transform: rotate(-3deg); border-radius: var(--radius-postcard); }
@@ -217,7 +226,7 @@ onBeforeUnmount(() => { disposed = true; controller?.abort(); disposeMotion?.();
 .rd-journal-map__opened { min-width: 0; border: var(--border); background: var(--paper-raised); }
 .rd-journal-map__message { padding: var(--space-6); font: 400 14px/1.8 var(--font-body); }
 .rd-journal-map__coverage { margin: 0; padding: var(--space-3) var(--space-4); font: 400 10px/1.8 var(--font-body); color: var(--ink-soft); }
-.rd-journal-map__selected { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); padding: var(--space-4); background: var(--note); overflow-wrap: anywhere; }
+.rd-journal-map__selected { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); padding: var(--space-4); background: var(--selected-surface); overflow-wrap: anywhere;  color: var(--selected-foreground);}
 .rd-journal-map__selected > span { font: 500 8px/1.8 var(--font-coordinate); }
 .rd-journal-map__selected strong { font: 700 18px/1.5 var(--font-display-vietnamese); }
 .rd-journal-map__selected a { display: inline-flex; min-height: var(--tap-min); align-items: center; font-size: 11px; }
@@ -226,7 +235,7 @@ onBeforeUnmount(() => { disposed = true; controller?.abort(); disposeMotion?.();
 .rd-journal-map__list ol { list-style: none; padding: 0 var(--space-4) var(--space-4); margin: 0; max-height: 300px; overflow-y: auto; }
 .rd-journal-map__list button { display: block; min-height: var(--tap-min); width: 100%; padding: var(--space-3); text-align: left; border: 0; border-bottom: var(--border); background: transparent; color: var(--ink); font: inherit; cursor: pointer; overflow-wrap: anywhere; }
 .rd-journal-map__list button > span:first-child { margin-right: var(--space-3); font-family: var(--font-coordinate); }
-.rd-journal-map__list button[aria-pressed='true'] { background: var(--note); }
+.rd-journal-map__list button[aria-pressed='true'] { background: var(--selected-surface);  color: var(--selected-foreground);}
 .rd-journal-share { display: grid; gap: var(--space-7); margin-top: var(--space-16); padding: var(--space-7) var(--space-5); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background-image: var(--paper-grain); background-size: 4px 4px; }
 .rd-journal-share__message > p:last-child { margin: var(--space-4) 0 0; color: var(--ink-soft); font: 400 12px/1.8 var(--font-body); }
 .rd-journal-share__postcard { position: relative; min-width: 0; padding: var(--space-6); border: 1px solid var(--line); background: var(--paper-raised); box-shadow: var(--shadow-postcard); border-radius: var(--radius-postcard); overflow-wrap: anywhere; }
@@ -234,7 +243,7 @@ onBeforeUnmount(() => { disposed = true; controller?.abort(); disposeMotion?.();
 .rd-journal-share__title { margin: var(--space-5) 0 var(--space-3); font: 700 24px/1.4 var(--font-display-vietnamese); letter-spacing: -.03em; }
 .rd-journal-share__destination { margin: 0; font: 400 10px/1.8 var(--font-body); color: var(--ink-soft); }
 .rd-journal-share__actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3) var(--space-5); margin-top: var(--space-5); }
-.rd-journal-share__status { margin: var(--space-3) 0 0; font: 400 11px/1.8 var(--font-body); }
+.rd-journal-share__status { margin: var(--space-3) 0 0; font: 400 var(--text-utility)/1.8 var(--font-body); }
 .rd-journal-share__status:empty { display: none; }
 .rd-journal-share__manual { display: block; margin-top: var(--space-4); font-size: 11px; }
 .rd-journal-share__manual input { display: block; width: 100%; min-width: 0; min-height: var(--tap-min); margin-top: var(--space-2); padding: var(--space-2); border: var(--border); background: var(--paper); color: var(--ink); font: 400 16px var(--font-body); }

@@ -10,6 +10,7 @@ import { usePageSeo } from '~/shared/lib/use-page-seo';
 import { markUnavailableOnServer, throwIfNotFound } from '~/shared/api/page-status';
 import { useClientNow } from '~/shared/lib/use-client-now';
 import RdErrorBanner from '~/shared/ui/RdErrorBanner.vue';
+import RdSkipLink from '~/shared/ui/RdSkipLink.vue';
 import RdCityHeader from '~/widgets/city-header/ui/RdCityHeader.vue';
 import RdPlaceDetail from '~/widgets/place-detail/ui/RdPlaceDetail.vue';
 
@@ -49,9 +50,9 @@ usePageSeo({
 
 <template>
   <div class="rd-place-story-page">
-    <a class="rd-place-story-page__skip" href="#place-story-main">Đến nội dung địa điểm</a>
+    <RdSkipLink target="place-story-main" label="Đến nội dung địa điểm" />
     <RdCityHeader :city-slug="citySlug" :city-name="city.data.value?.name ?? ''" :section-base="`/${citySlug}`" editorial />
-    <main id="place-story-main" class="rd-detail-page">
+    <main id="place-story-main" tabindex="-1" class="rd-detail-page">
       <nav class="rd-detail-page__breadcrumbs" aria-label="Đường dẫn trang"><NuxtLink class="rd-detail-page__back" :to="`/${citySlug}`">← {{ city.data.value?.name || 'Về trang thành phố' }}</NuxtLink><span aria-hidden="true">/</span><span aria-current="page">{{ detail.data.value?.place.name || 'Địa điểm' }}</span></nav>
       <RdErrorBanner v-if="failed" message="Chưa tải được hết thông tin địa điểm, có thể mạng đang chập chờn." @retry="retry" />
       <RdPlaceDetail v-if="detail.data.value" :detail="detail.data.value" :city="city.data.value" :city-slug="citySlug" :now="now" />

@@ -2,6 +2,21 @@ import { BEST_TIME_LABEL, type BestTime, type GeoPoint, type PlaceCard, type Pla
 
 export interface TravelNote { key: string; label: string; value: string; detail: string }
 
+export type StoryChapter = 'place-reveal' | 'first-impression' | 'photo-journal' | 'before-you-go' | 'right-moment' | 'find-your-way' | 'make-it-your-journey' | 'next-turn';
+
+/** Empty media/prose remains a small note, not a full numbered chapter. */
+export function storyChapters(place: Pick<PlaceDetail, 'practicalNotes' | 'tags' | 'photos' | 'bestTime' | 'status'>): StoryChapter[] {
+  return [
+    'place-reveal',
+    ...(place.practicalNotes || place.tags.length ? ['first-impression' as const] : []),
+    ...(place.photos.length ? ['photo-journal' as const] : []),
+    'before-you-go',
+    ...(visitingMoments(place).length ? ['right-moment' as const] : []),
+    ...(place.status === 'closed' ? [] : ['find-your-way' as const, 'make-it-your-journey' as const]),
+    'next-turn',
+  ];
+}
+
 /** Missing editorial fields are unknown, never a negative accessibility claim. */
 export function travelNotes(place: PlaceDetail): TravelNote[] {
   const shelter = {

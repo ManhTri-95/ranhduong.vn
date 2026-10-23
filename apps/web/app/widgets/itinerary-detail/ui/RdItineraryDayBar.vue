@@ -55,10 +55,10 @@ onBeforeUnmount(() => observer?.disconnect());
 .rd-itinerary-daybar__days a { flex: 0 0 auto; text-decoration: none; }
 /* Màn hẹp: chỉ ghi "Ngày n" để chip vừa cạnh công tắc Lịch, Bản đồ; số điểm có ở tiêu đề từng ngày. */
 @media (max-width: 399.98px) { .rd-itinerary-daybar__count { display: none; } }
-.rd-itinerary-daybar__days a[aria-current='true'] { background: var(--ink); color: var(--paper-raised); border-color: var(--ink); }
+.rd-itinerary-daybar__days a[aria-current='true'] { background: var(--selected-surface); color: var(--selected-foreground); border-color: var(--selected-foreground); }
 .rd-itinerary-daybar__views { flex: 0 0 auto; display: flex; padding: 2px; border: var(--border-hair) solid var(--ink); border-radius: var(--radius-pill); background: var(--paper-raised); }
 .rd-itinerary-daybar__views button { min-height: var(--tap-min); min-width: var(--tap-min); padding: 0 var(--space-3); border: 0; border-radius: var(--radius-pill); background: transparent; color: var(--ink); font: 600 12px var(--font-body); cursor: pointer; transition: background-color var(--dur-standard) var(--ease-out), color var(--dur-standard) var(--ease-out); }
-.rd-itinerary-daybar__views button[aria-pressed='true'] { background: var(--ink); color: var(--paper-raised); }
+.rd-itinerary-daybar__views button[aria-pressed='true'] { background: var(--selected-surface); color: var(--selected-foreground); }
 .rd-itinerary-daybar__views button:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
 /*
  * Desktop: full-width chapter navigation; the chips share the map panel's paper surface.

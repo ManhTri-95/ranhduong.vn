@@ -30,7 +30,7 @@ const coordinates = computed(() => {
         <p class="rd-home-hero__lead">Những nơi hay ho đôi khi nằm<br>ngay sau một ngã rẽ.</p>
         <p class="rd-home-hero__product">Khám phá địa điểm, mở bản đồ và chọn một lịch trình ở {{ cityName || 'điểm đến' }}. Người rành đường ghi lại. Bạn tự chọn cách đi.</p>
       </div>
-      <div class="rd-home-hero__actions"><a class="rd-btn rd-home-hero__primary" href="#hanh-trinh-kham-pha">Đi một vòng <span aria-hidden="true">↗</span></a><a class="rd-home-hero__secondary" href="#lich-trinh">Tìm một lịch trình →</a></div>
+      <div class="rd-home-hero__actions"><a class="rd-btn rd-btn--primary rd-home-hero__primary" href="#hanh-trinh-kham-pha">Đi một vòng <span aria-hidden="true">↗</span></a><a class="rd-home-hero__secondary" href="#lich-trinh">Tìm một lịch trình →</a></div>
       <div class="rd-home-hero__search"><span class="rd-home-hero__destination">⌖ {{ cityName || 'Điểm đến' }}</span><RdSearchForm :action="`/${citySlug}/tim-kiem`" :city-slug="citySlug" /></div>
       <div class="rd-home-hero__stamp" aria-hidden="true"><RdCompass /><span>ĐI MỘT VÒNG<br>BIẾT THÊM MỘT NƠI</span></div>
       <span class="rd-home-hero__annotation" aria-hidden="true">Một chút tò mò,<br>một chuyến đi khác.</span>
@@ -47,24 +47,24 @@ const coordinates = computed(() => {
 .rd-home-hero__topline { display: flex; justify-content: space-between; align-items: start; gap: var(--space-4); }
 .rd-home-hero__topline :deep(.rd-chapter) { font-size: 9px; margin: 0; }
 .rd-home-hero__coordinates { display: none; font: 10px/1.8 var(--font-coordinate); letter-spacing: 0.06em; text-align: right; }
-.rd-home-hero h1 { position: relative; z-index: 1; max-width: 1000px; margin: var(--space-10) 0 var(--space-6); font: 700 clamp(36px, 7.2vw, 104px)/1.16 var(--font-display); letter-spacing: -0.055em; }
+.rd-home-hero h1 { position: relative; z-index: 1; max-width: 1000px; margin: var(--space-10) 0 var(--space-6); font: 700 clamp(36px, 7.2vw, 96px)/1.16 var(--font-display); letter-spacing: -0.055em; }
 .rd-home-hero__mask { display: block; overflow: hidden; padding-block: 0.06em; margin-block: -0.06em; }
 .rd-home-hero__mask > span, .rd-home-hero__mask > em { display: block; }
 .rd-home-hero h1 em { color: var(--route-highlight); font-style: italic; }
 .rd-home-hero__story { display: grid; gap: var(--space-4); max-width: 680px; }
 .rd-home-hero__lead { margin: 0; font-size: 15px; line-height: 1.8; }
-.rd-home-hero__product { margin: 0; max-width: 340px; font-size: 12px; line-height: 1.9; }
+.rd-home-hero__product { margin: 0; max-width: 340px; font-size: var(--text-body); line-height: 1.9; }
 .rd-home-hero__actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3) var(--space-6); margin: var(--space-6) 0; }
-.rd-home-hero__primary { background: var(--route-highlight); color: var(--ink); border-radius: var(--radius-postcard); padding-inline: var(--space-6); }
+.rd-home-hero__primary { background: var(--brand-primary); color: var(--brand-primary-foreground); border-radius: var(--radius-postcard); padding-inline: var(--space-6);  border: var(--border-hair) solid var(--paper-raised);}
 .rd-home-hero__primary > span { margin-left: var(--space-6); font-size: 24px; }
-.rd-home-hero__secondary { display: inline-flex; align-items: center; gap: var(--space-4); min-height: var(--tap-min); color: inherit; font-size: 12px; text-underline-offset: 6px; }
+.rd-home-hero__secondary { display: inline-flex; align-items: center; gap: var(--space-4); min-height: var(--tap-min); color: inherit; font-size: var(--text-utility); text-underline-offset: 6px; }
 .rd-home-hero__search { position: relative; z-index: 5; display: flex; flex-direction: column; max-width: 590px; border-radius: var(--radius-postcard); background: var(--paper-raised); color: var(--ink); padding: var(--space-2) var(--space-3); }
 .rd-home-hero__destination { display: inline-flex; align-items: center; min-height: var(--tap-min); font-size: 12px; font-weight: 600; }
 .rd-home-hero__search :deep(.rd-search) { flex: 1; min-width: 0; }
 .rd-home-hero__search :deep(.rd-search__label) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 .rd-home-hero__search :deep(.rd-search__field) { border: 0; padding-left: 0; height: var(--tap-min); }
 .rd-home-hero__search :deep(input) { font-size: 16px; }
-.rd-home-hero__search :deep(.submit) { background: var(--ink); color: var(--paper-raised); margin: 0; border-radius: var(--radius-postcard); }
+.rd-home-hero__search :deep(.submit) { background: var(--brand-primary); color: var(--brand-primary-foreground); margin: 0; border-radius: var(--radius-postcard); }
 .rd-home-hero__stamp, .rd-home-hero__annotation { display: none; }
 .rd-home-hero__bottom { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); padding-block: var(--space-4); }
 .rd-home-hero__bottom a { display: inline-flex; align-items: center; min-height: var(--tap-min); color: inherit; font-size: 9px; text-decoration: none; }
@@ -89,7 +89,7 @@ const coordinates = computed(() => {
   .rd-home-hero__annotation { display: block; position: absolute; bottom: var(--space-12); right: 12%; font: 400 25px/1.3 var(--font-hand); transform: rotate(-8deg); }
 }
 @media (prefers-reduced-motion: no-preference) {
-  .rd-home-hero__image :deep(img) { animation: rd-hero-depth var(--dur-route-image) var(--ease-route) both; }
+  .rd-home-hero__image :deep(img) { animation: rd-hero-depth var(--dur-route) var(--ease-route) both; }
   .rd-home-hero__mask > span, .rd-home-hero__mask > em { animation: rd-hero-turn var(--dur-route) var(--ease-route) both; }
   .rd-home-hero__mask:nth-child(2) > em { animation-delay: 100ms; }
   @keyframes rd-hero-turn { from { transform: translateY(105%) rotate(2deg); } to { transform: none; } }

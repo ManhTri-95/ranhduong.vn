@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import RdSkipLink from '~/shared/ui/RdSkipLink.vue';
 import { Slug } from '@ranhduong/contracts';
 import { computed } from 'vue';
 import { useCity } from '~/entities/city/api/city';
@@ -69,8 +70,9 @@ usePageSeo({
 
 <template>
   <div>
+    <RdSkipLink target="area-main" />
     <RdCityHeader :city-slug="citySlug" :city-name="cityName" editorial :section-base="`/${citySlug}`" />
-    <main class="rd-area-page">
+    <main id="area-main" tabindex="-1" class="rd-area-page">
       <RdErrorBanner v-if="loadFailed" message="Chưa tải được hết dữ liệu, có thể mạng đang chập chờn." @retry="retry" />
       <RdAreaGuide :city="city.data.value ?? null" :city-slug="citySlug" :zone-slug="zoneSlug" :zone-name="zoneName" :base-path="basePath" :filter="filter" :params="params" :page="page" :failed="listFailed" :now="now" />
     </main>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import RdSkipLink from '~/shared/ui/RdSkipLink.vue';
 import { CATEGORY_LABEL, categoryFromUrlSlug, Slug } from '@ranhduong/contracts';
 import { computed } from 'vue';
 import { useCity } from '~/entities/city/api/city';
@@ -74,8 +75,9 @@ usePageSeo({
 
 <template>
   <div>
+    <RdSkipLink target="category-main" />
     <RdCityHeader :city-slug="citySlug" :city-name="cityName" editorial :section-base="`/${citySlug}`" />
-    <main class="rd-category-page">
+    <main id="category-main" tabindex="-1" class="rd-category-page">
       <RdErrorBanner v-if="loadFailed" message="Chưa tải được hết dữ liệu, có thể mạng đang chập chờn." @retry="retry" />
       <RdCategoryGuide :city="city.data.value ?? null" :city-slug="citySlug" :category="category" :base-path="basePath" :filter="filter" :params="params" :page="page" :failed="listFailed" :pending="list.pending.value" :now="now" />
     </main>

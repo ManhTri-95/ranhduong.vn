@@ -105,7 +105,7 @@ onBeforeUnmount(() => { observer?.disconnect(); clearTimeout(settleTimer); });
 .rd-itinerary-carousel__number { flex: 0 0 var(--tap-min); height: var(--tap-min); display: grid; place-items: center; padding: 0; border: var(--border-ink); box-sizing: border-box; border-radius: var(--radius-pill); background: var(--ink); color: var(--paper-raised); font: 500 13px var(--font-coordinate); cursor: pointer; }
 .rd-itinerary-carousel__photo { flex: 0 0 52px; height: 68px; border-radius: var(--radius-postcard); overflow: hidden; }
 .rd-itinerary-carousel__number:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
-.rd-itinerary-carousel__card--selected .rd-itinerary-carousel__number { background: var(--accent); color: var(--ink); border: var(--border-strong) solid var(--ink); }
+.rd-itinerary-carousel__card--selected .rd-itinerary-carousel__number { background: var(--selected-surface); color: var(--selected-foreground); border: var(--border-strong) solid var(--selected-border); }
 .rd-itinerary-carousel__body { flex: 1; min-width: 0; }
 .rd-itinerary-carousel__body p, .rd-itinerary-carousel__body h3 { margin: 0; }
 .rd-itinerary-carousel__time, .rd-itinerary-carousel__meta { font-size: 13px; color: var(--ink-soft); }

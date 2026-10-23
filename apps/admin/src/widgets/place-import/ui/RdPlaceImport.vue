@@ -129,7 +129,7 @@ function restart(): void { reset(); }
 .rd-import-steps li { display: flex; align-items: center; gap: var(--space-2); color: var(--ink-soft); }
 .rd-import-steps li[aria-current] { font-weight: 700; color: var(--ink); }
 .rd-import-steps span { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: var(--radius-pill); background: var(--mist); }
-.rd-import-steps li[aria-current] span { background: var(--accent); color: var(--ink); }
+.rd-import-steps li[aria-current] span { background: var(--selected-surface); color: var(--selected-foreground); }
 .rd-import-panel { padding: var(--space-6); background: var(--paper-raised); border: var(--border); border-radius: var(--radius-card); }
 .rd-import-panel h2 { margin: 0 0 var(--space-4); font-size: 20px; }
 .rd-import p { line-height: 1.65; overflow-wrap: anywhere; }

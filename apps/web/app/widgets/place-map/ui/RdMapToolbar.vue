@@ -63,8 +63,8 @@ onBeforeUnmount(() => { clearTimeout(timer); document.removeEventListener('point
 
 <template>
   <div class="rd-map-toolbar">
-    <div class="rd-map-toolbar__brand"><NuxtLink :to="`/${city.slug}`" aria-label="Rành Đường — về trang thành phố"><RdCompass /><span>Rành Đường<small>ĐI MỘT VÒNG, BIẾT THÊM MỘT NƠI.</small></span></NuxtLink><span class="rd-map-toolbar__stamp">SỔ TAY<br>KHÁM PHÁ</span></div>
-    <div class="rd-map-toolbar__intro"><span class="rd-map-toolbar__eyebrow">THE LIVING MAP</span><h1>Bản đồ {{ city.name }}</h1><p>Bản đồ biết kể chuyện.<br><em>Chọn một ghim. Mở một nơi hay.</em></p></div>
+    <div class="rd-map-toolbar__brand"><NuxtLink :to="`/${city.slug}`" aria-label="Rành Đường — về trang thành phố"><RdCompass /><span>Rành Đường<small>RẼ MỘT CHÚT. HAY CẢ CHUYẾN ĐI.</small></span></NuxtLink><span class="rd-map-toolbar__stamp">SỔ TAY<br>KHÁM PHÁ</span></div>
+    <div class="rd-map-toolbar__intro"><span class="rd-map-toolbar__eyebrow">BẢN ĐỒ KHÁM PHÁ</span><h1>Bản đồ {{ city.name }}</h1><p>Bản đồ biết kể chuyện.<br><em>Chọn một ghim. Mở một nơi hay.</em></p></div>
     <form class="rd-map-toolbar__search" role="search" method="get" :action="`/${city.slug}/ban-do`" @submit="submitSearch">
       <input v-for="[key, value] in hidden('q')" :key="key" type="hidden" :name="key" :value="value">
       <label class="visually-hidden" for="map-search">Tìm địa điểm trong vùng bản đồ</label>
